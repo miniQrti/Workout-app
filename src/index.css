@@ -1,0 +1,20 @@
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Prevent iOS auto-zoom on input focus (requires font-size >= 16px) */
+input, textarea, select {
+  font-size: 16px !important;
+}
+
+button {
+  -webkit-appearance: none;
+  appearance: none;
+}
