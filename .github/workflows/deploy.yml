@@ -27,6 +27,10 @@ jobs:
         with:
           node-version: '20'
 
+      - name: Setup Pages
+        id: pages
+        uses: actions/configure-pages@v4
+
       - name: Install dependencies
         run: npm install
 
@@ -34,10 +38,7 @@ jobs:
         run: npm run generate-icons
 
       - name: Build
-        run: npm run build
-
-      - name: Setup Pages
-        uses: actions/configure-pages@v4
+        run: npm run build -- --base="${{ steps.pages.outputs.base_path }}/"
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
