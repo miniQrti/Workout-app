@@ -2,8 +2,10 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 
+const base = process.env.BASE_PATH ?? '/workout-app/';
+
 export default defineConfig({
-  base: '/workout-app/',
+  base,
   plugins: [
     react(),
     VitePWA({
@@ -17,8 +19,8 @@ export default defineConfig({
         background_color: '#f9f9f7',
         display: 'standalone',
         orientation: 'portrait',
-        scope: '/workout-app/',
-        start_url: '/workout-app/',
+        scope: base,
+        start_url: base,
         icons: [
           { src: 'pwa-192x192.png', sizes: '192x192', type: 'image/png' },
           { src: 'pwa-512x512.png', sizes: '512x512', type: 'image/png' },
@@ -26,7 +28,8 @@ export default defineConfig({
         ]
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}']
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+        navigateFallback: 'index.html',
       }
     })
   ]

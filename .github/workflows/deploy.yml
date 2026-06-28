@@ -38,7 +38,9 @@ jobs:
         run: npm run generate-icons
 
       - name: Build
-        run: npm run build -- --base="${{ steps.pages.outputs.base_path }}/"
+        run: npm run build
+        env:
+          BASE_PATH: "${{ steps.pages.outputs.base_path }}/"
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
