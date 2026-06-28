@@ -3,28 +3,27 @@ import { DAYS, SEED, freshEx, prevLabel } from './data';
 import ExCard from './ExCard';
 import RestTimer from './RestTimer';
 import History from './History';
+import ProfileSelect, { getProfiles } from './ProfileSelect';
 
-const Store = {
-  get(key)       { try { return localStorage.getItem(key);        } catch(_) { return null; } },
-  set(key, value){ try { localStorage.setItem(key, value);        } catch(_) {} },
+const LS = {
+  get(k)    { try { return localStorage.getItem(k);  } catch(_) { return null; } },
+  set(k, v) { try { localStorage.setItem(k, v);      } catch(_) {} },
 };
-const KEY = "kurt-wt-v4";
 
 function freshStore() {
-  const s = {history:{...SEED}};
+  const s = { history: { ...SEED } };
   Object.values(DAYS).forEach(d => d.exercises.forEach(e => { s[e.id] = freshEx(); }));
-  ["a","b","c"].forEach(k => { s["sess_"+k] = {note:""}; });
+  ["a","b","c"].forEach(k => { s["sess_"+k] = { note: "" }; });
   return s;
 }
 
-// Migrate old single-session format ({date,sets}) → array format
 function migrateHistory(raw) {
   const out = {};
   for (const [id, val] of Object.entries(raw)) {
     if (Array.isArray(val)) {
       out[id] = val;
     } else if (val && typeof val === "object" && val.sets) {
-      out[id] = [{...val, pr:false}];
+      out[id] = [{ ...val, pr: false }];
     } else {
       out[id] = SEED[id] || [];
     }
@@ -32,8 +31,8 @@ function migrateHistory(raw) {
   return out;
 }
 
-// Bottom nav SVG icons
-const IconWorkout = ({color}) => (
+// ── Icons ────────────────────────────────────────────────────────────────────
+const IconWorkout = ({ color }) => (
   <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
     stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <rect x="2" y="10" width="4" height="4" rx="1"/>
@@ -43,7 +42,7 @@ const IconWorkout = ({color}) => (
     <line x1="8" y1="12" x2="16" y2="12" strokeWidth="2.5"/>
   </svg>
 );
-const IconTimer = ({color}) => (
+const IconTimer = ({ color }) => (
   <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
     stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <circle cx="12" cy="13" r="8"/>
@@ -52,7 +51,7 @@ const IconTimer = ({color}) => (
     <line x1="12" y1="3" x2="12" y2="5"/>
   </svg>
 );
-const IconHistory = ({color}) => (
+const IconHistory = ({ color }) => (
   <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
     stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <polyline points="4,18 9,13 13,15 20,7"/>
@@ -60,112 +59,119 @@ const IconHistory = ({color}) => (
   </svg>
 );
 
-export default function App() {
-  const [view,    setView]   = useState("today");  // "today" | "history"
-  const [day,     setDay]    = useState("a");
-  const [store,   setStore]  = useState(freshStore);
-  const [open,    setOpen]   = useState({});
-  const [copied,  setCopied] = useState(false);
-  const [status,  setStatus] = useState("idle");
-  const [toast,   setToast]  = useState(null);
-  const [showExp, setExp]    = useState(false);
-  const [showTimer,setTimer] = useState(false);
+function initials(name) {
+  return name.trim().split(/\s+/).map(w => w[0]).slice(0, 2).join('').toUpperCase();
+}
+
+// ── WorkoutApp — full app for a signed-in profile ────────────────────────────
+function WorkoutApp({ profile, onSwitchProfile }) {
+  const KEY = `kurt-wt-v4-${profile.id}`;
+
+  const [view,      setView]    = useState("today");
+  const [day,       setDay]     = useState("a");
+  const [store,     setStore]   = useState(freshStore);
+  const [open,      setOpen]    = useState({});
+  const [copied,    setCopied]  = useState(false);
+  const [status,    setStatus]  = useState("idle");
+  const [toast,     setToast]   = useState(null);
+  const [showExp,   setExp]     = useState(false);
+  const [showTimer, setTimer]   = useState(false);
+  const [showMenu,  setMenu]    = useState(false);
 
   const D     = DAYS[day];
-  const today = new Date().toLocaleDateString("en-US",{weekday:"long",month:"short",day:"numeric"});
+  const today = new Date().toLocaleDateString("en-US", { weekday:"long", month:"short", day:"numeric" });
 
-  // ── Toast ──
+  // ── Toast ────────────────────────────────────────────────────────────────
   const toastTimer = useRef(null);
-  function showToast(msg, type="info") {
+  function showToast(msg, type = "info") {
     clearTimeout(toastTimer.current);
-    setToast({msg, type});
-    if (type !== "error") toastTimer.current = setTimeout(()=>setToast(null), 4000);
+    setToast({ msg, type });
+    if (type !== "error") toastTimer.current = setTimeout(() => setToast(null), 4000);
   }
 
-  // ── Load & migrate ──
-  useEffect(()=>{
-    const val = Store.get(KEY);
+  // ── Load & migrate ───────────────────────────────────────────────────────
+  useEffect(() => {
+    const val = LS.get(KEY);
     if (val) {
       try {
         const p = JSON.parse(val);
-        const history = migrateHistory({...SEED, ...(p.history||{})});
-        setStore(prev=>({...prev, ...p, history}));
+        const history = migrateHistory({ ...SEED, ...(p.history || {}) });
+        setStore(prev => ({ ...prev, ...p, history }));
       } catch(_) {}
+    } else {
+      setStore(freshStore());
     }
-  },[]);
+  }, [KEY]);
 
-  // ── Debounced save ──
+  // ── Debounced save ───────────────────────────────────────────────────────
   const timerRef = useRef(null);
-  const save = useCallback((next)=>{
+  const save = useCallback((next, key) => {
     clearTimeout(timerRef.current);
     setStatus("saving");
-    timerRef.current = setTimeout(()=>{
-      Store.set(KEY, JSON.stringify(next));
+    timerRef.current = setTimeout(() => {
+      LS.set(key, JSON.stringify(next));
       setStatus("saved");
-      setTimeout(()=>setStatus("idle"), 2000);
+      setTimeout(() => setStatus("idle"), 2000);
     }, 400);
-  },[]);
+  }, []);
 
-  // ── Mutators ──
   function mut(fn) {
     let next;
-    setStore(prev=>{ next=fn(prev); return next; });
-    setTimeout(()=>{ if(next) save(next); }, 0);
+    setStore(prev => { next = fn(prev); return next; });
+    setTimeout(() => { if (next) save(next, KEY); }, 0);
   }
 
-  const toggleOpen = id => setOpen(o=>({...o,[id]:!o[id]}));
-  const toggleDone = id => mut(s=>({...s,[id]:{...s[id],done:!s[id].done}}));
-  const setSetVal  = (id,i,f,v) => mut(s=>{
-    const sets=[...(s[id]?.sets||[])];
-    if(!sets[i]) sets[i]={w:"",r:""};
-    sets[i]={...sets[i],[f]:v};
-    return {...s,[id]:{...s[id],sets}};
+  const toggleOpen = id => setOpen(o => ({ ...o, [id]: !o[id] }));
+  const toggleDone = id => mut(s => ({ ...s, [id]: { ...s[id], done: !s[id].done } }));
+  const setSetVal  = (id, i, f, v) => mut(s => {
+    const sets = [...(s[id]?.sets || [])];
+    if (!sets[i]) sets[i] = { w:"", r:"" };
+    sets[i] = { ...sets[i], [f]: v };
+    return { ...s, [id]: { ...s[id], sets } };
   });
-  const setFeel  = (id,f) => mut(s=>({...s,[id]:{...s[id],feel:s[id].feel===f?"":f}}));
-  const setNote  = (id,v) => mut(s=>({...s,[id]:{...s[id],note:v}}));
-  const fillPrev = (id,i,p) => mut(s=>{
-    const sets=[...(s[id]?.sets||[])];
-    if(!sets[i]) sets[i]={w:"",r:""};
-    if(p.w) sets[i]={...sets[i],w:p.w};
-    if(p.r && !s[id]?.sets?.[i]?.r) sets[i]={...sets[i],r:p.r};
-    return {...s,[id]:{...s[id],sets}};
+  const setFeel  = (id, f) => mut(s => ({ ...s, [id]: { ...s[id], feel: s[id].feel === f ? "" : f } }));
+  const setNote  = (id, v) => mut(s => ({ ...s, [id]: { ...s[id], note: v } }));
+  const fillPrev = (id, i, p) => mut(s => {
+    const sets = [...(s[id]?.sets || [])];
+    if (!sets[i]) sets[i] = { w:"", r:"" };
+    if (p.w) sets[i] = { ...sets[i], w: p.w };
+    if (p.r && !s[id]?.sets?.[i]?.r) sets[i] = { ...sets[i], r: p.r };
+    return { ...s, [id]: { ...s[id], sets } };
   });
-  const upSess = v => { const k="sess_"+day; mut(s=>({...s,[k]:{...s[k],note:v}})); };
+  const upSess = v => { const k = "sess_"+day; mut(s => ({ ...s, [k]: { ...s[k], note: v } })); };
 
   const finishDay = () => {
-    mut(s=>{
-      const n = {...s, history:{...s.history}};
-      const dateStr = new Date().toLocaleDateString("en-US",{month:"short",day:"numeric"});
-      DAYS[day].exercises.forEach(ex=>{
+    mut(s => {
+      const n = { ...s, history: { ...s.history } };
+      const dateStr = new Date().toLocaleDateString("en-US", { month:"short", day:"numeric" });
+      DAYS[day].exercises.forEach(ex => {
         const d = s[ex.id];
-        if (!d?.sets?.some(x=>x?.w)) return;
-
-        const prev = Array.isArray(n.history[ex.id]) ? n.history[ex.id] : [];
-        const curMax  = Math.max(...d.sets.map(x=>parseFloat(x.w)||0).filter(Boolean));
+        if (!d?.sets?.some(x => x?.w)) return;
+        const prev    = Array.isArray(n.history[ex.id]) ? n.history[ex.id] : [];
+        const curMax  = Math.max(...d.sets.map(x => parseFloat(x.w)||0).filter(Boolean));
         const histMax = prev.reduce((m, sess) =>
-          Math.max(m, ...((sess.sets||[]).map(x=>parseFloat(x.w)||0).filter(Boolean))), 0);
+          Math.max(m, ...((sess.sets||[]).map(x => parseFloat(x.w)||0).filter(Boolean))), 0);
         const isPR = curMax > 0 && curMax > histMax;
-
-        n.history[ex.id] = [...prev, {sets:d.sets, date:dateStr, pr:isPR}];
+        n.history[ex.id] = [...prev, { sets: d.sets, date: dateStr, pr: isPR }];
       });
       return n;
     });
     showToast("Session saved to history ✓", "success");
   };
 
-  const isDone = dk => DAYS[dk].exercises.every(e=>store[e.id]?.done);
+  const isDone = dk => DAYS[dk].exercises.every(e => store[e.id]?.done);
 
-  // ── Export ──
+  // ── Export to Claude ─────────────────────────────────────────────────────
   function buildExport() {
-    const lines=[`SESSION LOG — ${D.title.toUpperCase()}`,`Date: ${today}`, ""];
-    D.exercises.forEach(ex=>{
+    const lines = [`SESSION LOG — ${D.title.toUpperCase()}`, `Date: ${today}`, ""];
+    D.exercises.forEach(ex => {
       const d    = store[ex.id] || freshEx();
       const prev = prevLabel(store.history?.[ex.id], ex.isTime);
       lines.push(`▸ ${ex.name}`);
       if (prev) lines.push(`  Last session: ${prev.text}`);
       let any = false;
-      (d.sets||[]).forEach((sv,i)=>{
-        if (sv?.w||sv?.r) {
+      (d.sets||[]).forEach((sv, i) => {
+        if (sv?.w || sv?.r) {
           any = true;
           lines.push(ex.isTime ? `  Set ${i+1}: ${sv.w}s` : `  Set ${i+1}: ${sv.w} lb × ${sv.r} reps`);
         }
@@ -183,7 +189,7 @@ export default function App() {
 
   const doCopy = () => {
     const text = buildExport();
-    const copyFallback = () => {
+    const fallback = () => {
       const ta = document.createElement('textarea');
       ta.value = text;
       ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0;pointer-events:none;';
@@ -195,19 +201,39 @@ export default function App() {
     };
     const onOk = () => {
       setCopied(true);
-      showToast("Copied! Paste into Claude chat ✓","success");
-      setTimeout(()=>setCopied(false),2500);
+      showToast("Copied! Paste into Claude chat ✓", "success");
+      setTimeout(() => setCopied(false), 2500);
     };
     if (navigator.clipboard?.writeText) {
-      navigator.clipboard.writeText(text).then(onOk).catch(()=>{
-        if (copyFallback()) onOk(); else showToast("Copy failed — select text manually","error");
+      navigator.clipboard.writeText(text).then(onOk).catch(() => {
+        if (fallback()) onOk(); else showToast("Copy failed — select text manually","error");
       });
     } else {
-      if (copyFallback()) onOk(); else showToast("Copy failed — select text manually","error");
+      if (fallback()) onOk(); else showToast("Copy failed — select text manually","error");
     }
   };
 
-  // ── Styles ──
+  // ── Export data as JSON file ─────────────────────────────────────────────
+  function exportDataFile() {
+    const payload = {
+      exportedAt: new Date().toISOString(),
+      profile: profile.name,
+      data: store,
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href     = url;
+    a.download = `workout-data-${profile.name.replace(/\s+/g,'-').toLowerCase()}-${new Date().toISOString().slice(0,10)}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    setMenu(false);
+    showToast("Data exported ✓", "success");
+  }
+
+  // ── Styles ───────────────────────────────────────────────────────────────
   const tabSt = dk => ({
     flex:1, padding:"9px 4px", borderRadius:8, cursor:"pointer", lineHeight:1.4,
     textAlign:"center", whiteSpace:"pre-line", fontSize:12, fontWeight:day===dk?600:500,
@@ -227,7 +253,7 @@ export default function App() {
 
       {/* Toast */}
       {toast && (
-        <div onClick={()=>setToast(null)}
+        <div onClick={() => setToast(null)}
           style={{position:"fixed",top:16,left:"50%",transform:"translateX(-50%)",zIndex:999,
             background:toastBg,border:`1px solid ${toastCo}`,borderRadius:12,
             padding:"12px 18px",fontSize:13,fontWeight:500,color:toastCo,
@@ -238,8 +264,66 @@ export default function App() {
         </div>
       )}
 
+      {/* Profile menu overlay */}
+      {showMenu && (
+        <div onClick={() => setMenu(false)}
+          style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.4)",zIndex:250,
+            display:"flex",alignItems:"flex-end",justifyContent:"center"}}>
+          <div onClick={e => e.stopPropagation()}
+            style={{background:"#fff",borderRadius:"20px 20px 0 0",
+              padding:"20px 16px 32px",width:"100%"}}>
+            <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:20,
+              padding:"0 2px"}}>
+              <div style={{
+                width:44,height:44,borderRadius:"50%",background:profile.color,
+                display:"flex",alignItems:"center",justifyContent:"center",
+                fontSize:16,fontWeight:700,color:"#fff",flexShrink:0,
+              }}>
+                {initials(profile.name)}
+              </div>
+              <div>
+                <div style={{fontSize:16,fontWeight:600,color:"#1a1a1a"}}>{profile.name}</div>
+                <div style={{fontSize:12,color:"#aaa"}}>Your workout profile</div>
+              </div>
+            </div>
+            <div style={{display:"flex",flexDirection:"column",gap:8}}>
+              <button onClick={exportDataFile}
+                style={{display:"flex",alignItems:"center",gap:12,padding:"14px 16px",
+                  background:"#f5f5f3",border:"1px solid rgba(0,0,0,0.09)",
+                  borderRadius:12,cursor:"pointer",textAlign:"left",width:"100%"}}>
+                <span style={{fontSize:20}}>📥</span>
+                <div>
+                  <div style={{fontSize:14,fontWeight:500,color:"#1a1a1a"}}>Export my data</div>
+                  <div style={{fontSize:12,color:"#aaa",marginTop:1}}>
+                    Download all workout history as JSON
+                  </div>
+                </div>
+              </button>
+              <button onClick={() => { setMenu(false); onSwitchProfile(); }}
+                style={{display:"flex",alignItems:"center",gap:12,padding:"14px 16px",
+                  background:"#f5f5f3",border:"1px solid rgba(0,0,0,0.09)",
+                  borderRadius:12,cursor:"pointer",textAlign:"left",width:"100%"}}>
+                <span style={{fontSize:20}}>🔄</span>
+                <div>
+                  <div style={{fontSize:14,fontWeight:500,color:"#1a1a1a"}}>Switch profile</div>
+                  <div style={{fontSize:12,color:"#aaa",marginTop:1}}>
+                    Go back to profile selection
+                  </div>
+                </div>
+              </button>
+            </div>
+            <button onClick={() => setMenu(false)}
+              style={{width:"100%",marginTop:10,padding:"12px",fontSize:15,fontWeight:500,
+                borderRadius:12,border:"1px solid rgba(0,0,0,0.14)",
+                background:"#f0f0ee",color:"#1a1a1a",cursor:"pointer"}}>
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Rest timer overlay */}
-      {showTimer && <RestTimer onClose={()=>setTimer(false)}/>}
+      {showTimer && <RestTimer onClose={() => setTimer(false)}/>}
 
       {/* ── HISTORY VIEW ── */}
       {view === "history" && <History store={store}/>}
@@ -251,11 +335,21 @@ export default function App() {
           <div style={{background:"#f9f9f7",padding:"16px 16px 0",position:"sticky",top:0,zIndex:10}}>
             <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12}}>
               <div style={{fontSize:20,fontWeight:600,color:"#1a1a1a"}}>Workout tracker</div>
-              {statusLabel && <span style={{fontSize:12,color:statusColor}}>{statusLabel}</span>}
+              <div style={{display:"flex",alignItems:"center",gap:10}}>
+                {statusLabel && <span style={{fontSize:12,color:statusColor}}>{statusLabel}</span>}
+                {/* Profile avatar */}
+                <button onClick={() => setMenu(true)}
+                  style={{width:34,height:34,borderRadius:"50%",background:profile.color,
+                    display:"flex",alignItems:"center",justifyContent:"center",
+                    fontSize:12,fontWeight:700,color:"#fff",border:"none",cursor:"pointer",
+                    flexShrink:0}}>
+                  {initials(profile.name)}
+                </button>
+              </div>
             </div>
             <div style={{display:"flex",gap:8,marginBottom:4}}>
-              {["a","b","c"].map(dk=>(
-                <button key={dk} onClick={()=>setDay(dk)} style={tabSt(dk)}>
+              {["a","b","c"].map(dk => (
+                <button key={dk} onClick={() => setDay(dk)} style={tabSt(dk)}>
                   {dk==="a"?"Day A\nUpper":dk==="b"?"Day B\nLower":"Day C\nFull body"}
                 </button>
               ))}
@@ -278,23 +372,23 @@ export default function App() {
 
             <div style={{fontSize:10,fontWeight:600,letterSpacing:"0.08em",
               textTransform:"uppercase",color:"#bbb",margin:"18px 0 8px"}}>Strength</div>
-            {D.exercises.filter(e=>e.type==="strength").map(ex=>(
+            {D.exercises.filter(e => e.type==="strength").map(ex => (
               <ExCard key={ex.id} ex={ex}
                 exData={store[ex.id]} hist={store.history?.[ex.id]} isOpen={!!open[ex.id]}
-                onOpen={()=>toggleOpen(ex.id)} onDone={()=>toggleDone(ex.id)}
-                onSet={(i,f,v)=>setSetVal(ex.id,i,f,v)} onFeel={f=>setFeel(ex.id,f)}
-                onNote={v=>setNote(ex.id,v)} onFill={(i,p)=>fillPrev(ex.id,i,p)}
+                onOpen={() => toggleOpen(ex.id)} onDone={() => toggleDone(ex.id)}
+                onSet={(i,f,v) => setSetVal(ex.id,i,f,v)} onFeel={f => setFeel(ex.id,f)}
+                onNote={v => setNote(ex.id,v)} onFill={(i,p) => fillPrev(ex.id,i,p)}
               />
             ))}
 
             <div style={{fontSize:10,fontWeight:600,letterSpacing:"0.08em",
               textTransform:"uppercase",color:"#bbb",margin:"18px 0 8px"}}>Core</div>
-            {D.exercises.filter(e=>e.type==="core").map(ex=>(
+            {D.exercises.filter(e => e.type==="core").map(ex => (
               <ExCard key={ex.id} ex={ex}
                 exData={store[ex.id]} hist={store.history?.[ex.id]} isOpen={!!open[ex.id]}
-                onOpen={()=>toggleOpen(ex.id)} onDone={()=>toggleDone(ex.id)}
-                onSet={(i,f,v)=>setSetVal(ex.id,i,f,v)} onFeel={f=>setFeel(ex.id,f)}
-                onNote={v=>setNote(ex.id,v)} onFill={(i,p)=>fillPrev(ex.id,i,p)}
+                onOpen={() => toggleOpen(ex.id)} onDone={() => toggleDone(ex.id)}
+                onSet={(i,f,v) => setSetVal(ex.id,i,f,v)} onFeel={f => setFeel(ex.id,f)}
+                onNote={v => setNote(ex.id,v)} onFill={(i,p) => fillPrev(ex.id,i,p)}
               />
             ))}
 
@@ -318,7 +412,7 @@ export default function App() {
               textTransform:"uppercase",color:"#bbb",margin:"18px 0 8px"}}>Session notes</div>
             <textarea rows={3} placeholder="Overall feel, energy level, anything to flag..."
               value={store["sess_"+day]?.note||""}
-              onChange={e=>upSess(e.target.value)}
+              onChange={e => upSess(e.target.value)}
               style={{width:"100%",padding:"10px",borderRadius:12,
                 border:"1px solid rgba(0,0,0,0.18)",background:"#fff",
                 color:"#1a1a1a",resize:"none",fontFamily:"inherit",lineHeight:1.5}}
@@ -330,7 +424,7 @@ export default function App() {
                 color:"#0F6E56",cursor:"pointer"}}>
               ✓ Save as last session
             </button>
-            <button onClick={()=>setExp(true)}
+            <button onClick={() => setExp(true)}
               style={{width:"100%",marginTop:10,padding:"13px",fontSize:14,fontWeight:600,
                 borderRadius:12,border:"1px solid rgba(0,0,0,0.14)",background:"#fff",
                 color:"#1a1a1a",cursor:"pointer",display:"flex",alignItems:"center",
@@ -341,7 +435,7 @@ export default function App() {
 
           {/* Export modal */}
           {showExp && (
-            <div onClick={e=>{if(e.target===e.currentTarget)setExp(false);}}
+            <div onClick={e => { if (e.target===e.currentTarget) setExp(false); }}
               style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.5)",zIndex:200,
                 display:"flex",alignItems:"flex-end",justifyContent:"center"}}>
               <div style={{background:"#fff",borderRadius:"20px 20px 0 0",
@@ -355,7 +449,7 @@ export default function App() {
                   color:"#555",fontFamily:"monospace",overflowY:"auto",flex:1,
                   whiteSpace:"pre-wrap",lineHeight:1.5}}>{buildExport()}</div>
                 <div style={{display:"flex",gap:8}}>
-                  <button onClick={()=>setExp(false)}
+                  <button onClick={() => setExp(false)}
                     style={{flex:1,padding:12,fontSize:15,fontWeight:500,borderRadius:8,
                       border:"1px solid rgba(0,0,0,0.18)",background:"#f0f0ee",
                       color:"#1a1a1a",cursor:"pointer"}}>Close</button>
@@ -374,21 +468,21 @@ export default function App() {
       <div style={{position:"fixed",bottom:0,left:0,right:0,background:"#fff",
         borderTop:"1px solid rgba(0,0,0,0.1)",display:"flex",zIndex:20,
         paddingBottom:"env(safe-area-inset-bottom)"}}>
-        <button onClick={()=>setView("today")}
+        <button onClick={() => setView("today")}
           style={{flex:1,padding:"10px 0 8px",display:"flex",flexDirection:"column",
             alignItems:"center",gap:3,background:"none",border:"none",cursor:"pointer",
             color:view==="today"?"#1D9E75":"#bbb"}}>
           <IconWorkout color={view==="today"?"#1D9E75":"#bbb"}/>
           <span style={{fontSize:10,fontWeight:view==="today"?600:400}}>Workout</span>
         </button>
-        <button onClick={()=>setTimer(true)}
+        <button onClick={() => setTimer(true)}
           style={{flex:1,padding:"10px 0 8px",display:"flex",flexDirection:"column",
             alignItems:"center",gap:3,background:"none",border:"none",cursor:"pointer",
             color:"#bbb"}}>
           <IconTimer color="#bbb"/>
           <span style={{fontSize:10,fontWeight:400}}>Rest timer</span>
         </button>
-        <button onClick={()=>setView("history")}
+        <button onClick={() => setView("history")}
           style={{flex:1,padding:"10px 0 8px",display:"flex",flexDirection:"column",
             alignItems:"center",gap:3,background:"none",border:"none",cursor:"pointer",
             color:view==="history"?"#1D9E75":"#bbb"}}>
@@ -398,4 +492,15 @@ export default function App() {
       </div>
     </div>
   );
+}
+
+// ── App root — profile gate ───────────────────────────────────────────────────
+export default function App() {
+  const [profile, setProfile] = useState(null);
+
+  if (!profile) {
+    return <ProfileSelect onSelect={setProfile}/>;
+  }
+
+  return <WorkoutApp key={profile.id} profile={profile} onSwitchProfile={() => setProfile(null)}/>;
 }
