@@ -124,18 +124,18 @@ function RestBanner({ restSecs, onDismiss }) {
   return (
     <div style={{
       position: "fixed", bottom: 72, left: 0, right: 0,
-      zIndex: 50, padding: "0 12px", pointerEvents: "none",
+      zIndex: 50, padding: "0 10px", pointerEvents: "none",
     }}>
       <div style={{
         background: done ? C.greenLight : C.surface,
-        border: `1px solid ${done ? C.green : C.border}`,
-        borderRadius: 14, padding: "10px 14px 8px",
-        boxShadow: "0 4px 20px rgba(0,0,0,0.18)",
+        border: `2px solid ${done ? C.green : C.border}`,
+        borderRadius: 18, padding: "14px 16px 10px",
+        boxShadow: "0 8px 32px rgba(0,0,0,0.28)",
         pointerEvents: "all", overflow: "hidden", position: "relative",
       }}>
         {/* Progress bar */}
         <div style={{
-          position: "absolute", bottom: 0, left: 0, right: 0, height: 3, background: C.surface2,
+          position: "absolute", bottom: 0, left: 0, right: 0, height: 4, background: C.surface2,
         }}>
           <div style={{
             height: "100%", width: `${pct * 100}%`,
@@ -145,32 +145,33 @@ function RestBanner({ restSecs, onDismiss }) {
           }}/>
         </div>
 
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
             <button
               onClick={toggleRunning}
               disabled={done}
               style={{
-                width: 38, height: 38, borderRadius: "50%",
+                width: 52, height: 52, borderRadius: "50%",
                 background: done ? C.green : running ? C.greenLight : C.green,
-                border: "none",
+                border: running && !done ? `2px solid ${C.green}` : "none",
                 display: "flex", alignItems: "center", justifyContent: "center",
                 flexShrink: 0, cursor: done ? "default" : "pointer",
+                boxShadow: running ? "none" : `0 4px 12px ${C.green}55`,
               }}
             >
               {done ? (
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
                   stroke="#fff" strokeWidth="2.8" strokeLinecap="round">
                   <polyline points="20,6 9,17 4,12"/>
                 </svg>
               ) : running ? (
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
                   stroke={C.green} strokeWidth="2.5" strokeLinecap="round">
                   <line x1="6" y1="4" x2="6" y2="20"/>
                   <line x1="18" y1="4" x2="18" y2="20"/>
                 </svg>
               ) : (
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
                   stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <polygon points="5,3 19,12 5,21"/>
                 </svg>
@@ -178,13 +179,14 @@ function RestBanner({ restSecs, onDismiss }) {
             </button>
 
             <div>
-              <div style={{ fontSize: 11, color: C.text2, fontWeight: 500, marginBottom: 1 }}>
+              <div style={{ fontSize: 12, color: C.text2, fontWeight: 500, marginBottom: 2 }}>
                 {done ? "Rest complete — go!" : running ? "Resting" : "Tap to start"}
               </div>
               <div style={{
-                fontSize: 20, fontWeight: 700,
+                fontSize: 36, fontWeight: 800,
                 color: done ? C.green : C.text1,
                 fontVariantNumeric: "tabular-nums", lineHeight: 1,
+                letterSpacing: "-0.5px",
               }}>
                 {done ? "✓" : `${m}:${String(s).padStart(2, "0")}`}
               </div>
@@ -194,29 +196,29 @@ function RestBanner({ restSecs, onDismiss }) {
           <button
             onClick={onDismiss}
             style={{
-              padding: "8px 14px", borderRadius: 8,
+              padding: "10px 18px", borderRadius: 10,
               border: `1px solid ${C.border}`,
               background: C.surface2, color: C.text2,
-              fontSize: 13, fontWeight: 500, cursor: "pointer", fontFamily: FONT,
+              fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: FONT,
             }}
           >
             Skip
           </button>
         </div>
 
-        {/* Duration presets — always visible so you can change mid-countdown */}
+        {/* Duration presets */}
         {!done && (
-          <div style={{ display: "flex", gap: 6, paddingBottom: 4 }}>
+          <div style={{ display: "flex", gap: 8, paddingBottom: 2 }}>
             {REST_PRESETS.map(p => (
               <button
                 key={p.secs}
                 onClick={() => pickPreset(p.secs)}
                 style={{
-                  flex: 1, padding: "5px 0", borderRadius: 8,
-                  border: `1px solid ${duration === p.secs ? C.green : C.border}`,
+                  flex: 1, padding: "8px 0", borderRadius: 10,
+                  border: `1.5px solid ${duration === p.secs ? C.green : C.border}`,
                   background: duration === p.secs ? C.greenLight : C.surface2,
                   color: duration === p.secs ? C.green : C.text2,
-                  fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: FONT,
+                  fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: FONT,
                 }}
               >
                 {p.label}

@@ -1,5 +1,6 @@
-import React from "react";
+import React, { useState, useMemo } from "react";
 import { useTheme, FONT } from "../theme.js";
+import { buildSessionPlan } from "../data/store.js";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -155,6 +156,13 @@ export default function Home({ store, plans, exercises, onStartWorkout, onContin
 
   const hasActiveSession = !!onContinueSession;
 
+  const [coachOpen, setCoachOpen] = useState(true);
+
+  const sessionPlan = useMemo(() => {
+    if (!plan || !day) return [];
+    return buildSessionPlan(logs, plan, dayIdx % (plan.days.length || 1), exercises, store.swaps || {});
+  }, [logs, store.activePlanId, store.nextDayIdx, store.swaps]); // eslint-disable-line
+
   return (
     <div style={{
       minHeight: "100vh",
@@ -282,6 +290,96 @@ export default function Home({ store, plans, exercises, onStartWorkout, onContin
               marginBottom: 14, lineHeight: 1.5,
             }}>
               Ready to start your first workout? Let's go!
+            </div>
+          )}
+
+          {/* Coach's notes */}
+          {sessionPlan.length > 0 && (
+            <div style={{
+              background: C.bg, borderRadius: 12,
+              border: `1px solid ${C.border}`,
+              marginBottom: 14, overflow: "hidden",
+            }}>
+              <button
+                onClick={() => setCoachOpen(o => !o)}
+                style={{
+                  width: "100%", padding: "10px 12px",
+                  display: "flex", alignItems: "center", justifyContent: "space-between",
+                  background: "none", border: "none", cursor: "pointer", fontFamily: FONT,
+                }}
+              >
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <span style={{ fontSize: 15 }}>🎯</span>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: C.text1 }}>Coach's Notes</span>
+                  <span style={{
+                    fontSize: 11, padding: "2px 7px", borderRadius: 10,
+                    background: C.greenLight, color: C.green, fontWeight: 600,
+                  }}>
+                    {sessionPlan.filter(e => e.action === "increase").length} increases
+                  </span>
+                </div>
+                <span style={{
+                  fontSize: 11, color: C.text3,
+                  display: "inline-block",
+                  transform: coachOpen ? "rotate(180deg)" : "none",
+                  transition: "transform 0.2s",
+                }}>▼</span>
+              </button>
+
+              {coachOpen && (
+                <div style={{ borderTop: `1px solid ${C.border}` }}>
+                  {sessionPlan.map((item, i) => {
+                    const isLast = i === sessionPlan.length - 1;
+                    const actionColor =
+                      item.action === "increase" ? C.green :
+                      item.action === "decrease" ? (C.isDark ? "#F87171" : "#DC2626") :
+                      item.action === "first"    ? C.text3 : C.text2;
+                    const arrow =
+                      item.action === "increase" ? "↑" :
+                      item.action === "decrease" ? "↓" :
+                      item.action === "hold"     ? "→" : "•";
+
+                    return (
+                      <div key={item.exId} style={{
+                        padding: "9px 12px",
+                        borderBottom: isLast ? "none" : `1px solid ${C.border}`,
+                        display: "flex", alignItems: "flex-start", gap: 8,
+                      }}>
+                        <span style={{ fontSize: 13, fontWeight: 700, color: actionColor, flexShrink: 0, marginTop: 1 }}>
+                          {arrow}
+                        </span>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ display: "flex", alignItems: "baseline", gap: 6, flexWrap: "wrap" }}>
+                            <span style={{ fontSize: 13, fontWeight: 600, color: C.text1 }}>{item.name}</span>
+                            {item.suggestedWeight !== null && (
+                              <span style={{ fontSize: 13, fontWeight: 700, color: actionColor }}>
+                                {item.suggestedWeight} lbs
+                              </span>
+                            )}
+                            {item.isNewPR && (
+                              <span style={{ fontSize: 10, fontWeight: 700, color: "#F59E0B", background: "#FEF3C7", padding: "1px 5px", borderRadius: 5 }}>
+                                PR attempt
+                              </span>
+                            )}
+                            {item.deload && (
+                              <span style={{ fontSize: 10, fontWeight: 700, color: "#EF4444", background: "#FEE2E2", padding: "1px 5px", borderRadius: 5 }}>
+                                deload
+                              </span>
+                            )}
+                          </div>
+                          <div style={{ fontSize: 11, color: C.text3, marginTop: 2 }}>
+                            {item.lastSets ? (
+                              <>last: {item.lastWeight} lbs · {item.lastSets.length} sets{item.reason ? ` — ${item.reason}` : ""}</>
+                            ) : (
+                              item.reason || "no history yet — try the plan weight"
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           )}
 

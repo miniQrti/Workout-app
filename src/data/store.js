@@ -1,4 +1,5 @@
 import { EXERCISES } from "./exercises.js";
+import { PROGRESSION, EXERCISE_NOTES } from "./trainerKb.js";
 
 const STORE_KEY = "wt-v2";
 
@@ -308,76 +309,172 @@ export async function shareOrDownloadCSV(csvContent, filename) {
 }
 
 /**
- * Smart progression suggestion for next session, based on the last logged
- * session for this exercise. Returns null if no history exists.
+ * Trainer-grade progression suggestion.
  *
- * Rules (mimic a personal trainer):
- *  • All sets completed + felt Easy  → +10 lb
- *  • All sets completed + felt Good  → +5 lb
- *  • All sets completed + felt Hard  → hold
- *  • All sets completed + felt Tough → −5 lb (deload)
- *  • All sets completed + no feel    → +5 lb (default progression)
- *  • Not all sets completed          → hold (earn the weight first)
+ * Priority order:
+ *  1. Deload — 2+ consecutive "Tough" sessions → 85% of last weight
+ *  2. Completion gate — not all sets completed → hold
+ *  3. Rep gate — didn't hit target reps on every set → hold
+ *  4. Fatigue gate — weight dropped mid-workout (e.g. 90→80 lb) → hold
+ *  5. Feel-based jump using muscle-group increments from TRAINER_KB
  *
  * @param {Array}  logs
  * @param {string} exId
- * @returns {{ suggestedWeight: number, lastWeight: number, action: "increase"|"hold"|"decrease", reason: string } | null}
+ * @param {object} [exercise]  EXERCISES[exId], used for muscle group & rep target
+ * @returns {object|null}
  */
-export function getProgressionSuggestion(logs, exId) {
+export function getProgressionSuggestion(logs, exId, exercise) {
   if (!Array.isArray(logs) || !exId) return null;
 
-  for (let i = logs.length - 1; i >= 0; i--) {
+  // Collect up to 5 most-recent sessions containing this exercise
+  const sessions = [];
+  for (let i = logs.length - 1; i >= 0 && sessions.length < 5; i--) {
     const log = logs[i];
     if (!log?.exercises) continue;
     const entry = log.exercises.find(e => e?.exId === exId);
     if (!entry?.sets?.length) continue;
+    sessions.push(entry);
+  }
+  if (sessions.length === 0) return null;
 
-    const weightSets = entry.sets.filter(s => {
-      const w = parseFloat(s.weight);
-      return !isNaN(w) && w > 0;
-    });
-    if (weightSets.length === 0) continue;
+  const last        = sessions[0];
+  const feel        = last.feel || "";
+  const weightSets  = last.sets.filter(s => parseFloat(s.weight) > 0);
+  if (weightSets.length === 0) return null;
 
-    const lastWeight    = Math.max(...weightSets.map(s => parseFloat(s.weight)));
-    const allCompleted  = entry.sets.every(s => s.completed !== false);
-    const feel          = entry.feel || "";
+  const topWeight   = Math.max(...weightSets.map(s => parseFloat(s.weight)));
+  const minWeight   = Math.min(...weightSets.map(s => parseFloat(s.weight)));
+  const targetReps  = exercise?.defaultReps || 12;
+  const muscle      = exercise?.primaryMuscle || "chest";
 
-    let suggestedWeight = lastWeight;
-    let action          = "hold";
-    let reason          = "";
+  // Epley 1RM estimate
+  const avgReps    = weightSets.reduce((a, s) => a + (parseInt(s.reps) || 0), 0) / weightSets.length;
+  const estimatedRM = Math.round(topWeight * (1 + avgReps / 30));
 
-    if (allCompleted) {
-      if (feel === "Easy") {
-        suggestedWeight = lastWeight + 10;
-        action = "increase";
-        reason = "felt easy — bigger jump";
-      } else if (feel === "Tough") {
-        suggestedWeight = Math.max(lastWeight - 5, 0);
-        action = "decrease";
-        reason = "was very tough — back off slightly";
-      } else if (feel === "Hard") {
-        suggestedWeight = lastWeight;
-        action = "hold";
-        reason = "still challenging — hold weight";
-      } else {
-        // Good or no feel recorded
-        suggestedWeight = lastWeight + 5;
-        action = "increase";
-        reason = feel === "Good" ? "felt good — move up" : "all sets complete";
-      }
-    } else {
-      suggestedWeight = lastWeight;
-      action = "hold";
-      reason = "complete all sets before adding weight";
-    }
-
-    return { suggestedWeight, lastWeight, action, reason, feel };
+  // 1. Deload: 2+ consecutive Tough sessions
+  const recentFeels = sessions.slice(0, 3).map(s => s.feel || "");
+  if (recentFeels.length >= 2 && recentFeels[0] === "Tough" && recentFeels[1] === "Tough") {
+    return {
+      suggestedWeight: round5(Math.max(topWeight * 0.85, 0)),
+      lastWeight: topWeight, action: "decrease",
+      reason: "2 tough sessions in a row — deload to 85%",
+      feel, deload: true, repGate: "n/a", estimatedRM,
+    };
   }
 
-  return null;
+  // 2. Completion gate
+  const allCompleted = last.sets.every(s => s.completed !== false);
+  if (!allCompleted) {
+    return {
+      suggestedWeight: topWeight, lastWeight: topWeight, action: "hold",
+      reason: "complete all sets before adding weight",
+      feel, deload: false, repGate: "incomplete", estimatedRM,
+    };
+  }
+
+  // 3. Rep gate — every set must hit target reps
+  const allRepsHit  = last.sets.every(s => (parseInt(s.reps) || 0) >= targetReps);
+  const someRepsHit = last.sets.some(s => (parseInt(s.reps) || 0) >= targetReps);
+  if (!allRepsHit) {
+    return {
+      suggestedWeight: topWeight, lastWeight: topWeight, action: "hold",
+      reason: `hit ${targetReps} reps on every set first`,
+      feel, deload: false, repGate: someRepsHit ? "partial" : "failed", estimatedRM,
+    };
+  }
+
+  // 4. Fatigue gate — weight dropped mid-workout
+  if (minWeight < topWeight) {
+    return {
+      suggestedWeight: topWeight, lastWeight: topWeight, action: "hold",
+      reason: "weight dropped mid-workout — build consistency first",
+      feel, deload: false, repGate: "passed", estimatedRM,
+    };
+  }
+
+  // 5. Feel-based progression using KB increments
+  const prog     = PROGRESSION[muscle] || PROGRESSION["chest"];
+  const cap      = EXERCISE_NOTES[exId]?.progressionCap ?? Infinity;
+
+  if (feel === "Easy") {
+    return {
+      suggestedWeight: round5(topWeight + Math.min(prog.easyJump, cap)),
+      lastWeight: topWeight, action: "increase",
+      reason: "felt easy — bigger jump",
+      feel, deload: false, repGate: "passed", estimatedRM,
+    };
+  }
+  if (feel === "Tough") {
+    return {
+      suggestedWeight: round5(Math.max(topWeight - prog.goodJump, 0)),
+      lastWeight: topWeight, action: "decrease",
+      reason: "was very tough — back off slightly",
+      feel, deload: false, repGate: "passed", estimatedRM,
+    };
+  }
+  if (feel === "Hard") {
+    return {
+      suggestedWeight: topWeight, lastWeight: topWeight, action: "hold",
+      reason: "still challenging — hold weight",
+      feel, deload: false, repGate: "passed", estimatedRM,
+    };
+  }
+  // Good or unrated
+  return {
+    suggestedWeight: round5(topWeight + Math.min(prog.goodJump, cap)),
+    lastWeight: topWeight, action: "increase",
+    reason: feel === "Good" ? "felt good — move up" : "all sets complete",
+    feel, deload: false, repGate: "passed", estimatedRM,
+  };
+}
+
+/**
+ * Build the full coach's pre-session plan for every exercise in an upcoming day.
+ * One entry per exercise, with suggested weight, last-session summary, PR flag, etc.
+ *
+ * @param {Array}  logs
+ * @param {object} plan
+ * @param {number} dayIdx
+ * @param {object} exercises  EXERCISES dictionary
+ * @param {object} swaps      store.swaps
+ * @returns {Array}
+ */
+export function buildSessionPlan(logs, plan, dayIdx, exercises, swaps) {
+  const dayExList = getDayExercises(plan, dayIdx, swaps);
+  return dayExList.map(({ exId, sets: targetSets, reps: targetReps, restSecs }) => {
+    const ex         = exercises[exId];
+    const suggestion = getProgressionSuggestion(logs, exId, ex);
+    const last       = getLastSession(logs, exId);
+    const pr         = getPR(logs, exId);
+    const action     = suggestion?.action ?? "first";
+    const isNewPR    = suggestion && pr ? suggestion.suggestedWeight > pr.weight : false;
+
+    return {
+      exId,
+      name:            ex?.name ?? exId,
+      targetSets,
+      targetReps,
+      restSecs,
+      suggestedWeight: suggestion?.suggestedWeight ?? null,
+      lastWeight:      suggestion?.lastWeight ?? null,
+      lastSets:        last?.sets ?? null,
+      action,
+      reason:          suggestion?.reason ?? null,
+      feel:            suggestion?.feel ?? null,
+      deload:          suggestion?.deload ?? false,
+      repGate:         suggestion?.repGate ?? null,
+      estimatedRM:     suggestion?.estimatedRM ?? null,
+      pr,
+      isNewPR,
+    };
+  });
 }
 
 // ── Internal helpers ─────────────────────────────────────────────────────────
+
+function round5(n) {
+  return Math.round(n / 5) * 5;
+}
 
 /**
  * Format an ISO timestamp or ms-since-epoch number into a short human-readable
