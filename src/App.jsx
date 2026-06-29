@@ -383,6 +383,16 @@ export default function App() {
     });
   }, []);
 
+  const updateFeel = useCallback((exIdx, feel) => {
+    setSession(prev => {
+      if (!prev) return prev;
+      const exercises = prev.exercises.map((ex, ei) =>
+        ei === exIdx ? { ...ex, feel } : ex
+      );
+      return { ...prev, exercises };
+    });
+  }, []);
+
   // ── Finish workout → save log → show summary ──────────────────────────────
   function finishWorkout() {
     if (!session) return;
@@ -403,6 +413,7 @@ export default function App() {
       exercises:   session.exercises.map(e => ({
         exId: e.exId,
         sets: e.sets,
+        feel: e.feel || null,
       })),
     };
 
@@ -493,6 +504,7 @@ export default function App() {
             unit={store.unit || "lbs"}
             onUpdateSet={updateSet}
             onCompleteSet={completeSet}
+            onUpdateFeel={updateFeel}
             onFinish={finishWorkout}
             onCancel={cancelWorkout}
             onSwapExercise={swapExercise}

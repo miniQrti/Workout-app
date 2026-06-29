@@ -73,10 +73,18 @@ function ElapsedTimer({ startTime }) {
 
 // ── Rest banner ────────────────────────────────────────────────────────────────
 
+const REST_PRESETS = [
+  { label: "1:00", secs: 60 },
+  { label: "1:30", secs: 90 },
+  { label: "2:00", secs: 120 },
+  { label: "3:00", secs: 180 },
+];
+
 function RestBanner({ restSecs, onDismiss }) {
   const C = useTheme();
-  const [left,    setLeft]    = useState(restSecs);
-  const [running, setRunning] = useState(false);
+  const [duration, setDuration] = useState(restSecs);
+  const [left,     setLeft]     = useState(restSecs);
+  const [running,  setRunning]  = useState(false);
   const intervalRef = useRef(null);
 
   useEffect(() => {
@@ -96,7 +104,7 @@ function RestBanner({ restSecs, onDismiss }) {
     return () => clearInterval(intervalRef.current);
   }, [running, onDismiss]);
 
-  const pct  = restSecs > 0 ? (restSecs - left) / restSecs : 0;
+  const pct  = duration > 0 ? (duration - left) / duration : 0;
   const m    = Math.floor(left / 60);
   const s    = left % 60;
   const done = left === 0;
@@ -104,6 +112,13 @@ function RestBanner({ restSecs, onDismiss }) {
   function toggleRunning() {
     if (done) return;
     setRunning(r => !r);
+  }
+
+  function pickPreset(secs) {
+    clearInterval(intervalRef.current);
+    setRunning(false);
+    setDuration(secs);
+    setLeft(secs);
   }
 
   return (
@@ -114,25 +129,24 @@ function RestBanner({ restSecs, onDismiss }) {
       <div style={{
         background: done ? C.greenLight : C.surface,
         border: `1px solid ${done ? C.green : C.border}`,
-        borderRadius: 14, padding: "10px 14px",
+        borderRadius: 14, padding: "10px 14px 8px",
         boxShadow: "0 4px 20px rgba(0,0,0,0.18)",
         pointerEvents: "all", overflow: "hidden", position: "relative",
       }}>
-        {/* Progress bar fills as time elapses */}
+        {/* Progress bar */}
         <div style={{
           position: "absolute", bottom: 0, left: 0, right: 0, height: 3, background: C.surface2,
         }}>
           <div style={{
             height: "100%", width: `${pct * 100}%`,
-            background: done ? C.green : C.green,
+            background: C.green,
             transition: running ? "width 0.95s linear" : "none",
             borderRadius: 2,
           }}/>
         </div>
 
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            {/* Play/Pause/Done button */}
             <button
               onClick={toggleRunning}
               disabled={done}
@@ -150,14 +164,12 @@ function RestBanner({ restSecs, onDismiss }) {
                   <polyline points="20,6 9,17 4,12"/>
                 </svg>
               ) : running ? (
-                /* Pause icon */
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
                   stroke={C.green} strokeWidth="2.5" strokeLinecap="round">
                   <line x1="6" y1="4" x2="6" y2="20"/>
                   <line x1="18" y1="4" x2="18" y2="20"/>
                 </svg>
               ) : (
-                /* Play icon */
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
                   stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <polygon points="5,3 19,12 5,21"/>
@@ -167,7 +179,7 @@ function RestBanner({ restSecs, onDismiss }) {
 
             <div>
               <div style={{ fontSize: 11, color: C.text2, fontWeight: 500, marginBottom: 1 }}>
-                {done ? "Rest complete — go!" : running ? "Resting" : "Rest Timer"}
+                {done ? "Rest complete — go!" : running ? "Resting" : "Tap to start"}
               </div>
               <div style={{
                 fontSize: 20, fontWeight: 700,
@@ -191,6 +203,27 @@ function RestBanner({ restSecs, onDismiss }) {
             Skip
           </button>
         </div>
+
+        {/* Duration presets — always visible so you can change mid-countdown */}
+        {!done && (
+          <div style={{ display: "flex", gap: 6, paddingBottom: 4 }}>
+            {REST_PRESETS.map(p => (
+              <button
+                key={p.secs}
+                onClick={() => pickPreset(p.secs)}
+                style={{
+                  flex: 1, padding: "5px 0", borderRadius: 8,
+                  border: `1px solid ${duration === p.secs ? C.green : C.border}`,
+                  background: duration === p.secs ? C.greenLight : C.surface2,
+                  color: duration === p.secs ? C.green : C.text2,
+                  fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: FONT,
+                }}
+              >
+                {p.label}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -301,12 +334,19 @@ function SwapModal({ exercise, exercises, onSwap, onClose }) {
 
 // ── Exercise card ──────────────────────────────────────────────────────────────
 
+const FEEL_OPTIONS = [
+  { label: "Easy",  color: "#10B981", bg: "#D1FAE5" },
+  { label: "Good",  color: "#3B82F6", bg: "#DBEAFE" },
+  { label: "Hard",  color: "#F59E0B", bg: "#FEF3C7" },
+  { label: "Tough", color: "#EF4444", bg: "#FEE2E2" },
+];
+
 function ExerciseCard({
   exIdx, exEntry, exercise, exercises, lastSession, progressionSuggestion, unit,
-  onUpdateSet, onCompleteSet, onSwap,
+  onUpdateSet, onCompleteSet, onUpdateFeel, onSwap,
 }) {
   const C = useTheme();
-  const [expanded, setExpanded] = useState(true);
+  const [expanded, setExpanded] = useState(false);
   const [showSwap, setShowSwap] = useState(false);
 
   if (!exercise) return null;
@@ -493,6 +533,34 @@ function ExerciseCard({
                 {isTime ? "" : "Reps"}
               </div>
               <div/>
+            </div>
+
+            {/* How did it feel */}
+            <div style={{ marginBottom: 12 }}>
+              <div style={{ fontSize: 10, fontWeight: 600, color: C.text3, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 6 }}>
+                How did it feel?
+              </div>
+              <div style={{ display: "flex", gap: 6 }}>
+                {FEEL_OPTIONS.map(f => {
+                  const selected = exEntry.feel === f.label;
+                  return (
+                    <button
+                      key={f.label}
+                      onClick={() => onUpdateFeel(exIdx, selected ? null : f.label)}
+                      style={{
+                        flex: 1, padding: "7px 2px", borderRadius: 8, cursor: "pointer",
+                        border: `1.5px solid ${selected ? f.color : C.border}`,
+                        background: selected ? f.bg : C.surface2,
+                        color: selected ? f.color : C.text2,
+                        fontSize: 12, fontWeight: 600, fontFamily: FONT,
+                        transition: "all 0.15s",
+                      }}
+                    >
+                      {f.label}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
 
             {/* Set rows */}
@@ -748,6 +816,7 @@ export default function ActiveWorkout({
   unit,
   onUpdateSet,
   onCompleteSet,
+  onUpdateFeel,
   onFinish,
   onCancel,
   onSwapExercise,
@@ -872,6 +941,7 @@ export default function ActiveWorkout({
               unit={unit}
               onUpdateSet={onUpdateSet}
               onCompleteSet={handleCompleteSet}
+              onUpdateFeel={onUpdateFeel}
               onSwap={onSwapExercise}
             />
           );
