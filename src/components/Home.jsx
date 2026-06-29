@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useTheme, FONT, ACCENT_OPTIONS } from "../theme.js";
+import { exportWorkoutCSV, shareOrDownloadCSV } from "../data/store.js";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -103,7 +104,7 @@ function totalPRs(logs, exercises) {
 
 // ── Settings sheet ─────────────────────────────────────────────────────────────
 
-function SettingsSheet({ unit, onChangeUnit, theme, accent, onChangeTheme, onChangeAccent, onClose }) {
+function SettingsSheet({ unit, onChangeUnit, theme, accent, onChangeTheme, onChangeAccent, onExport, hasLogs, onClose }) {
   const C = useTheme();
 
   return (
@@ -229,6 +230,42 @@ function SettingsSheet({ unit, onChangeUnit, theme, accent, onChangeTheme, onCha
           </div>
         </div>
 
+        {/* Data */}
+        <div style={{ marginBottom: 24 }}>
+          <div style={{ fontSize: 12, color: C.text2, fontWeight: 600,
+            textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 10 }}>
+            Data
+          </div>
+          <button
+            onClick={hasLogs ? onExport : undefined}
+            disabled={!hasLogs}
+            style={{
+              width: "100%", padding: "13px 16px",
+              borderRadius: 10, cursor: hasLogs ? "pointer" : "default",
+              fontSize: 14, fontWeight: 600, fontFamily: FONT,
+              display: "flex", alignItems: "center", justifyContent: "space-between",
+              background: C.surface2,
+              color: hasLogs ? C.text1 : C.text3,
+              border: `1px solid ${C.border}`,
+              opacity: hasLogs ? 1 : 0.5,
+              transition: "all 0.15s",
+            }}
+          >
+            <span>Export Workout Log (CSV)</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+              <polyline points="7 10 12 15 17 10"/>
+              <line x1="12" y1="15" x2="12" y2="3"/>
+            </svg>
+          </button>
+          {!hasLogs && (
+            <div style={{ fontSize: 12, color: C.text3, marginTop: 6, paddingLeft: 2 }}>
+              Complete a workout to enable export
+            </div>
+          )}
+        </div>
+
         <button
           onClick={onClose}
           style={{
@@ -308,6 +345,13 @@ export default function Home({ store, plans, exercises, onStartWorkout, onContin
   const [showSettings, setShowSettings] = useState(false);
   const [localUnit, setLocalUnit]       = useState(store.unit || "lbs");
 
+  async function handleExport() {
+    const csv = exportWorkoutCSV(store.logs, exercises, plans, store.unit || "lbs");
+    if (!csv) return;
+    const date = new Date().toISOString().slice(0, 10);
+    await shareOrDownloadCSV(csv, `workout-log-${date}.csv`);
+  }
+
   const plan       = plans[store.activePlanId];
   const dayIdx     = store.nextDayIdx || 0;
   const day        = plan?.days?.[dayIdx % (plan?.days?.length || 1)];
@@ -341,6 +385,8 @@ export default function Home({ store, plans, exercises, onStartWorkout, onContin
           accent={store.accent || "green"}
           onChangeTheme={t => { if (onUpdateStore) onUpdateStore({ theme: t }); }}
           onChangeAccent={a => { if (onUpdateStore) onUpdateStore({ accent: a }); }}
+          onExport={handleExport}
+          hasLogs={hasLogs}
           onClose={() => setShowSettings(false)}
         />
       )}

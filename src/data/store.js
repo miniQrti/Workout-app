@@ -184,6 +184,129 @@ export function getDayExercises(plan, dayIdx, swaps) {
   }).filter(Boolean);
 }
 
+// ── CSV Export ───────────────────────────────────────────────────────────────
+
+/**
+ * Build a CSV string from all workout logs.
+ * Each row = one set. Duration is shown only on the first row of each session.
+ *
+ * @param {Array}  logs      - store.logs
+ * @param {object} exercises - EXERCISES dictionary
+ * @param {object} plans     - PLANS dictionary
+ * @param {string} unit      - "lbs" | "kg"
+ * @returns {string} CSV content, or null if there's nothing to export
+ */
+export function exportWorkoutCSV(logs, exercises, plans, unit = "lbs") {
+  if (!Array.isArray(logs) || logs.length === 0) return null;
+
+  const headers = [
+    "Date",
+    "Plan",
+    "Day",
+    "Exercise",
+    "Set",
+    `Weight (${unit})`,
+    "Reps",
+    "Completed",
+    "Duration (min)",
+  ];
+
+  const esc = v => {
+    const s = String(v ?? "");
+    return s.includes(",") || s.includes('"') || s.includes("\n")
+      ? `"${s.replace(/"/g, '""')}"`
+      : s;
+  };
+
+  const rows = [];
+
+  for (const log of logs) {
+    const raw       = log.completedAt || log.startedAt || "";
+    const dateLabel = raw
+      ? new Date(raw).toLocaleDateString("en-US", {
+          year: "numeric", month: "short", day: "numeric",
+        })
+      : "";
+    const planName    = plans?.[log.planId]?.name || log.planId || "";
+    const dayName     = log.dayName || "";
+    const durationMin = log.durationSecs ? Math.round(log.durationSecs / 60) : "";
+
+    if (!Array.isArray(log.exercises) || log.exercises.length === 0) {
+      rows.push([dateLabel, planName, dayName, "", "", "", "", "", durationMin]);
+      continue;
+    }
+
+    let sessionFirstRow = true;
+
+    for (const entry of log.exercises) {
+      const exName = exercises?.[entry.exId]?.name || entry.exId || "";
+
+      if (!Array.isArray(entry.sets) || entry.sets.length === 0) {
+        rows.push([dateLabel, planName, dayName, exName, "", "", "", "", sessionFirstRow ? durationMin : ""]);
+        sessionFirstRow = false;
+        continue;
+      }
+
+      for (let i = 0; i < entry.sets.length; i++) {
+        const s = entry.sets[i] || {};
+        rows.push([
+          dateLabel,
+          planName,
+          dayName,
+          exName,
+          i + 1,
+          s.weight ?? "",
+          s.reps   ?? "",
+          s.completed === true ? "Yes" : s.completed === false ? "No" : "",
+          sessionFirstRow && i === 0 ? durationMin : "",
+        ]);
+      }
+      sessionFirstRow = false;
+    }
+  }
+
+  return [
+    headers.map(esc).join(","),
+    ...rows.map(r => r.map(esc).join(",")),
+  ].join("\n");
+}
+
+/**
+ * Trigger a CSV file share/download in the browser.
+ * On iOS Safari uses the native Web Share API (share sheet).
+ * Falls back to a hidden <a download> on desktop.
+ *
+ * @param {string} csvContent
+ * @param {string} filename
+ */
+export async function shareOrDownloadCSV(csvContent, filename) {
+  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+
+  // iOS / mobile: prefer native share sheet so the user can save to Files, AirDrop, etc.
+  if (typeof navigator !== "undefined" && navigator.share) {
+    try {
+      const file = new File([blob], filename, { type: "text/csv" });
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({ files: [file], title: "Workout Log" });
+        return;
+      }
+    } catch (e) {
+      if (e?.name === "AbortError") return; // user dismissed the share sheet
+      // otherwise fall through to link download
+    }
+  }
+
+  // Desktop / fallback: trigger file download via hidden anchor
+  const url = URL.createObjectURL(blob);
+  const a   = document.createElement("a");
+  a.href     = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
 // ── Internal helpers ─────────────────────────────────────────────────────────
 
 /**
