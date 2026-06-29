@@ -1,7 +1,7 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { PLANS }    from "./data/plans.js";
 import { EXERCISES } from "./data/exercises.js";
-import { loadStore, saveStore, getDayExercises, getPR, exportWorkoutCSV, shareOrDownloadCSV } from "./data/store.js";
+import { loadStore, saveStore, getDayExercises, getPR, exportWorkoutCSV, shareOrDownloadCSV, importWorkoutCSV } from "./data/store.js";
 import { ThemeContext, buildTheme, useTheme, FONT, ACCENT_OPTIONS } from "./theme.js";
 import Home          from "./components/Home.jsx";
 import ActiveWorkout from "./components/ActiveWorkout.jsx";
@@ -171,6 +171,36 @@ function HamburgerMenu({ view, onNavigate, store, onUpdateStore, plans, exercise
   const C      = useTheme();
   const unit   = store.unit   || "lbs";
   const theme  = store.theme  || "light";
+  const importRef = useRef(null);
+  const [importStatus, setImportStatus] = useState(null); // null | {count, dupes} | "error"
+
+  function handleImportFile(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    e.target.value = "";
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      try {
+        const { logs: imported } = importWorkoutCSV(ev.target.result, exercises, plans);
+        const existingKeys = new Set(
+          (store.logs || []).map(l => `${(l.completedAt || l.startedAt || "").slice(0, 10)}|${l.dayName}`)
+        );
+        const toAdd = imported.filter(
+          l => !existingKeys.has(`${l.startedAt.slice(0, 10)}|${l.dayName}`)
+        );
+        if (toAdd.length > 0) {
+          const merged = [...(store.logs || []), ...toAdd];
+          merged.sort((a, b) => new Date(a.startedAt) - new Date(b.startedAt));
+          onUpdateStore({ logs: merged });
+        }
+        setImportStatus({ count: toAdd.length, dupes: imported.length - toAdd.length });
+      } catch {
+        setImportStatus("error");
+      }
+    };
+    reader.onerror = () => setImportStatus("error");
+    reader.readAsText(file);
+  }
   const accent = store.accent || "green";
   const hasLogs = (store.logs || []).length > 0;
   const [changelogOpen, setChangelogOpen] = useState(false);
@@ -322,8 +352,10 @@ function HamburgerMenu({ view, onNavigate, store, onUpdateStore, plans, exercise
         {/* Data */}
         <div style={{ marginBottom: 24 }}>
           <div style={{ fontSize: 12, color: C.text2, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 10 }}>Data</div>
+
+          {/* Export */}
           <button onClick={hasLogs ? handleExport : undefined} disabled={!hasLogs} style={{
-            width: "100%", padding: "13px 16px", borderRadius: 10,
+            width: "100%", padding: "13px 16px", borderRadius: 10, marginBottom: 8,
             cursor: hasLogs ? "pointer" : "default", fontSize: 14, fontWeight: 600, fontFamily: FONT,
             display: "flex", alignItems: "center", justifyContent: "space-between",
             background: C.surface2, color: hasLogs ? C.text1 : C.text3,
@@ -334,7 +366,55 @@ function HamburgerMenu({ view, onNavigate, store, onUpdateStore, plans, exercise
               <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
             </svg>
           </button>
-          {!hasLogs && <div style={{ fontSize: 12, color: C.text3, marginTop: 6, paddingLeft: 2 }}>Complete a workout to enable export</div>}
+
+          {/* Import */}
+          <input
+            ref={importRef}
+            type="file"
+            accept=".csv,text/csv"
+            style={{ display: "none" }}
+            onChange={handleImportFile}
+          />
+          <button
+            onClick={() => { setImportStatus(null); importRef.current?.click(); }}
+            style={{
+              width: "100%", padding: "13px 16px", borderRadius: 10,
+              cursor: "pointer", fontSize: 14, fontWeight: 600, fontFamily: FONT,
+              display: "flex", alignItems: "center", justifyContent: "space-between",
+              background: C.surface2, color: C.text1, border: `1px solid ${C.border}`,
+            }}
+          >
+            <span>Import from CSV</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+            </svg>
+          </button>
+
+          {/* Import result feedback */}
+          {importStatus && (
+            <div style={{
+              marginTop: 8, padding: "10px 12px", borderRadius: 8, fontSize: 13,
+              background: importStatus === "error"
+                ? (C.isDark ? "#2D1A1A" : "#FFF0F0")
+                : (importStatus.count > 0 ? C.greenLight : C.surface2),
+              border: `1px solid ${importStatus === "error"
+                ? (C.isDark ? "#7F2020" : "#FECACA")
+                : (importStatus.count > 0 ? C.green + "66" : C.border)}`,
+              color: importStatus === "error"
+                ? (C.isDark ? "#F87171" : "#DC2626")
+                : (importStatus.count > 0 ? C.green : C.text2),
+              fontWeight: 500,
+            }}>
+              {importStatus === "error"
+                ? "Could not read file. Make sure it's a CSV exported from this app."
+                : importStatus.count === 0
+                  ? `No new sessions found${importStatus.dupes > 0 ? ` (${importStatus.dupes} already imported)` : ""}.`
+                  : `Imported ${importStatus.count} session${importStatus.count !== 1 ? "s" : ""}${importStatus.dupes > 0 ? ` · ${importStatus.dupes} duplicate${importStatus.dupes !== 1 ? "s" : ""} skipped` : ""}.`
+              }
+            </div>
+          )}
+
+          {!hasLogs && <div style={{ fontSize: 12, color: C.text3, marginTop: 6, paddingLeft: 2 }}>Export is available once you complete a workout</div>}
         </div>
 
         {/* App */}

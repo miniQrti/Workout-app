@@ -470,10 +470,137 @@ export function buildSessionPlan(logs, plan, dayIdx, exercises, swaps) {
   });
 }
 
+// ── CSV Import ───────────────────────────────────────────────────────────────
+
+/**
+ * Parse a CSV exported by exportWorkoutCSV() back into an array of log entries
+ * compatible with store.logs.
+ *
+ * @param {string} csvText
+ * @param {object} exercises  EXERCISES dictionary (name → exId reverse lookup)
+ * @param {object} plans      PLANS dictionary (name → planId reverse lookup)
+ * @returns {{ logs: Array }}
+ */
+export function importWorkoutCSV(csvText, exercises, plans) {
+  const nameToExId = {};
+  for (const [id, ex] of Object.entries(exercises || {})) {
+    if (ex?.name) nameToExId[ex.name.toLowerCase()] = id;
+  }
+
+  const nameToPlanId = {};
+  for (const [id, plan] of Object.entries(plans || {})) {
+    if (plan?.name) nameToPlanId[plan.name.toLowerCase()] = id;
+  }
+
+  const lines = csvText.trim().split(/\r?\n/);
+  if (lines.length < 2) return { logs: [] };
+
+  // Map header labels → column indices (strip unit annotations like "(lbs)")
+  const header = parseCSVRow(lines[0]);
+  const COL = {};
+  header.forEach((h, i) => {
+    const key = h.toLowerCase().replace(/\s*\(.*?\)/, "").trim();
+    COL[key] = i;
+  });
+
+  // Group rows by "date|dayName" to reconstruct sessions
+  const sessionMap = new Map();
+
+  for (let i = 1; i < lines.length; i++) {
+    const line = lines[i].trim();
+    if (!line) continue;
+    const cells = parseCSVRow(line);
+
+    const date      = cells[COL["date"]]      || "";
+    const planName  = cells[COL["plan"]]      || "";
+    const dayName   = cells[COL["day"]]       || "";
+    const exName    = cells[COL["exercise"]]  || "";
+    const setNum    = parseInt(cells[COL["set"]], 10) || 1;
+    const weight    = cells[COL["weight"]]    || "";
+    const reps      = cells[COL["reps"]]      || "";
+    const completed = cells[COL["completed"]] === "Yes";
+    const durMin    = parseFloat(cells[COL["duration"]]);
+
+    if (!date || !dayName) continue;
+
+    const key = `${date}|${dayName}`;
+    if (!sessionMap.has(key)) {
+      const ts = new Date(date).getTime();
+      sessionMap.set(key, {
+        date, dayName, planName,
+        timestamp:   isNaN(ts) ? Date.now() : ts,
+        durationSecs: isNaN(durMin) ? null : Math.round(durMin * 60),
+        exercises:   new Map(),
+      });
+    }
+
+    const sess = sessionMap.get(key);
+    if (!isNaN(durMin) && !sess.durationSecs) {
+      sess.durationSecs = Math.round(durMin * 60);
+    }
+    if (!exName) continue;
+
+    if (!sess.exercises.has(exName)) sess.exercises.set(exName, []);
+    const sets = sess.exercises.get(exName);
+    while (sets.length < setNum) sets.push(null);
+    sets[setNum - 1] = { weight, reps, completed };
+  }
+
+  // Convert to log entries
+  const logs = [];
+  for (const sess of sessionMap.values()) {
+    const isoDate = new Date(sess.timestamp).toISOString();
+    const planId  = nameToPlanId[sess.planName.toLowerCase()] || "beginner-3day";
+
+    const exEntries = [];
+    for (const [exName, sets] of sess.exercises) {
+      const exId = nameToExId[exName.toLowerCase()] || slugify(exName);
+      exEntries.push({ exId, feel: null, sets: sets.filter(Boolean) });
+    }
+
+    logs.push({
+      id:          `imported-${sess.timestamp}-${Math.random().toString(36).slice(2, 6)}`,
+      planId,
+      dayIdx:      0,
+      dayName:     sess.dayName,
+      startedAt:   isoDate,
+      completedAt: isoDate,
+      durationSecs: sess.durationSecs,
+      exercises:   exEntries,
+    });
+  }
+
+  logs.sort((a, b) => new Date(a.startedAt) - new Date(b.startedAt));
+  return { logs };
+}
+
 // ── Internal helpers ─────────────────────────────────────────────────────────
 
 function round5(n) {
   return Math.round(n / 5) * 5;
+}
+
+function slugify(name) {
+  return name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+}
+
+function parseCSVRow(line) {
+  const cells = [];
+  let cur = "";
+  let inQ = false;
+  for (let i = 0; i < line.length; i++) {
+    const c = line[i];
+    if (c === '"') {
+      if (inQ && line[i + 1] === '"') { cur += '"'; i++; }
+      else inQ = !inQ;
+    } else if (c === "," && !inQ) {
+      cells.push(cur); cur = "";
+    } else {
+      cur += c;
+    }
+  }
+  cells.push(cur);
+  return cells;
 }
 
 /**
