@@ -634,6 +634,111 @@ function ExerciseCard({
   );
 }
 
+// ── Warmup card ────────────────────────────────────────────────────────────────
+
+function WarmupCard({ items }) {
+  const C = useTheme();
+  const [expanded, setExpanded] = useState(true);
+  const [done, setDone] = useState(() => new Array(items.length).fill(false));
+
+  if (!items || items.length === 0) return null;
+
+  const completedCount = done.filter(Boolean).length;
+  const allDone = completedCount === items.length;
+
+  function toggle(i) {
+    setDone(prev => prev.map((v, idx) => idx === i ? !v : v));
+  }
+
+  return (
+    <div style={{
+      background: allDone ? C.greenLight : C.surface,
+      border: `1px solid ${allDone ? C.green : C.border}`,
+      borderRadius: 14, marginBottom: 10, overflow: "hidden",
+      transition: "border-color 0.2s, background 0.2s",
+    }}>
+      {/* Header */}
+      <div
+        onClick={() => setExpanded(e => !e)}
+        style={{
+          display: "flex", alignItems: "center", gap: 10,
+          padding: "13px 14px", cursor: "pointer", userSelect: "none",
+        }}
+      >
+        <div style={{
+          width: 10, height: 10, borderRadius: "50%", flexShrink: 0,
+          background: allDone ? C.green : completedCount > 0 ? C.green + "66" : C.border,
+          border: `2px solid ${allDone ? C.green : completedCount > 0 ? C.green : C.text3}`,
+          transition: "all 0.2s",
+        }}/>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: 15, fontWeight: 600, color: allDone ? C.greenDark : C.text1 }}>
+            Warmup & Mobility
+          </div>
+          <div style={{ fontSize: 12, color: C.text2, marginTop: 2 }}>
+            {completedCount}/{items.length} done
+          </div>
+        </div>
+        <span style={{
+          fontSize: 11, color: C.text3,
+          display: "inline-block",
+          transform: expanded ? "rotate(180deg)" : "none",
+          transition: "transform 0.2s",
+        }}>▼</span>
+      </div>
+
+      {/* Body */}
+      {expanded && (
+        <div style={{ borderTop: `1px solid ${C.border}`, padding: "8px 14px 12px" }}>
+          {items.map((item, i) => (
+            <div
+              key={i}
+              onClick={() => toggle(i)}
+              style={{
+                display: "flex", alignItems: "flex-start", gap: 10,
+                padding: "9px 0",
+                borderBottom: i < items.length - 1 ? `1px solid ${C.border}` : "none",
+                cursor: "pointer", userSelect: "none",
+                opacity: done[i] ? 0.5 : 1,
+                transition: "opacity 0.2s",
+              }}
+            >
+              {/* Checkbox */}
+              <div style={{
+                width: 22, height: 22, borderRadius: 6, flexShrink: 0, marginTop: 1,
+                border: `2px solid ${done[i] ? C.green : C.border}`,
+                background: done[i] ? C.green : "transparent",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                transition: "all 0.18s",
+              }}>
+                {done[i] && (
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none"
+                    stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="20,6 9,17 4,12"/>
+                  </svg>
+                )}
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={{
+                  fontSize: 13, fontWeight: 500, color: C.text1,
+                  textDecoration: done[i] ? "line-through" : "none",
+                }}>
+                  {item.name}
+                </div>
+                {item.detail && (
+                  <div style={{ fontSize: 11, color: C.text3, marginTop: 2 }}>
+                    {item.detail}
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── ActiveWorkout ──────────────────────────────────────────────────────────────
 
 export default function ActiveWorkout({
@@ -751,6 +856,8 @@ export default function ActiveWorkout({
 
       {/* Exercise list */}
       <div style={{ padding: "14px 14px 130px" }}>
+        <WarmupCard items={session.warmup || []} />
+
         {(session.exercises || []).map((exEntry, exIdx) => {
           const exercise = exercises[exEntry.exId];
           return (

@@ -343,6 +343,7 @@ export default function App() {
       planId:    store.activePlanId,
       dayIdx,
       dayName:   day.name,
+      warmup:    day.warmup || [],
       startTime: Date.now(),
       exercises: exList.map(e => ({
         exId:     e.exId,

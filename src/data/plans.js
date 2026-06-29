@@ -11,6 +11,16 @@ export const PLANS = {
       {
         id: "full-body",
         name: "Full Body",
+        warmup: [
+          { name: "Treadmill walk / light jog",  detail: "5 min, moderate pace" },
+          { name: "Arm circles",                  detail: "10 forward, 10 backward" },
+          { name: "Shoulder rolls",               detail: "10 forward, 10 backward" },
+          { name: "Leg swings",                   detail: "10 front-back each leg" },
+          { name: "Hip circles",                  detail: "10 each direction" },
+          { name: "Bodyweight squats",            detail: "10 reps, slow and controlled" },
+          { name: "Cat-cow",                      detail: "5 slow reps on mat" },
+          { name: "Light warmup set",             detail: "First machine at ~50% × 15 reps" },
+        ],
         exercises: [
           { exId: "chest-press-machine",    sets: 3, reps: 12, restSecs: 90 },
           { exId: "lat-pulldown",           sets: 3, reps: 12, restSecs: 90 },
@@ -38,6 +48,15 @@ export const PLANS = {
       {
         id: "upper-body",
         name: "Upper Body",
+        warmup: [
+          { name: "Treadmill walk / bike",         detail: "5 min, light pace" },
+          { name: "Arm circles",                   detail: "10 forward, 10 backward each arm" },
+          { name: "Shoulder rolls",                detail: "10 forward, 10 backward" },
+          { name: "Cross-body shoulder stretch",   detail: "15 s each side" },
+          { name: "Chest opener stretch",          detail: "Clasp hands behind back, open chest — 15 s" },
+          { name: "Light lat pulldown warmup set", detail: "~50% weight × 15 reps" },
+          { name: "Light chest press warmup set",  detail: "~50% weight × 15 reps" },
+        ],
         exercises: [
           { exId: "chest-press-machine",    sets: 4, reps: 10, restSecs: 90 },
           { exId: "pec-deck",               sets: 3, reps: 12, restSecs: 90 },
@@ -53,6 +72,15 @@ export const PLANS = {
       {
         id: "lower-body",
         name: "Lower Body",
+        warmup: [
+          { name: "Treadmill walk / bike",   detail: "5 min, moderate pace" },
+          { name: "Leg swings (front-back)", detail: "10 each leg" },
+          { name: "Leg swings (side-side)",  detail: "10 each leg" },
+          { name: "Hip circles",             detail: "10 each direction" },
+          { name: "Glute bridges",           detail: "10 reps on mat, 2-second hold" },
+          { name: "Bodyweight squats",       detail: "15 slow reps, full depth" },
+          { name: "Light leg press warmup",  detail: "~50% weight × 15 reps" },
+        ],
         exercises: [
           { exId: "leg-press",              sets: 4, reps: 12, restSecs: 120 },
           { exId: "leg-extension-machine",  sets: 3, reps: 15, restSecs: 90 },
@@ -68,6 +96,15 @@ export const PLANS = {
       {
         id: "upper-body-2",
         name: "Upper Body",
+        warmup: [
+          { name: "Treadmill walk / bike",         detail: "5 min, light pace" },
+          { name: "Arm circles",                   detail: "10 forward, 10 backward each arm" },
+          { name: "Shoulder rolls",                detail: "10 forward, 10 backward" },
+          { name: "Cross-body shoulder stretch",   detail: "15 s each side" },
+          { name: "Chest opener stretch",          detail: "Clasp hands behind back, open chest — 15 s" },
+          { name: "Light lat pulldown warmup set", detail: "~50% weight × 15 reps" },
+          { name: "Light chest press warmup set",  detail: "~50% weight × 15 reps" },
+        ],
         exercises: [
           { exId: "chest-press-machine",    sets: 4, reps: 10, restSecs: 90 },
           { exId: "pec-deck",               sets: 3, reps: 12, restSecs: 90 },
@@ -83,6 +120,15 @@ export const PLANS = {
       {
         id: "lower-body-2",
         name: "Lower Body",
+        warmup: [
+          { name: "Treadmill walk / bike",   detail: "5 min, moderate pace" },
+          { name: "Leg swings (front-back)", detail: "10 each leg" },
+          { name: "Leg swings (side-side)",  detail: "10 each leg" },
+          { name: "Hip circles",             detail: "10 each direction" },
+          { name: "Glute bridges",           detail: "10 reps on mat, 2-second hold" },
+          { name: "Bodyweight squats",       detail: "15 slow reps, full depth" },
+          { name: "Light leg press warmup",  detail: "~50% weight × 15 reps" },
+        ],
         exercises: [
           { exId: "leg-press",              sets: 4, reps: 12, restSecs: 120 },
           { exId: "leg-extension-machine",  sets: 3, reps: 15, restSecs: 90 },
@@ -110,6 +156,14 @@ export const PLANS = {
       {
         id: "push",
         name: "Push (Chest, Shoulders, Triceps)",
+        warmup: [
+          { name: "Treadmill walk / bike",         detail: "5 min, light pace" },
+          { name: "Arm circles",                   detail: "10 forward, 10 backward" },
+          { name: "Shoulder rotations",            detail: "10 internal, 10 external each arm" },
+          { name: "Chest opener stretch",          detail: "Hands clasped behind back — 15 s" },
+          { name: "Band pull-aparts (or face pulls)", detail: "15 reps at light weight" },
+          { name: "Light chest press warmup set",  detail: "~50% weight × 15 reps" },
+        ],
         exercises: [
           { exId: "chest-press-machine",         sets: 4, reps: 10, restSecs: 90 },
           { exId: "incline-dumbbell-press",       sets: 3, reps: 10, restSecs: 90 },
@@ -124,6 +178,14 @@ export const PLANS = {
       {
         id: "pull",
         name: "Pull (Back, Biceps)",
+        warmup: [
+          { name: "Treadmill walk / bike",      detail: "5 min, light pace" },
+          { name: "Arm circles",                detail: "10 forward, 10 backward" },
+          { name: "Scapular retractions",       detail: "10 reps — squeeze shoulder blades" },
+          { name: "Cross-body shoulder stretch",detail: "15 s each side" },
+          { name: "Light lat pulldown warmup",  detail: "~50% weight × 15 reps" },
+          { name: "Light row warmup set",       detail: "~50% weight × 15 reps" },
+        ],
         exercises: [
           { exId: "lat-pulldown",       sets: 4, reps: 10, restSecs: 90 },
           { exId: "seated-cable-row",   sets: 4, reps: 10, restSecs: 90 },
@@ -138,6 +200,15 @@ export const PLANS = {
       {
         id: "legs-core",
         name: "Legs + Core",
+        warmup: [
+          { name: "Treadmill walk / bike",   detail: "5 min, moderate pace" },
+          { name: "Leg swings (front-back)", detail: "10 each leg" },
+          { name: "Leg swings (side-side)",  detail: "10 each leg" },
+          { name: "Hip circles",             detail: "10 each direction" },
+          { name: "Glute bridges",           detail: "10 reps, 2-second hold at top" },
+          { name: "Bodyweight squats",       detail: "15 slow reps, full depth" },
+          { name: "Light leg press warmup",  detail: "~50% weight × 15 reps" },
+        ],
         exercises: [
           { exId: "leg-press",              sets: 4, reps: 12, restSecs: 120 },
           { exId: "leg-extension-machine",  sets: 3, reps: 15, restSecs: 90 },
