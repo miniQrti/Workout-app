@@ -7,7 +7,9 @@ import Home          from "./components/Home.jsx";
 import ActiveWorkout from "./components/ActiveWorkout.jsx";
 import Progress      from "./components/Progress.jsx";
 import Programs      from "./components/Programs.jsx";
+import Profile       from "./components/Profile.jsx";
 import RestTimer     from "./components/RestTimer.jsx";
+import { HISTORICAL_LOGS } from "./data/historicalLogs.js";
 
 // ── Workout summary modal ─────────────────────────────────────────────────────
 
@@ -148,6 +150,10 @@ function HamburgerMenu({ view, onNavigate, store, onUpdateStore, plans, exercise
     {
       id: "timer", label: "Rest Timer",
       icon: <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>,
+    },
+    {
+      id: "profile", label: "Profile",
+      icon: <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>,
     },
   ];
 
@@ -456,6 +462,17 @@ export default function App() {
     }
   }
 
+  // ── Import historical logs (one-time) ────────────────────────────────────
+  function importHistory() {
+    setStore(prev => {
+      const existing = new Set((prev.logs || []).map(l => l.id));
+      const toAdd = HISTORICAL_LOGS.filter(l => !existing.has(l.id));
+      const merged = [...toAdd, ...(prev.logs || [])];
+      merged.sort((a, b) => new Date(a.startedAt) - new Date(b.startedAt));
+      return { ...prev, logs: merged, historicalImported: true };
+    });
+  }
+
   // ── Plan switching ────────────────────────────────────────────────────────
   function selectPlan(planId) {
     updateStore({ activePlanId: planId, nextDayIdx: 0 });
@@ -517,6 +534,14 @@ export default function App() {
             onSelectPlan={selectPlan}
             onUpdateStore={updateStore}
             onOpenMenu={() => setMenu(true)}
+          />
+        )}
+
+        {view === "profile" && (
+          <Profile
+            store={store}
+            onOpenMenu={() => setMenu(true)}
+            onImportHistory={importHistory}
           />
         )}
 
