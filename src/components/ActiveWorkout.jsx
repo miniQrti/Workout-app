@@ -298,50 +298,6 @@ function SwapModal({ exercise, exercises, onSwap, onClose }) {
   );
 }
 
-// ── Weight stepper ─────────────────────────────────────────────────────────────
-
-function WeightStepper({ value, disabled, onChange }) {
-  const C = useTheme();
-
-  function step(delta) {
-    const cur = parseFloat(value) || 0;
-    const next = Math.max(0, Math.round((cur + delta) * 10) / 10);
-    onChange(String(next));
-  }
-
-  const btnStyle = {
-    width: 30, height: 36, borderRadius: 7, padding: 0, flexShrink: 0,
-    border: `1px solid ${C.border}`,
-    background: disabled ? C.bg : C.surface2,
-    color: disabled ? C.text3 : C.text1,
-    fontSize: 16, fontWeight: 700, cursor: disabled ? "default" : "pointer",
-    display: "flex", alignItems: "center", justifyContent: "center",
-    fontFamily: FONT,
-  };
-
-  return (
-    <div style={{ display: "flex", alignItems: "center", gap: 3 }}>
-      <button style={btnStyle} disabled={disabled} onClick={() => step(-5)}>−</button>
-      <input
-        type="number"
-        inputMode="decimal"
-        placeholder="lb"
-        value={value || ""}
-        disabled={disabled}
-        onChange={e => onChange(e.target.value)}
-        style={{
-          flex: 1, padding: "7px 4px", borderRadius: 7, textAlign: "center",
-          border: `1px solid ${disabled ? C.border : C.inputBorder}`,
-          background: disabled ? C.bg : C.surface,
-          color: C.text1, minWidth: 0,
-          fontFamily: FONT, fontSize: 14,
-        }}
-      />
-      <button style={btnStyle} disabled={disabled} onClick={() => step(+5)}>+</button>
-    </div>
-  );
-}
-
 // ── Exercise card ──────────────────────────────────────────────────────────────
 
 function ExerciseCard({
@@ -467,7 +423,7 @@ function ExerciseCard({
             {/* Column headers */}
             <div style={{
               display: "grid",
-              gridTemplateColumns: "22px 72px 1fr 56px 36px",
+              gridTemplateColumns: "22px 68px 88px 56px 36px",
               gap: "4px 6px",
               marginBottom: 6,
               alignItems: "center",
@@ -502,7 +458,7 @@ function ExerciseCard({
                   key={setIdx}
                   style={{
                     display: "grid",
-                    gridTemplateColumns: "22px 72px 1fr 56px 36px",
+                    gridTemplateColumns: "22px 68px 88px 56px 36px",
                     gap: "4px 6px",
                     alignItems: "center",
                     marginBottom: 8,
@@ -556,10 +512,20 @@ function ExerciseCard({
                       }}
                     />
                   ) : (
-                    <WeightStepper
-                      value={set.weight}
+                    <input
+                      type="number"
+                      inputMode="decimal"
+                      placeholder="lb"
+                      value={set.weight || ""}
                       disabled={completed}
-                      onChange={v => onUpdateSet(exIdx, setIdx, "weight", v)}
+                      onChange={e => onUpdateSet(exIdx, setIdx, "weight", e.target.value)}
+                      style={{
+                        padding: "7px 4px", borderRadius: 7, textAlign: "center",
+                        border: `1px solid ${completed ? C.border : C.inputBorder}`,
+                        background: completed ? C.bg : C.surface,
+                        color: C.text1, width: "100%",
+                        fontFamily: FONT, fontSize: 14,
+                      }}
                     />
                   )}
 
