@@ -119,6 +119,52 @@ function WorkoutSummary({ summary, onClose }) {
   );
 }
 
+// ── Changelog ─────────────────────────────────────────────────────────────────
+
+const CHANGELOG = [
+  {
+    label: "v0.9 · Jun 29 2025",
+    changes: [
+      "Trainer AI — Coach's Notes on Home with smart weight suggestions",
+      "Progression v2: rep gate, fatigue detection, 2× Tough → deload",
+      "Trainer knowledge base with muscle-group increments & PF substitutions",
+      "Feel rating (Easy / Good / Hard / Tough) saved to every session log",
+      "Rest timer banner bigger — 36 px countdown, larger play button",
+      "Rest timer presets (1:00 / 1:30 / 2:00 / 3:00) in the banner",
+      "Exercise cards start collapsed — tap to open",
+      "Warmup & Mobility checklist before each workout",
+    ],
+  },
+  {
+    label: "v0.8 · Jun 28 2025",
+    changes: [
+      "Machine seat settings shown inside workout exercise cards",
+      "Profile page — athlete overview, machine settings, session targets",
+      "Historical workout import (Weeks 1–7, 14 sessions)",
+      "Hamburger menu replaces bottom nav + settings gear",
+      "Active workout progression suggestion chip (↑/→/↓)",
+    ],
+  },
+  {
+    label: "v0.7 · Jun 27 2025",
+    changes: [
+      "CSV export with iOS native share sheet",
+      "Weight input layout fixed — removed +/− steppers",
+      "Set checkmarks are now toggleable (tap to uncheck)",
+      "QA bug sweep — 7 fixes across navigation and logging",
+    ],
+  },
+  {
+    label: "v0.6 · Jun 2025",
+    changes: [
+      "Progress charts — SVG line chart, PR dots in gold",
+      "Full session history with Day A / B / C tabs",
+      "Rest timer — animated ring, vibration on done",
+      "Clipboard copy for sharing session with Claude",
+    ],
+  },
+];
+
 // ── Hamburger menu ────────────────────────────────────────────────────────────
 
 function HamburgerMenu({ view, onNavigate, store, onUpdateStore, plans, exercises, onClose }) {
@@ -127,6 +173,7 @@ function HamburgerMenu({ view, onNavigate, store, onUpdateStore, plans, exercise
   const theme  = store.theme  || "light";
   const accent = store.accent || "green";
   const hasLogs = (store.logs || []).length > 0;
+  const [changelogOpen, setChangelogOpen] = useState(false);
 
   async function handleExport() {
     const csv = exportWorkoutCSV(store.logs, exercises, plans, unit);
@@ -288,6 +335,83 @@ function HamburgerMenu({ view, onNavigate, store, onUpdateStore, plans, exercise
             </svg>
           </button>
           {!hasLogs && <div style={{ fontSize: 12, color: C.text3, marginTop: 6, paddingLeft: 2 }}>Complete a workout to enable export</div>}
+        </div>
+
+        {/* App */}
+        <div style={{ marginBottom: 20 }}>
+          <div style={{ fontSize: 12, color: C.text2, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 10 }}>App</div>
+
+          {/* Reload */}
+          <button
+            onClick={() => { onClose(); setTimeout(() => window.location.reload(true), 150); }}
+            style={{
+              width: "100%", padding: "13px 16px", borderRadius: 10, marginBottom: 8,
+              cursor: "pointer", fontSize: 14, fontWeight: 600, fontFamily: FONT,
+              display: "flex", alignItems: "center", justifyContent: "space-between",
+              background: C.surface2, color: C.text1, border: `1px solid ${C.border}`,
+            }}
+          >
+            <span>Reload App</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="23 4 23 10 17 10"/>
+              <path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/>
+            </svg>
+          </button>
+
+          {/* What's New */}
+          <div style={{
+            background: C.surface2, borderRadius: 10,
+            border: `1px solid ${C.border}`, overflow: "hidden",
+          }}>
+            <button
+              onClick={() => setChangelogOpen(o => !o)}
+              style={{
+                width: "100%", padding: "13px 16px",
+                display: "flex", alignItems: "center", justifyContent: "space-between",
+                background: "none", border: "none", cursor: "pointer", fontFamily: FONT,
+              }}
+            >
+              <span style={{ fontSize: 14, fontWeight: 600, color: C.text1 }}>What's New</span>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <span style={{
+                  fontSize: 11, padding: "2px 7px", borderRadius: 10,
+                  background: C.greenLight, color: C.green, fontWeight: 700,
+                }}>
+                  {CHANGELOG[0].label.split(" · ")[0]}
+                </span>
+                <span style={{
+                  fontSize: 11, color: C.text3,
+                  display: "inline-block",
+                  transform: changelogOpen ? "rotate(180deg)" : "none",
+                  transition: "transform 0.2s",
+                }}>▼</span>
+              </div>
+            </button>
+
+            {changelogOpen && (
+              <div style={{ borderTop: `1px solid ${C.border}`, padding: "12px 16px 14px" }}>
+                {CHANGELOG.map((release, ri) => (
+                  <div key={ri} style={{ marginBottom: ri < CHANGELOG.length - 1 ? 16 : 0 }}>
+                    <div style={{
+                      fontSize: 12, fontWeight: 700, color: C.green,
+                      marginBottom: 6, letterSpacing: "0.02em",
+                    }}>
+                      {release.label}
+                    </div>
+                    {release.changes.map((c, ci) => (
+                      <div key={ci} style={{
+                        display: "flex", gap: 8, marginBottom: 4,
+                        fontSize: 12, color: C.text2, lineHeight: 1.5,
+                      }}>
+                        <span style={{ color: C.text3, flexShrink: 0 }}>•</span>
+                        <span>{c}</span>
+                      </div>
+                    ))}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
 
         <button onClick={onClose} style={{
