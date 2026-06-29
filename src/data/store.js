@@ -11,6 +11,8 @@ export function freshStore() {
     activePlanId: "beginner-3day",
     nextDayIdx: 0,
     unit: "lbs",
+    theme: "light",
+    accent: "green",
     logs: [],
     swaps: {},
   };

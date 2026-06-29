@@ -1,20 +1,5 @@
 import React, { useState } from "react";
-
-// ── Design tokens ─────────────────────────────────────────────────────────────
-const C = {
-  bg:          "#F5F5F0",
-  surface:     "#FFFFFF",
-  green:       "#16A97C",
-  greenDark:   "#0D7A59",
-  greenLight:  "#E8F8F2",
-  orange:      "#F97316",
-  orangeLight: "#FFF4ED",
-  text1:       "#111111",
-  text2:       "#6B7280",
-  text3:       "#9CA3AF",
-  border:      "rgba(0,0,0,0.07)",
-  red:         "#EF4444",
-};
+import { useTheme, FONT, ACCENT_OPTIONS } from "../theme.js";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -48,12 +33,11 @@ function formatDateLabel(isoString) {
   return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
-// Days in the current Mon-Sun week that have at least one log
 function getWeekDots(logs) {
-  const now   = new Date();
-  const day   = now.getDay(); // 0=Sun
-  const mon   = new Date(now);
-  mon.setDate(now.getDate() - ((day + 6) % 7)); // roll back to Monday
+  const now = new Date();
+  const day = now.getDay();
+  const mon = new Date(now);
+  mon.setDate(now.getDate() - ((day + 6) % 7));
   mon.setHours(0, 0, 0, 0);
 
   const dots = Array(7).fill(false);
@@ -63,7 +47,7 @@ function getWeekDots(logs) {
     const diffDays = Math.floor((d - mon) / 86400000);
     if (diffDays >= 0 && diffDays < 7) dots[diffDays] = true;
   }
-  return dots; // index 0 = Monday
+  return dots;
 }
 
 function workoutsThisWeek(logs) {
@@ -72,7 +56,6 @@ function workoutsThisWeek(logs) {
 
 function currentStreak(logs) {
   if (!logs.length) return 0;
-  // Build a set of "YYYY-MM-DD" date strings for all logged days
   const daySet = new Set();
   for (const log of logs) {
     const d = new Date(log.date || log.completedAt || log.startedAt || "");
@@ -81,15 +64,12 @@ function currentStreak(logs) {
   let streak = 0;
   const cursor = new Date();
   cursor.setHours(0, 0, 0, 0);
-  // If today has no workout yet, still allow it to count as "today" in streak
   while (true) {
     const key = cursor.toISOString().slice(0, 10);
     if (!daySet.has(key)) {
-      // Allow one gap for today (it may not be done yet)
       if (streak === 0) {
         cursor.setDate(cursor.getDate() - 1);
-        const prevKey = cursor.toISOString().slice(0, 10);
-        if (!daySet.has(prevKey)) break;
+        if (!daySet.has(cursor.toISOString().slice(0, 10))) break;
         streak++;
         cursor.setDate(cursor.getDate() - 1);
         continue;
@@ -104,28 +84,28 @@ function currentStreak(logs) {
 
 function totalPRs(logs, exercises) {
   if (!logs.length) return 0;
-  const exerciseIds = Object.keys(exercises);
   let count = 0;
-  for (const id of exerciseIds) {
+  for (const id of Object.keys(exercises)) {
     let best = 0;
-    let hasPR = false;
     for (const log of logs) {
       if (!log.exercises) continue;
       const ex = log.exercises.find(e => e.exId === id);
-      if (!ex || !ex.sets) continue;
+      if (!ex?.sets) continue;
       for (const s of ex.sets) {
         const w = parseFloat(s.weight);
-        if (!isNaN(w) && w > best) { best = w; hasPR = true; }
+        if (!isNaN(w) && w > best) best = w;
       }
     }
-    if (hasPR && best > 0) count++;
+    if (best > 0) count++;
   }
   return count;
 }
 
-// ── Settings bottom sheet ─────────────────────────────────────────────────────
+// ── Settings sheet ─────────────────────────────────────────────────────────────
 
-function SettingsSheet({ unit, onChangeUnit, onClose }) {
+function SettingsSheet({ unit, onChangeUnit, theme, accent, onChangeTheme, onChangeAccent, onClose }) {
+  const C = useTheme();
+
   return (
     <div
       onClick={onClose}
@@ -139,22 +119,23 @@ function SettingsSheet({ unit, onChangeUnit, onClose }) {
         style={{
           background: C.surface, borderRadius: "20px 20px 0 0",
           padding: "20px 16px calc(env(safe-area-inset-bottom) + 24px)",
-          width: "100%",
-          fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif",
+          width: "100%", fontFamily: FONT,
         }}
       >
-        {/* drag handle */}
+        {/* Drag handle */}
         <div style={{
-          width: 36, height: 4, borderRadius: 2, background: "#D1D5DB",
+          width: 36, height: 4, borderRadius: 2, background: C.border,
           margin: "0 auto 20px",
         }} />
-        <div style={{ fontSize: 17, fontWeight: 600, color: C.text1, marginBottom: 20 }}>
+        <div style={{ fontSize: 17, fontWeight: 700, color: C.text1, marginBottom: 20 }}>
           Settings
         </div>
 
-        <div style={{ marginBottom: 12 }}>
-          <div style={{ fontSize: 13, color: C.text2, fontWeight: 500, marginBottom: 10 }}>
-            Weight unit
+        {/* Weight unit */}
+        <div style={{ marginBottom: 20 }}>
+          <div style={{ fontSize: 12, color: C.text2, fontWeight: 600,
+            textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 10 }}>
+            Weight Unit
           </div>
           <div style={{ display: "flex", gap: 10 }}>
             {["lbs", "kg"].map(u => (
@@ -162,13 +143,11 @@ function SettingsSheet({ unit, onChangeUnit, onClose }) {
                 key={u}
                 onClick={() => onChangeUnit(u)}
                 style={{
-                  flex: 1, padding: "12px 0", borderRadius: 10, cursor: "pointer",
-                  fontSize: 15, fontWeight: 600,
-                  background: unit === u ? C.greenLight : C.bg,
+                  flex: 1, padding: "13px 0", borderRadius: 10, cursor: "pointer",
+                  fontSize: 15, fontWeight: 600, fontFamily: FONT,
+                  background: unit === u ? C.greenLight : C.surface2,
                   color:      unit === u ? C.green : C.text2,
-                  border: unit === u
-                    ? `1.5px solid ${C.green}`
-                    : `1px solid ${C.border}`,
+                  border: unit === u ? `1.5px solid ${C.green}` : `1px solid ${C.border}`,
                   transition: "all 0.15s",
                 }}
               >
@@ -178,13 +157,86 @@ function SettingsSheet({ unit, onChangeUnit, onClose }) {
           </div>
         </div>
 
+        {/* Appearance */}
+        <div style={{ marginBottom: 20 }}>
+          <div style={{ fontSize: 12, color: C.text2, fontWeight: 600,
+            textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 10 }}>
+            Appearance
+          </div>
+          <div style={{ display: "flex", gap: 10 }}>
+            {[
+              { value: "light", label: "Light", icon: "☀️" },
+              { value: "dark",  label: "Dark",  icon: "🌙" },
+            ].map(opt => (
+              <button
+                key={opt.value}
+                onClick={() => onChangeTheme(opt.value)}
+                style={{
+                  flex: 1, padding: "12px 0", borderRadius: 10, cursor: "pointer",
+                  fontSize: 14, fontWeight: 600, fontFamily: FONT,
+                  display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+                  background: theme === opt.value ? C.greenLight : C.surface2,
+                  color:      theme === opt.value ? C.green : C.text2,
+                  border: theme === opt.value ? `1.5px solid ${C.green}` : `1px solid ${C.border}`,
+                  transition: "all 0.15s",
+                }}
+              >
+                <span style={{ fontSize: 16 }}>{opt.icon}</span>
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Accent color */}
+        <div style={{ marginBottom: 24 }}>
+          <div style={{ fontSize: 12, color: C.text2, fontWeight: 600,
+            textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 10 }}>
+            Accent Color
+          </div>
+          <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+            {ACCENT_OPTIONS.map(opt => {
+              const isActive = accent === opt.key;
+              return (
+                <button
+                  key={opt.key}
+                  onClick={() => onChangeAccent(opt.key)}
+                  style={{
+                    width: 44, height: 44, borderRadius: "50%",
+                    background: opt.color,
+                    border: isActive ? `3px solid ${C.text1}` : "3px solid transparent",
+                    boxShadow: isActive ? `0 0 0 2px ${opt.color}` : "none",
+                    cursor: "pointer", padding: 0,
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    transition: "all 0.15s",
+                    flexShrink: 0,
+                  }}
+                >
+                  {isActive && (
+                    <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                      <path d="M3.5 9L7.5 13L14.5 5.5" stroke="#fff" strokeWidth="2.2"
+                        strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  )}
+                </button>
+              );
+            })}
+            <div style={{ marginLeft: 4 }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: C.text1 }}>
+                {ACCENT_OPTIONS.find(a => a.key === accent)?.label || "Green"}
+              </div>
+            </div>
+          </div>
+        </div>
+
         <button
           onClick={onClose}
           style={{
-            width: "100%", marginTop: 16, padding: "13px 0",
+            width: "100%", padding: "14px 0",
             borderRadius: 12, border: `1px solid ${C.border}`,
-            background: C.bg, color: C.text1, fontSize: 15,
-            fontWeight: 500, cursor: "pointer",
+            background: C.surface2, color: C.text1,
+            fontSize: 15, fontWeight: 600, cursor: "pointer",
+            fontFamily: FONT,
           }}
         >
           Done
@@ -194,9 +246,10 @@ function SettingsSheet({ unit, onChangeUnit, onClose }) {
   );
 }
 
-// ── Gear icon ─────────────────────────────────────────────────────────────────
+// ── Sub-components ─────────────────────────────────────────────────────────────
 
 function IconGear() {
+  const C = useTheme();
   return (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
       stroke={C.text2} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -218,13 +271,12 @@ function IconGear() {
   );
 }
 
-// ── Pill chip ─────────────────────────────────────────────────────────────────
-
 function Pill({ label }) {
+  const C = useTheme();
   return (
     <span style={{
       padding: "4px 10px", borderRadius: 20, fontSize: 12, fontWeight: 500,
-      background: C.bg, color: C.text2, border: `1px solid ${C.border}`,
+      background: C.surface2, color: C.text2, border: `1px solid ${C.border}`,
       whiteSpace: "nowrap",
     }}>
       {label}
@@ -232,9 +284,8 @@ function Pill({ label }) {
   );
 }
 
-// ── Stat card (mini) ──────────────────────────────────────────────────────────
-
 function StatCard({ value, label }) {
+  const C = useTheme();
   return (
     <div style={{
       flex: 1, background: C.surface, border: `1px solid ${C.border}`,
@@ -253,17 +304,18 @@ function StatCard({ value, label }) {
 // ── Main component ────────────────────────────────────────────────────────────
 
 export default function Home({ store, plans, exercises, onStartWorkout, onContinueSession, onUpdateStore }) {
+  const C = useTheme();
   const [showSettings, setShowSettings] = useState(false);
   const [localUnit, setLocalUnit]       = useState(store.unit || "lbs");
 
-  const plan        = plans[store.activePlanId];
-  const dayIdx      = store.nextDayIdx || 0;
-  const day         = plan?.days?.[dayIdx % (plan?.days?.length || 1)];
-  const logs        = store.logs || [];
-  const hasLogs     = logs.length > 0;
-  const recentLogs  = [...logs].reverse().slice(0, 3);
-  const weekDots    = getWeekDots(logs);
-  const DAY_LABELS  = ["M", "T", "W", "T", "F", "S", "S"];
+  const plan       = plans[store.activePlanId];
+  const dayIdx     = store.nextDayIdx || 0;
+  const day        = plan?.days?.[dayIdx % (plan?.days?.length || 1)];
+  const logs       = store.logs || [];
+  const hasLogs    = logs.length > 0;
+  const recentLogs = [...logs].reverse().slice(0, 3);
+  const weekDots   = getWeekDots(logs);
+  const DAY_LABELS = ["M", "T", "W", "T", "F", "S", "S"];
 
   const exerciseCount = day?.exercises?.length || 0;
   const firstFour     = (day?.exercises || []).slice(0, 4).map(e => {
@@ -277,25 +329,29 @@ export default function Home({ store, plans, exercises, onStartWorkout, onContin
     <div style={{
       minHeight: "100vh",
       background: C.bg,
-      fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif",
+      fontFamily: FONT,
       paddingBottom: "calc(72px + env(safe-area-inset-bottom))",
     }}>
 
-      {/* Settings sheet */}
       {showSettings && (
         <SettingsSheet
           unit={localUnit}
           onChangeUnit={u => { setLocalUnit(u); if (onUpdateStore) onUpdateStore({ unit: u }); }}
+          theme={store.theme || "light"}
+          accent={store.accent || "green"}
+          onChangeTheme={t => { if (onUpdateStore) onUpdateStore({ theme: t }); }}
+          onChangeAccent={a => { if (onUpdateStore) onUpdateStore({ accent: a }); }}
           onClose={() => setShowSettings(false)}
         />
       )}
 
-      {/* ── Sticky header ── */}
+      {/* Sticky header */}
       <div style={{
         position: "sticky", top: 0, zIndex: 50,
         background: C.surface,
         borderBottom: `1px solid ${C.border}`,
         padding: "14px 16px 12px",
+        paddingTop: "calc(14px + env(safe-area-inset-top))",
         display: "flex", alignItems: "center", justifyContent: "space-between",
       }}>
         <div>
@@ -309,8 +365,8 @@ export default function Home({ store, plans, exercises, onStartWorkout, onContin
         <button
           onClick={() => setShowSettings(true)}
           style={{
-            width: 36, height: 36, borderRadius: "50%",
-            background: C.bg, border: `1px solid ${C.border}`,
+            width: 40, height: 40, borderRadius: "50%",
+            background: C.surface2, border: `1px solid ${C.border}`,
             display: "flex", alignItems: "center", justifyContent: "center",
             cursor: "pointer",
           }}
@@ -321,7 +377,7 @@ export default function Home({ store, plans, exercises, onStartWorkout, onContin
 
       <div style={{ padding: "16px 16px 0" }}>
 
-        {/* ── Continue session banner ── */}
+        {/* Continue session banner */}
         {hasActiveSession && (
           <div style={{
             background: C.greenLight, border: `1.5px solid ${C.green}`,
@@ -340,9 +396,10 @@ export default function Home({ store, plans, exercises, onStartWorkout, onContin
             <button
               onClick={onContinueSession}
               style={{
-                padding: "8px 14px", borderRadius: 8, cursor: "pointer",
+                padding: "9px 16px", borderRadius: 8, cursor: "pointer",
                 fontSize: 13, fontWeight: 600,
                 background: C.green, color: "#fff", border: "none",
+                fontFamily: FONT,
               }}
             >
               Resume
@@ -350,13 +407,12 @@ export default function Home({ store, plans, exercises, onStartWorkout, onContin
           </div>
         )}
 
-        {/* ── Today's workout card ── */}
+        {/* Today's workout card */}
         <div style={{
           background: C.surface, border: `1px solid ${C.border}`,
           borderRadius: 18, padding: "18px 16px",
-          marginBottom: 16, boxShadow: "0 2px 12px rgba(0,0,0,0.06)",
+          marginBottom: 16, boxShadow: C.isDark ? "none" : "0 2px 12px rgba(0,0,0,0.06)",
         }}>
-          {/* Plan badge */}
           <div style={{
             display: "inline-block", padding: "3px 10px",
             borderRadius: 20, background: C.greenLight,
@@ -366,16 +422,12 @@ export default function Home({ store, plans, exercises, onStartWorkout, onContin
             {plan?.name || "No plan selected"}
           </div>
 
-          {/* Workout name */}
           <div style={{ fontSize: 24, fontWeight: 700, color: C.text1, lineHeight: 1.2 }}>
             {day?.name || "Rest Day"}
           </div>
 
-          {/* Stats row */}
           {day && (
-            <div style={{
-              display: "flex", gap: 16, marginTop: 8, marginBottom: 12,
-            }}>
+            <div style={{ display: "flex", gap: 16, marginTop: 8, marginBottom: 12 }}>
               <span style={{ fontSize: 13, color: C.text2 }}>
                 <span style={{ color: C.text1, fontWeight: 600 }}>{exerciseCount}</span>
                 {" exercises"}
@@ -390,17 +442,13 @@ export default function Home({ store, plans, exercises, onStartWorkout, onContin
             </div>
           )}
 
-          {/* Exercise pills */}
           {firstFour.length > 0 && (
-            <div style={{
-              display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 16,
-            }}>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 16 }}>
               {firstFour.map((name, i) => <Pill key={i} label={name} />)}
               {exerciseCount > 4 && (
                 <span style={{
                   padding: "4px 10px", borderRadius: 20, fontSize: 12,
                   color: C.text3, border: `1px dashed ${C.border}`,
-                  background: "transparent",
                 }}>
                   +{exerciseCount - 4} more
                 </span>
@@ -408,7 +456,6 @@ export default function Home({ store, plans, exercises, onStartWorkout, onContin
             </div>
           )}
 
-          {/* Encouraging message if no logs */}
           {!hasLogs && (
             <div style={{
               fontSize: 13, color: C.text2, fontStyle: "italic",
@@ -418,18 +465,17 @@ export default function Home({ store, plans, exercises, onStartWorkout, onContin
             </div>
           )}
 
-          {/* Start button */}
           <button
             onClick={onStartWorkout}
             style={{
-              width: "100%", padding: "14px 0",
+              width: "100%", padding: "15px 0",
               borderRadius: 12, border: "none",
               background: C.green, color: "#fff",
               fontSize: 16, fontWeight: 700, cursor: "pointer",
+              fontFamily: FONT,
+              display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+              boxShadow: `0 3px 14px ${C.green}55`,
               letterSpacing: "0.01em",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              gap: 8,
-              boxShadow: `0 3px 10px ${C.green}55`,
             }}
           >
             Start Workout
@@ -437,7 +483,7 @@ export default function Home({ store, plans, exercises, onStartWorkout, onContin
           </button>
         </div>
 
-        {/* ── This Week ── */}
+        {/* This Week */}
         <div style={{
           background: C.surface, border: `1px solid ${C.border}`,
           borderRadius: 16, padding: "14px 16px",
@@ -447,9 +493,7 @@ export default function Home({ store, plans, exercises, onStartWorkout, onContin
             display: "flex", alignItems: "center",
             justifyContent: "space-between", marginBottom: 12,
           }}>
-            <div style={{ fontSize: 15, fontWeight: 600, color: C.text1 }}>
-              This Week
-            </div>
+            <div style={{ fontSize: 15, fontWeight: 600, color: C.text1 }}>This Week</div>
             <div style={{ fontSize: 13, color: C.text2 }}>
               {workoutsThisWeek(logs)} workout{workoutsThisWeek(logs) !== 1 ? "s" : ""}
             </div>
@@ -458,8 +502,8 @@ export default function Home({ store, plans, exercises, onStartWorkout, onContin
             {DAY_LABELS.map((label, i) => (
               <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
                 <div style={{
-                  width: 32, height: 32, borderRadius: "50%",
-                  background: weekDots[i] ? C.green : C.bg,
+                  width: 34, height: 34, borderRadius: "50%",
+                  background: weekDots[i] ? C.green : C.surface2,
                   border: weekDots[i] ? "none" : `1.5px solid ${C.border}`,
                   display: "flex", alignItems: "center", justifyContent: "center",
                 }}>
@@ -478,7 +522,7 @@ export default function Home({ store, plans, exercises, onStartWorkout, onContin
           </div>
         </div>
 
-        {/* ── Stats row (only if there are logs) ── */}
+        {/* Stats row */}
         {hasLogs && (
           <div style={{ display: "flex", gap: 10, marginBottom: 16 }}>
             <StatCard value={logs.length} label="Total Workouts" />
@@ -487,7 +531,7 @@ export default function Home({ store, plans, exercises, onStartWorkout, onContin
           </div>
         )}
 
-        {/* ── Recent Workouts ── */}
+        {/* Recent Workouts */}
         <div style={{ marginBottom: 16 }}>
           <div style={{ fontSize: 15, fontWeight: 600, color: C.text1, marginBottom: 12 }}>
             Recent Workouts
@@ -496,7 +540,7 @@ export default function Home({ store, plans, exercises, onStartWorkout, onContin
           {!hasLogs ? (
             <div style={{
               background: C.surface, border: `1px solid ${C.border}`,
-              borderRadius: 14, padding: "20px 16px", textAlign: "center",
+              borderRadius: 14, padding: "24px 16px", textAlign: "center",
             }}>
               <div style={{ fontSize: 28, marginBottom: 8 }}>🏋️</div>
               <div style={{ fontSize: 14, color: C.text2, lineHeight: 1.5 }}>
@@ -506,10 +550,10 @@ export default function Home({ store, plans, exercises, onStartWorkout, onContin
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
               {recentLogs.map((log, i) => {
-                const exCount = log.exercises?.length || 0;
+                const exCount  = log.exercises?.length || 0;
                 const dayLabel = log.dayName || `Day ${(log.dayIdx ?? 0) + 1}`;
                 const dateLabel = formatDateLabel(log.date || log.completedAt || log.startedAt);
-                const duration = formatDuration(log.durationSecs);
+                const duration  = formatDuration(log.durationSecs);
                 return (
                   <div key={log.id || i} style={{
                     background: C.surface, border: `1px solid ${C.border}`,
@@ -525,10 +569,7 @@ export default function Home({ store, plans, exercises, onStartWorkout, onContin
                         {exCount > 0 && ` · ${exCount} exercise${exCount !== 1 ? "s" : ""}`}
                       </div>
                     </div>
-                    <div style={{
-                      fontSize: 13, color: C.text2, fontWeight: 500,
-                      textAlign: "right",
-                    }}>
+                    <div style={{ fontSize: 13, color: C.text2, fontWeight: 500 }}>
                       {duration}
                     </div>
                   </div>

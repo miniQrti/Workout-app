@@ -1,22 +1,5 @@
 import React, { useState, useMemo } from "react";
-
-// ── Design tokens ─────────────────────────────────────────────────────────────
-const C = {
-  bg:          "#F5F5F0",
-  surface:     "#FFFFFF",
-  green:       "#16A97C",
-  greenDark:   "#0D7A59",
-  greenLight:  "#E8F8F2",
-  orange:      "#F97316",
-  orangeLight: "#FFF4ED",
-  text1:       "#111111",
-  text2:       "#6B7280",
-  text3:       "#9CA3AF",
-  border:      "rgba(0,0,0,0.07)",
-  red:         "#EF4444",
-};
-
-// ── Helpers ───────────────────────────────────────────────────────────────────
+import { useTheme, FONT } from "../theme.js";
 
 const DIFFICULTY_COLORS = {
   Beginner:     { bg: "#E8F8F2", color: "#16A97C" },
@@ -25,12 +8,11 @@ const DIFFICULTY_COLORS = {
 };
 
 function difficultyStyle(difficulty) {
-  return DIFFICULTY_COLORS[difficulty] || { bg: C.bg, color: C.text2 };
+  return DIFFICULTY_COLORS[difficulty] || { bg: "#F5F5F0", color: "#6B7280" };
 }
 
 const MUSCLE_FILTERS = ["All", "Chest", "Back", "Shoulders", "Arms", "Legs", "Core", "Cardio"];
 
-// Map display label → exercises primaryMuscle value
 const MUSCLE_MAP = {
   All:       null,
   Chest:     "chest",
@@ -48,9 +30,10 @@ function matchesMuscle(exercise, filter) {
   return exercise.primaryMuscle === filter;
 }
 
-// ── Badge ─────────────────────────────────────────────────────────────────────
+// ── Badge ──────────────────────────────────────────────────────────────────────
 
 function Badge({ label, bg, color, small }) {
+  const C = useTheme();
   return (
     <span style={{
       display: "inline-block",
@@ -58,7 +41,7 @@ function Badge({ label, bg, color, small }) {
       borderRadius: 20,
       fontSize: small ? 11 : 12,
       fontWeight: 600,
-      background: bg || C.bg,
+      background: bg || C.surface2,
       color:      color || C.text2,
       whiteSpace: "nowrap",
     }}>
@@ -70,6 +53,7 @@ function Badge({ label, bg, color, small }) {
 // ── Plan card ─────────────────────────────────────────────────────────────────
 
 function PlanCard({ plan, isActive, onSwitch }) {
+  const C = useTheme();
   const [confirmOpen, setConfirmOpen] = useState(false);
   const dc = difficultyStyle(plan.difficulty);
 
@@ -82,24 +66,18 @@ function PlanCard({ plan, isActive, onSwitch }) {
       marginBottom: 12,
       position: "relative",
     }}>
-      {/* Active badge */}
       {isActive && (
         <div style={{
           position: "absolute", top: 14, right: 14,
           padding: "3px 10px", borderRadius: 20,
           background: C.green, color: "#fff",
-          fontSize: 11, fontWeight: 700,
-          letterSpacing: "0.03em",
+          fontSize: 11, fontWeight: 700, letterSpacing: "0.03em",
         }}>
           ACTIVE
         </div>
       )}
 
-      {/* Header */}
-      <div style={{
-        paddingRight: isActive ? 68 : 0,
-        marginBottom: 8,
-      }}>
+      <div style={{ paddingRight: isActive ? 68 : 0, marginBottom: 8 }}>
         <div style={{ fontSize: 16, fontWeight: 700, color: C.text1, marginBottom: 4 }}>
           {plan.name}
         </div>
@@ -108,21 +86,21 @@ function PlanCard({ plan, isActive, onSwitch }) {
         </div>
       </div>
 
-      {/* Meta row */}
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 12 }}>
         <Badge label={plan.difficulty} bg={dc.bg} color={dc.color} />
         <Badge label={`${plan.daysPerWeek}×/week`} />
         <Badge label={`~${plan.estimatedMins} min`} />
       </div>
 
-      {/* Day rotation (active plan only) */}
       {isActive && plan.days.length > 1 && (
         <div style={{
           background: C.greenLight, borderRadius: 10,
           padding: "10px 12px", marginBottom: 12,
         }}>
-          <div style={{ fontSize: 11, fontWeight: 600, color: C.green,
-            textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 }}>
+          <div style={{
+            fontSize: 11, fontWeight: 600, color: C.green,
+            textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6,
+          }}>
             Day Rotation
           </div>
           <div style={{ fontSize: 12, color: C.greenDark, lineHeight: 1.6 }}>
@@ -135,6 +113,7 @@ function PlanCard({ plan, isActive, onSwitch }) {
           </div>
         </div>
       )}
+
       {isActive && plan.days.length === 1 && (
         <div style={{
           background: C.greenLight, borderRadius: 10,
@@ -146,15 +125,14 @@ function PlanCard({ plan, isActive, onSwitch }) {
         </div>
       )}
 
-      {/* Switch button (non-active plans) */}
       {!isActive && !confirmOpen && (
         <button
           onClick={() => setConfirmOpen(true)}
           style={{
-            width: "100%", padding: "11px 0",
+            width: "100%", padding: "12px 0",
             borderRadius: 10, cursor: "pointer",
-            fontSize: 14, fontWeight: 600,
-            background: C.bg, color: C.text1,
+            fontSize: 14, fontWeight: 600, fontFamily: FONT,
+            background: C.surface2, color: C.text1,
             border: `1px solid ${C.border}`,
           }}
         >
@@ -162,22 +140,22 @@ function PlanCard({ plan, isActive, onSwitch }) {
         </button>
       )}
 
-      {/* Confirmation */}
       {!isActive && confirmOpen && (
         <div style={{
-          background: C.bg, borderRadius: 10,
+          background: C.surface2, borderRadius: 10,
           padding: "12px", border: `1px solid ${C.border}`,
         }}>
           <div style={{ fontSize: 13, color: C.text2, marginBottom: 10, lineHeight: 1.5 }}>
-            Switch to <strong>{plan.name}</strong>? Your progress tracking will continue.
+            Switch to <strong style={{ color: C.text1 }}>{plan.name}</strong>? Your progress tracking will continue.
           </div>
           <div style={{ display: "flex", gap: 8 }}>
             <button
               onClick={() => setConfirmOpen(false)}
               style={{
-                flex: 1, padding: "9px 0", borderRadius: 8,
+                flex: 1, padding: "10px 0", borderRadius: 8,
                 background: "none", border: `1px solid ${C.border}`,
                 color: C.text2, fontSize: 13, fontWeight: 500, cursor: "pointer",
+                fontFamily: FONT,
               }}
             >
               Cancel
@@ -185,9 +163,10 @@ function PlanCard({ plan, isActive, onSwitch }) {
             <button
               onClick={() => { setConfirmOpen(false); onSwitch(plan.id); }}
               style={{
-                flex: 1, padding: "9px 0", borderRadius: 8,
+                flex: 1, padding: "10px 0", borderRadius: 8,
                 background: C.green, border: "none",
                 color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer",
+                fontFamily: FONT,
               }}
             >
               Confirm
@@ -199,9 +178,10 @@ function PlanCard({ plan, isActive, onSwitch }) {
   );
 }
 
-// ── Exercise card ─────────────────────────────────────────────────────────────
+// ── Exercise card ──────────────────────────────────────────────────────────────
 
 function ExerciseCard({ exercise }) {
+  const C = useTheme();
   const [expanded, setExpanded] = useState(false);
   const muscleLabel = exercise.primaryMuscle.charAt(0).toUpperCase() +
     exercise.primaryMuscle.slice(1);
@@ -218,7 +198,7 @@ function ExerciseCard({ exercise }) {
           display: "flex", alignItems: "flex-start",
           justifyContent: "space-between",
           background: "none", border: "none", cursor: "pointer", textAlign: "left",
-          gap: 10,
+          gap: 10, fontFamily: FONT,
         }}
       >
         <div style={{ flex: 1 }}>
@@ -247,27 +227,20 @@ function ExerciseCard({ exercise }) {
       </button>
 
       {expanded && (
-        <div style={{
-          borderTop: `1px solid ${C.border}`,
-          padding: "12px 16px 14px",
-        }}>
-          {/* Tip */}
+        <div style={{ borderTop: `1px solid ${C.border}`, padding: "12px 16px 14px" }}>
           {exercise.tip && (
             <div style={{
-              fontSize: 13, color: C.text2, lineHeight: 1.6,
-              marginBottom: 12,
+              fontSize: 13, color: C.text2, lineHeight: 1.6, marginBottom: 12,
             }}>
               {exercise.tip}
             </div>
           )}
 
-          {/* Muscles */}
           {exercise.muscles?.length > 0 && (
             <div>
               <div style={{
                 fontSize: 11, fontWeight: 600, color: C.text3,
-                textTransform: "uppercase", letterSpacing: "0.06em",
-                marginBottom: 6,
+                textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6,
               }}>
                 Muscles Worked
               </div>
@@ -285,7 +258,6 @@ function ExerciseCard({ exercise }) {
             </div>
           )}
 
-          {/* Default reps / rest */}
           <div style={{
             display: "flex", gap: 16, marginTop: 10,
             fontSize: 12, color: C.text2,
@@ -296,9 +268,7 @@ function ExerciseCard({ exercise }) {
               {exercise.isTime ? "s" : " reps"}
             </span>
             {exercise.restSecs > 0 && (
-              <span>
-                <strong>{exercise.restSecs}s</strong> rest
-              </span>
+              <span><strong>{exercise.restSecs}s</strong> rest</span>
             )}
           </div>
         </div>
@@ -307,16 +277,16 @@ function ExerciseCard({ exercise }) {
   );
 }
 
-// ── Main ─────────────────────────────────────────────────────────────────────
+// ── Main ──────────────────────────────────────────────────────────────────────
 
 export default function Programs({ store, plans, exercises, onSelectPlan, onUpdateStore }) {
-  const [tab,          setTab]    = useState("plans");   // "plans" | "exercises"
+  const C = useTheme();
+  const [tab,          setTab]    = useState("plans");
   const [search,       setSearch] = useState("");
   const [muscleFilter, setMuscle] = useState("All");
 
   const activePlanId = store.activePlanId;
 
-  // Filtered exercises list
   const filteredExercises = useMemo(() => {
     const q      = search.toLowerCase().trim();
     const muscle = MUSCLE_MAP[muscleFilter];
@@ -331,22 +301,21 @@ export default function Programs({ store, plans, exercises, onSelectPlan, onUpda
     <div style={{
       minHeight: "100vh",
       background: C.bg,
-      fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif",
+      fontFamily: FONT,
       paddingBottom: "calc(72px + env(safe-area-inset-bottom))",
     }}>
 
-      {/* ── Sticky header + tabs ── */}
+      {/* Sticky header + tabs */}
       <div style={{
         position: "sticky", top: 0, zIndex: 50,
         background: C.surface,
         borderBottom: `1px solid ${C.border}`,
       }}>
-        <div style={{ padding: "16px 16px 0" }}>
+        <div style={{ padding: "16px 16px 0", paddingTop: "calc(16px + env(safe-area-inset-top))" }}>
           <div style={{ fontSize: 20, fontWeight: 700, color: C.text1, marginBottom: 14 }}>
             Programs
           </div>
-          {/* Tabs */}
-          <div style={{ display: "flex", gap: 0 }}>
+          <div style={{ display: "flex" }}>
             {["plans", "exercises"].map(t => (
               <button
                 key={t}
@@ -359,6 +328,7 @@ export default function Programs({ store, plans, exercises, onSelectPlan, onUpda
                   borderBottom: tab === t ? `2px solid ${C.green}` : "2px solid transparent",
                   letterSpacing: "0.01em",
                   transition: "all 0.15s",
+                  fontFamily: FONT,
                 }}
               >
                 {t.charAt(0).toUpperCase() + t.slice(1)}
@@ -368,7 +338,7 @@ export default function Programs({ store, plans, exercises, onSelectPlan, onUpda
         </div>
       </div>
 
-      {/* ── Plans tab ── */}
+      {/* Plans tab */}
       {tab === "plans" && (
         <div style={{ padding: "16px 16px 0" }}>
           {Object.values(plans).map(plan => (
@@ -385,14 +355,12 @@ export default function Programs({ store, plans, exercises, onSelectPlan, onUpda
         </div>
       )}
 
-      {/* ── Exercises tab ── */}
+      {/* Exercises tab */}
       {tab === "exercises" && (
         <div style={{ padding: "16px 16px 0" }}>
 
           {/* Search */}
-          <div style={{
-            position: "relative", marginBottom: 12,
-          }}>
+          <div style={{ position: "relative", marginBottom: 12 }}>
             <div style={{
               position: "absolute", left: 12, top: "50%",
               transform: "translateY(-50%)", pointerEvents: "none",
@@ -412,13 +380,12 @@ export default function Programs({ store, plans, exercises, onSelectPlan, onUpda
                 width: "100%", padding: "11px 12px 11px 36px",
                 borderRadius: 10, border: `1px solid ${C.border}`,
                 background: C.surface, color: C.text1, fontSize: 14,
-                fontFamily: "inherit", outline: "none",
-                boxSizing: "border-box",
+                fontFamily: FONT, outline: "none", boxSizing: "border-box",
               }}
             />
           </div>
 
-          {/* Muscle filter chips (horizontally scrollable) */}
+          {/* Muscle filter chips */}
           <div style={{
             display: "flex", gap: 8, overflowX: "auto",
             paddingBottom: 4, marginBottom: 14,
@@ -429,9 +396,9 @@ export default function Programs({ store, plans, exercises, onSelectPlan, onUpda
                 key={f}
                 onClick={() => setMuscle(f)}
                 style={{
-                  flexShrink: 0, padding: "7px 14px", borderRadius: 20,
+                  flexShrink: 0, padding: "8px 14px", borderRadius: 20,
                   fontSize: 13, fontWeight: muscleFilter === f ? 600 : 500,
-                  cursor: "pointer",
+                  cursor: "pointer", fontFamily: FONT,
                   background: muscleFilter === f ? C.green : C.surface,
                   color:      muscleFilter === f ? "#fff"  : C.text2,
                   border: muscleFilter === f
@@ -444,14 +411,10 @@ export default function Programs({ store, plans, exercises, onSelectPlan, onUpda
             ))}
           </div>
 
-          {/* Count */}
-          <div style={{
-            fontSize: 12, color: C.text3, marginBottom: 10, fontWeight: 500,
-          }}>
+          <div style={{ fontSize: 12, color: C.text3, marginBottom: 10, fontWeight: 500 }}>
             {filteredExercises.length} exercise{filteredExercises.length !== 1 ? "s" : ""}
           </div>
 
-          {/* Exercise list */}
           {filteredExercises.length === 0 ? (
             <div style={{
               background: C.surface, border: `1px solid ${C.border}`,
