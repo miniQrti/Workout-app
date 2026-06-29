@@ -90,7 +90,7 @@ export const EXERCISES = {
   },
   "seated-cable-row": {
     id: "seated-cable-row",
-    name: "Seated Cable Row",
+    name: "Seated Row",
     primaryMuscle: "back",
     muscles: ["back","biceps","rear-delts"],
     equipment: "cable",
@@ -102,7 +102,7 @@ export const EXERCISES = {
   },
   "back-extension": {
     id: "back-extension",
-    name: "Back Extension",
+    name: "Lower Back Extension",
     primaryMuscle: "back",
     muscles: ["back","glutes","hamstrings"],
     equipment: "machine",
@@ -138,7 +138,7 @@ export const EXERCISES = {
   },
   "assisted-pull-up": {
     id: "assisted-pull-up",
-    name: "Assisted Pull-Up Machine",
+    name: "Assisted Chin-Up / Pull-Up Machine",
     primaryMuscle: "back",
     muscles: ["back","biceps","shoulders"],
     equipment: "machine",
@@ -300,7 +300,7 @@ export const EXERCISES = {
   },
   "tricep-dip-machine": {
     id: "tricep-dip-machine",
-    name: "Tricep Dip Machine",
+    name: "Seated Tricep Press",
     primaryMuscle: "triceps",
     muscles: ["triceps","chest","shoulders"],
     equipment: "machine",
@@ -338,7 +338,7 @@ export const EXERCISES = {
   },
   "leg-curl-machine": {
     id: "leg-curl-machine",
-    name: "Leg Curl Machine",
+    name: "Seated Leg Curl",
     primaryMuscle: "legs",
     muscles: ["legs"],
     equipment: "machine",
@@ -350,7 +350,7 @@ export const EXERCISES = {
   },
   "leg-extension-machine": {
     id: "leg-extension-machine",
-    name: "Leg Extension Machine",
+    name: "Leg Extension",
     primaryMuscle: "legs",
     muscles: ["legs"],
     equipment: "machine",
@@ -386,7 +386,7 @@ export const EXERCISES = {
   },
   "calf-raise-machine": {
     id: "calf-raise-machine",
-    name: "Calf Raise Machine",
+    name: "Seated Calf Raise",
     primaryMuscle: "legs",
     muscles: ["legs"],
     equipment: "machine",
@@ -436,7 +436,7 @@ export const EXERCISES = {
   },
   "ab-crunch-machine": {
     id: "ab-crunch-machine",
-    name: "Ab Crunch Machine",
+    name: "Abdominal Machine",
     primaryMuscle: "core",
     muscles: ["core"],
     equipment: "machine",

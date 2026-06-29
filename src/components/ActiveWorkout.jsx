@@ -74,28 +74,36 @@ function ElapsedTimer({ startTime }) {
 
 function RestBanner({ restSecs, onDismiss }) {
   const C = useTheme();
-  const [left, setLeft] = useState(restSecs);
+  const [left,    setLeft]    = useState(restSecs);
+  const [running, setRunning] = useState(false);
   const intervalRef = useRef(null);
 
   useEffect(() => {
+    if (!running) return;
     intervalRef.current = setInterval(() => {
       setLeft(l => {
         if (l <= 1) {
           clearInterval(intervalRef.current);
+          setRunning(false);
           if (navigator.vibrate) navigator.vibrate([300, 100, 300]);
-          setTimeout(onDismiss, 800);
+          setTimeout(onDismiss, 900);
           return 0;
         }
         return l - 1;
       });
     }, 1000);
     return () => clearInterval(intervalRef.current);
-  }, [onDismiss]);
+  }, [running, onDismiss]);
 
-  const pct  = restSecs > 0 ? left / restSecs : 0;
+  const pct  = restSecs > 0 ? (restSecs - left) / restSecs : 0;
   const m    = Math.floor(left / 60);
   const s    = left % 60;
   const done = left === 0;
+
+  function toggleRunning() {
+    if (done) return;
+    setRunning(r => !r);
+  }
 
   return (
     <div style={{
@@ -109,47 +117,67 @@ function RestBanner({ restSecs, onDismiss }) {
         boxShadow: "0 4px 20px rgba(0,0,0,0.18)",
         pointerEvents: "all", overflow: "hidden", position: "relative",
       }}>
-        {/* Progress bar */}
+        {/* Progress bar fills as time elapses */}
         <div style={{
           position: "absolute", bottom: 0, left: 0, right: 0, height: 3, background: C.surface2,
         }}>
           <div style={{
-            height: "100%", width: `${pct * 100}%`, background: C.green,
-            transition: "width 0.95s linear", borderRadius: 2,
+            height: "100%", width: `${pct * 100}%`,
+            background: done ? C.green : C.green,
+            transition: running ? "width 0.95s linear" : "none",
+            borderRadius: 2,
           }}/>
         </div>
 
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <div style={{
-              width: 38, height: 38, borderRadius: "50%",
-              background: done ? C.green : C.greenLight,
-              display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
-            }}>
-              {done
-                ? <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
-                    stroke="#fff" strokeWidth="2.8" strokeLinecap="round">
-                    <polyline points="20,6 9,17 4,12"/>
-                  </svg>
-                : <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
-                    stroke={C.green} strokeWidth="2.2" strokeLinecap="round">
-                    <circle cx="12" cy="12" r="9"/>
-                    <polyline points="12,7 12,12 15,14"/>
-                  </svg>
-              }
-            </div>
+            {/* Play/Pause/Done button */}
+            <button
+              onClick={toggleRunning}
+              disabled={done}
+              style={{
+                width: 38, height: 38, borderRadius: "50%",
+                background: done ? C.green : running ? C.greenLight : C.green,
+                border: "none",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                flexShrink: 0, cursor: done ? "default" : "pointer",
+              }}
+            >
+              {done ? (
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                  stroke="#fff" strokeWidth="2.8" strokeLinecap="round">
+                  <polyline points="20,6 9,17 4,12"/>
+                </svg>
+              ) : running ? (
+                /* Pause icon */
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                  stroke={C.green} strokeWidth="2.5" strokeLinecap="round">
+                  <line x1="6" y1="4" x2="6" y2="20"/>
+                  <line x1="18" y1="4" x2="18" y2="20"/>
+                </svg>
+              ) : (
+                /* Play icon */
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                  stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polygon points="5,3 19,12 5,21"/>
+                </svg>
+              )}
+            </button>
+
             <div>
               <div style={{ fontSize: 11, color: C.text2, fontWeight: 500, marginBottom: 1 }}>
-                {done ? "Rest complete — go!" : "Rest"}
+                {done ? "Rest complete — go!" : running ? "Resting" : "Rest Timer"}
               </div>
               <div style={{
-                fontSize: 20, fontWeight: 700, color: done ? C.green : C.text1,
+                fontSize: 20, fontWeight: 700,
+                color: done ? C.green : C.text1,
                 fontVariantNumeric: "tabular-nums", lineHeight: 1,
               }}>
                 {done ? "✓" : `${m}:${String(s).padStart(2, "0")}`}
               </div>
             </div>
           </div>
+
           <button
             onClick={onDismiss}
             style={{
