@@ -280,7 +280,7 @@ function ExerciseCard({ exercise }) {
 
 // ── Main ──────────────────────────────────────────────────────────────────────
 
-export default function Programs({ store, plans, exercises, onSelectPlan, onUpdateStore }) {
+export default function Programs({ store, plans, exercises, onSelectPlan, onUpdateStore, onOpenMenu }) {
   const C = useTheme();
   const [tab,          setTab]    = useState("plans");
   const [search,       setSearch] = useState("");
@@ -303,7 +303,7 @@ export default function Programs({ store, plans, exercises, onSelectPlan, onUpda
       minHeight: "100vh",
       background: C.bg,
       fontFamily: FONT,
-      paddingBottom: "calc(72px + env(safe-area-inset-bottom))",
+      paddingBottom: "calc(24px + env(safe-area-inset-bottom))",
     }}>
 
       {/* Sticky header + tabs */}
@@ -312,9 +312,24 @@ export default function Programs({ store, plans, exercises, onSelectPlan, onUpda
         background: C.surface,
         borderBottom: `1px solid ${C.border}`,
       }}>
-        <div style={{ padding: "16px 16px 0", paddingTop: "calc(16px + env(safe-area-inset-top))" }}>
-          <div style={{ fontSize: 20, fontWeight: 700, color: C.text1, marginBottom: 14 }}>
-            Programs
+        <div style={{ padding: "14px 16px 0", paddingTop: "calc(14px + env(safe-area-inset-top))" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14 }}>
+            <button
+              onClick={onOpenMenu}
+              style={{
+                width: 40, height: 40, borderRadius: "50%",
+                background: C.surface2, border: `1px solid ${C.border}`,
+                display: "flex", alignItems: "center", justifyContent: "center",
+                cursor: "pointer", flexShrink: 0,
+              }}
+            >
+              <svg width="18" height="14" viewBox="0 0 18 14" fill="none">
+                <path d="M0 1h18M0 7h18M0 13h18" stroke={C.text2} strokeWidth="1.8" strokeLinecap="round"/>
+              </svg>
+            </button>
+            <div style={{ fontSize: 20, fontWeight: 700, color: C.text1 }}>
+              Programs
+            </div>
           </div>
           <div style={{ display: "flex" }}>
             {["plans", "exercises"].map(t => (

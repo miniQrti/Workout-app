@@ -1,9 +1,8 @@
 import { useState, useEffect, useCallback } from "react";
 import { PLANS }    from "./data/plans.js";
 import { EXERCISES } from "./data/exercises.js";
-import { loadStore, saveStore, getDayExercises, getPR } from "./data/store.js";
-import { ThemeContext, buildTheme, useTheme, FONT } from "./theme.js";
-import Nav           from "./components/Nav.jsx";
+import { loadStore, saveStore, getDayExercises, getPR, exportWorkoutCSV, shareOrDownloadCSV } from "./data/store.js";
+import { ThemeContext, buildTheme, useTheme, FONT, ACCENT_OPTIONS } from "./theme.js";
 import Home          from "./components/Home.jsx";
 import ActiveWorkout from "./components/ActiveWorkout.jsx";
 import Progress      from "./components/Progress.jsx";
@@ -118,6 +117,185 @@ function WorkoutSummary({ summary, onClose }) {
   );
 }
 
+// ── Hamburger menu ────────────────────────────────────────────────────────────
+
+function HamburgerMenu({ view, onNavigate, store, onUpdateStore, plans, exercises, onClose }) {
+  const C      = useTheme();
+  const unit   = store.unit   || "lbs";
+  const theme  = store.theme  || "light";
+  const accent = store.accent || "green";
+  const hasLogs = (store.logs || []).length > 0;
+
+  async function handleExport() {
+    const csv = exportWorkoutCSV(store.logs, exercises, plans, unit);
+    if (!csv) return;
+    await shareOrDownloadCSV(csv, `workout-log-${new Date().toISOString().slice(0, 10)}.csv`);
+  }
+
+  const NAV = [
+    {
+      id: "home", label: "Home",
+      icon: <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>,
+    },
+    {
+      id: "progress", label: "Progress",
+      icon: <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>,
+    },
+    {
+      id: "programs", label: "Programs",
+      icon: <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>,
+    },
+    {
+      id: "timer", label: "Rest Timer",
+      icon: <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>,
+    },
+  ];
+
+  return (
+    <div
+      onClick={onClose}
+      style={{
+        position: "fixed", inset: 0, background: "rgba(0,0,0,0.45)",
+        zIndex: 300, display: "flex", alignItems: "flex-end",
+      }}
+    >
+      <div
+        onClick={e => e.stopPropagation()}
+        style={{
+          background: C.surface, borderRadius: "20px 20px 0 0",
+          padding: "20px 16px calc(env(safe-area-inset-bottom) + 24px)",
+          width: "100%", fontFamily: FONT,
+          maxHeight: "88vh", overflowY: "auto",
+        }}
+      >
+        <div style={{ width: 36, height: 4, borderRadius: 2, background: C.border, margin: "0 auto 20px" }} />
+        <div style={{ fontSize: 17, fontWeight: 700, color: C.text1, marginBottom: 16 }}>Menu</div>
+
+        {/* Navigation */}
+        <div style={{ fontSize: 12, color: C.text2, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 10 }}>Navigate</div>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 20 }}>
+          {NAV.map(item => {
+            const isActive = view === item.id;
+            return (
+              <button
+                key={item.id}
+                onClick={() => { onNavigate(item.id); onClose(); }}
+                style={{
+                  display: "flex", alignItems: "center", gap: 9,
+                  padding: "13px 14px", borderRadius: 12, cursor: "pointer",
+                  background: isActive ? C.greenLight : C.surface2,
+                  color: isActive ? C.green : C.text1,
+                  border: isActive ? `1.5px solid ${C.green}` : `1px solid ${C.border}`,
+                  fontSize: 14, fontWeight: 600, fontFamily: FONT, textAlign: "left",
+                  transition: "all 0.15s",
+                }}
+              >
+                {item.icon}
+                {item.label}
+              </button>
+            );
+          })}
+        </div>
+
+        <div style={{ height: 1, background: C.border, marginBottom: 20 }} />
+
+        {/* Weight Unit */}
+        <div style={{ marginBottom: 20 }}>
+          <div style={{ fontSize: 12, color: C.text2, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 10 }}>Weight Unit</div>
+          <div style={{ display: "flex", gap: 10 }}>
+            {["lbs", "kg"].map(u => (
+              <button key={u} onClick={() => onUpdateStore({ unit: u })} style={{
+                flex: 1, padding: "13px 0", borderRadius: 10, cursor: "pointer",
+                fontSize: 15, fontWeight: 600, fontFamily: FONT,
+                background: unit === u ? C.greenLight : C.surface2,
+                color:      unit === u ? C.green : C.text2,
+                border: unit === u ? `1.5px solid ${C.green}` : `1px solid ${C.border}`,
+                transition: "all 0.15s",
+              }}>{u}</button>
+            ))}
+          </div>
+        </div>
+
+        {/* Appearance */}
+        <div style={{ marginBottom: 20 }}>
+          <div style={{ fontSize: 12, color: C.text2, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 10 }}>Appearance</div>
+          <div style={{ display: "flex", gap: 10 }}>
+            {[{ value: "light", label: "Light", icon: "☀️" }, { value: "dark", label: "Dark", icon: "🌙" }].map(opt => (
+              <button key={opt.value} onClick={() => onUpdateStore({ theme: opt.value })} style={{
+                flex: 1, padding: "12px 0", borderRadius: 10, cursor: "pointer",
+                fontSize: 14, fontWeight: 600, fontFamily: FONT,
+                display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+                background: theme === opt.value ? C.greenLight : C.surface2,
+                color:      theme === opt.value ? C.green : C.text2,
+                border: theme === opt.value ? `1.5px solid ${C.green}` : `1px solid ${C.border}`,
+                transition: "all 0.15s",
+              }}>
+                <span style={{ fontSize: 16 }}>{opt.icon}</span>{opt.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Accent Color */}
+        <div style={{ marginBottom: 24 }}>
+          <div style={{ fontSize: 12, color: C.text2, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 10 }}>Accent Color</div>
+          <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+            {ACCENT_OPTIONS.map(opt => {
+              const isActive = accent === opt.key;
+              return (
+                <button key={opt.key} onClick={() => onUpdateStore({ accent: opt.key })} style={{
+                  width: 44, height: 44, borderRadius: "50%",
+                  background: opt.color,
+                  border: isActive ? `3px solid ${C.text1}` : "3px solid transparent",
+                  boxShadow: isActive ? `0 0 0 2px ${opt.color}` : "none",
+                  cursor: "pointer", padding: 0,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  transition: "all 0.15s", flexShrink: 0,
+                }}>
+                  {isActive && (
+                    <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                      <path d="M3.5 9L7.5 13L14.5 5.5" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  )}
+                </button>
+              );
+            })}
+            <div style={{ marginLeft: 4, fontSize: 13, fontWeight: 600, color: C.text1 }}>
+              {ACCENT_OPTIONS.find(a => a.key === accent)?.label || "Green"}
+            </div>
+          </div>
+        </div>
+
+        {/* Data */}
+        <div style={{ marginBottom: 24 }}>
+          <div style={{ fontSize: 12, color: C.text2, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 10 }}>Data</div>
+          <button onClick={hasLogs ? handleExport : undefined} disabled={!hasLogs} style={{
+            width: "100%", padding: "13px 16px", borderRadius: 10,
+            cursor: hasLogs ? "pointer" : "default", fontSize: 14, fontWeight: 600, fontFamily: FONT,
+            display: "flex", alignItems: "center", justifyContent: "space-between",
+            background: C.surface2, color: hasLogs ? C.text1 : C.text3,
+            border: `1px solid ${C.border}`, opacity: hasLogs ? 1 : 0.5,
+          }}>
+            <span>Export Workout Log (CSV)</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+            </svg>
+          </button>
+          {!hasLogs && <div style={{ fontSize: 12, color: C.text3, marginTop: 6, paddingLeft: 2 }}>Complete a workout to enable export</div>}
+        </div>
+
+        <button onClick={onClose} style={{
+          width: "100%", padding: "14px 0", borderRadius: 12,
+          border: `1px solid ${C.border}`, background: C.surface2, color: C.text1,
+          fontSize: 15, fontWeight: 600, cursor: "pointer", fontFamily: FONT,
+        }}>
+          Close
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // ── App ───────────────────────────────────────────────────────────────────────
 
 export default function App() {
@@ -126,6 +304,12 @@ export default function App() {
   const [session,   setSession] = useState(null);
   const [showTimer, setTimer]   = useState(false);
   const [summary,   setSummary] = useState(null);
+  const [showMenu,  setMenu]    = useState(false);
+
+  function navigate(id) {
+    if (id === "timer") { setTimer(true); return; }
+    setView(id);
+  }
 
   // Persist on every store change
   useEffect(() => { saveStore(store); }, [store]);
@@ -312,6 +496,7 @@ export default function App() {
             onStartWorkout={startWorkout}
             onContinueSession={hasSession ? () => setView("workout") : null}
             onUpdateStore={updateStore}
+            onOpenMenu={() => setMenu(true)}
           />
         )}
 
@@ -320,6 +505,7 @@ export default function App() {
             store={store}
             exercises={EXERCISES}
             plans={PLANS}
+            onOpenMenu={() => setMenu(true)}
           />
         )}
 
@@ -330,18 +516,21 @@ export default function App() {
             exercises={EXERCISES}
             onSelectPlan={selectPlan}
             onUpdateStore={updateStore}
+            onOpenMenu={() => setMenu(true)}
           />
         )}
 
-        <Nav
-          view={view}
-          onChange={v => {
-            if (v === "workout" && hasSession) { setView("workout"); return; }
-            if (v === "workout" && !hasSession) { startWorkout(); return; }
-            setView(v);
-          }}
-          hasActiveSession={hasSession}
-        />
+        {showMenu && (
+          <HamburgerMenu
+            view={view}
+            onNavigate={navigate}
+            store={store}
+            onUpdateStore={updateStore}
+            plans={PLANS}
+            exercises={EXERCISES}
+            onClose={() => setMenu(false)}
+          />
+        )}
 
         {/* Session summary modal */}
         {summary && (

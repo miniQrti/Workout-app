@@ -209,7 +209,7 @@ function SessionLogItem({ log, exercises }) {
 
 // ── Main ──────────────────────────────────────────────────────────────────────
 
-export default function Progress({ store, exercises, plans }) {
+export default function Progress({ store, exercises, plans, onOpenMenu }) {
   const C = useTheme();
   const [selectedExId, setSelectedExId] = useState("");
   const [showAllPRs,   setShowAllPRs]   = useState(false);
@@ -246,7 +246,7 @@ export default function Progress({ store, exercises, plans }) {
       minHeight: "100vh",
       background: C.bg,
       fontFamily: FONT,
-      paddingBottom: "calc(72px + env(safe-area-inset-bottom))",
+      paddingBottom: "calc(24px + env(safe-area-inset-bottom))",
     }}>
 
       {/* Sticky header */}
@@ -254,9 +254,23 @@ export default function Progress({ store, exercises, plans }) {
         position: "sticky", top: 0, zIndex: 50,
         background: C.surface,
         borderBottom: `1px solid ${C.border}`,
-        padding: "16px 16px 14px",
-        paddingTop: "calc(16px + env(safe-area-inset-top))",
+        padding: "14px 16px 12px",
+        paddingTop: "calc(14px + env(safe-area-inset-top))",
+        display: "flex", alignItems: "center", gap: 12,
       }}>
+        <button
+          onClick={onOpenMenu}
+          style={{
+            width: 40, height: 40, borderRadius: "50%",
+            background: C.surface2, border: `1px solid ${C.border}`,
+            display: "flex", alignItems: "center", justifyContent: "center",
+            cursor: "pointer", flexShrink: 0,
+          }}
+        >
+          <svg width="18" height="14" viewBox="0 0 18 14" fill="none">
+            <path d="M0 1h18M0 7h18M0 13h18" stroke={C.text2} strokeWidth="1.8" strokeLinecap="round"/>
+          </svg>
+        </button>
         <div style={{ fontSize: 20, fontWeight: 700, color: C.text1 }}>Progress</div>
       </div>
 
