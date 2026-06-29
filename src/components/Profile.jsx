@@ -16,38 +16,6 @@ const MACHINE_SETTINGS = [
   { machine: "Rotary Torso",      setting: "Seat 3" },
 ];
 
-const COACHING_NOTES = [
-  {
-    title: "Wrist on curls",
-    body: "Bicep curl machine causes discomfort at ~120°. Use cable rope curls or one-arm cable curl. Try dumbbells next. Keep wrist neutral throughout.",
-    tag: "⚠️ Injury",
-  },
-  {
-    title: "Left ankle",
-    body: "Keep treadmill incline at 1–2% max. Monitor during lunges and any unilateral work.",
-    tag: "⚠️ Injury",
-  },
-  {
-    title: "Lat Pulldown form",
-    body: "Feeling it in biceps more than lats. Cue: drive elbows down toward back pockets, use loose/open grip, lean back 10–15°, pull to upper chest. Try neutral grip attachment.",
-    tag: "Form",
-  },
-  {
-    title: "Ab Crunch / Cable Crunch",
-    body: "Only feeling upper abs. Cue: slow tempo, exhale hard at the bottom, think ribcage pulling toward hips rather than chin to chest.",
-    tag: "Form",
-  },
-  {
-    title: "Shoulder Press set 3",
-    body: "Recurring drop-off on set 3. Hold at 55 lb / 12 reps until all 3 sets are clean before adding weight.",
-    tag: "Progression",
-  },
-  {
-    title: "Hanging Knee Tuck",
-    body: "Frequently skipped — machine often taken. Alternatives in order: lying leg raises, reverse crunches, or hang from any pull-up bar.",
-    tag: "Sub",
-  },
-];
 
 const TARGETS = {
   "Day A": [
@@ -97,57 +65,6 @@ function Section({ title, children }) {
         {title}
       </div>
       {children}
-    </div>
-  );
-}
-
-function CoachingNote({ note }) {
-  const C = useTheme();
-  const [open, setOpen] = useState(false);
-  const tagColor = note.tag.startsWith("⚠️")
-    ? { bg: "#FEF3C7", color: "#D97706" }
-    : { bg: C.surface2, color: C.text2 };
-
-  return (
-    <div style={{
-      border: `1px solid ${C.border}`, borderRadius: 12,
-      overflow: "hidden", marginBottom: 8,
-    }}>
-      <button
-        onClick={() => setOpen(o => !o)}
-        style={{
-          width: "100%", padding: "12px 14px",
-          display: "flex", alignItems: "center", justifyContent: "space-between",
-          background: "none", border: "none", cursor: "pointer", textAlign: "left",
-          gap: 10, fontFamily: FONT,
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: 8, flex: 1 }}>
-          <span style={{
-            fontSize: 11, fontWeight: 600, padding: "2px 8px",
-            borderRadius: 20, background: tagColor.bg, color: tagColor.color,
-            whiteSpace: "nowrap",
-          }}>
-            {note.tag}
-          </span>
-          <span style={{ fontSize: 14, fontWeight: 600, color: C.text1 }}>
-            {note.title}
-          </span>
-        </div>
-        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"
-          stroke={C.text3} strokeWidth="2" strokeLinecap="round" style={{ flexShrink: 0 }}>
-          <path d={open ? "M3 9l4-4 4 4" : "M3 5l4 4 4-4"} />
-        </svg>
-      </button>
-      {open && (
-        <div style={{
-          padding: "0 14px 14px",
-          fontSize: 13, color: C.text2, lineHeight: 1.6,
-          borderTop: `1px solid ${C.border}`, paddingTop: 12,
-        }}>
-          {note.body}
-        </div>
-      )}
     </div>
   );
 }
@@ -280,13 +197,6 @@ export default function Profile({ store, onOpenMenu, onImportHistory }) {
                 {row.setting}
               </div>
             </div>
-          ))}
-        </Section>
-
-        {/* Coaching notes */}
-        <Section title="Coaching Notes">
-          {COACHING_NOTES.map(note => (
-            <CoachingNote key={note.title} note={note} />
           ))}
         </Section>
 

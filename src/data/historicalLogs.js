@@ -1,5 +1,17 @@
 // Historical workout sessions from pre-app tracking (Weeks 1–7, May–Jun 2025)
 
+export const MACHINE_SETTINGS = {
+  "chest-press-machine":    "Seat 3",
+  "seated-cable-row":       "Chest pad 5 / Seat 5",
+  "shoulder-press-machine": "Seat 4",
+  "lat-pulldown":           "Wide overhand, just outside shoulder width",
+  "leg-press":              "Seat 4",
+  "leg-curl-machine":       "Left-close 3 / Left-far 2 / Top 4",
+  "leg-extension-machine":  "Knee pad position 2",
+  "calf-raise-machine":     "Seat 6",
+  "rotary-torso":           "Seat 3",
+};
+
 function log(id, date, dayName, dayIdx, exercises) {
   const d = new Date(date + "T10:00:00");
   return {

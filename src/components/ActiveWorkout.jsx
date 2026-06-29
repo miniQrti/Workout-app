@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { getLastSession } from "../data/store.js";
 import { useTheme, FONT } from "../theme.js";
+import { MACHINE_SETTINGS } from "../data/historicalLogs.js";
 
 // ── Icons ──────────────────────────────────────────────────────────────────────
 
@@ -410,13 +411,26 @@ function ExerciseCard({
             )}
 
             {/* Machine settings */}
-            {exercise.settings && (
+            {MACHINE_SETTINGS[exercise.id] && (
               <div style={{
-                fontSize: 11, color: C.text2, background: C.surface2,
-                borderRadius: 6, padding: "5px 9px", marginBottom: 10,
-                border: `1px solid ${C.border}`, display: "inline-block",
+                display: "flex", alignItems: "center", gap: 6,
+                marginBottom: 10,
+                background: C.isDark ? "#1A1A2E" : "#F5F3FF",
+                border: `1px solid ${C.isDark ? "#2D2B55" : "#DDD6FE"}`,
+                borderRadius: 8, padding: "7px 10px",
               }}>
-                ⚙ {exercise.settings}
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
+                  stroke={C.isDark ? "#A78BFA" : "#7C3AED"} strokeWidth="2.2"
+                  strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="3"/>
+                  <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/>
+                </svg>
+                <span style={{
+                  fontSize: 12, fontWeight: 600,
+                  color: C.isDark ? "#A78BFA" : "#7C3AED",
+                }}>
+                  {MACHINE_SETTINGS[exercise.id]}
+                </span>
               </div>
             )}
 
