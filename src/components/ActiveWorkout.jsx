@@ -599,11 +599,14 @@ export default function ActiveWorkout({
   const [restBanner, setRestBanner] = useState(null);
 
   const handleCompleteSet = useCallback((exIdx, setIdx) => {
+    const wasCompleted = session.exercises[exIdx]?.sets?.[setIdx]?.completed;
     onCompleteSet(exIdx, setIdx);
-    const exEntry  = session.exercises[exIdx];
-    const ex       = exercises[exEntry?.exId];
-    const restSecs = ex?.restSecs || exEntry?.restSecs || 60;
-    setRestBanner({ restSecs, key: Date.now() });
+    if (!wasCompleted) {
+      const exEntry  = session.exercises[exIdx];
+      const ex       = exercises[exEntry?.exId];
+      const restSecs = ex?.restSecs || exEntry?.restSecs || 60;
+      setRestBanner({ restSecs, key: Date.now() });
+    }
   }, [onCompleteSet, session, exercises]);
 
   const dismissBanner = useCallback(() => setRestBanner(null), []);

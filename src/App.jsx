@@ -184,7 +184,7 @@ export default function App() {
       const exercises = prev.exercises.map((ex, ei) => {
         if (ei !== exIdx) return ex;
         const sets = ex.sets.map((s, si) =>
-          si === setIdx ? { ...s, completed: true } : s
+          si === setIdx ? { ...s, completed: !s.completed } : s
         );
         return { ...ex, sets };
       });
