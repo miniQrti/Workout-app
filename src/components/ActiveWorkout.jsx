@@ -301,7 +301,7 @@ function SwapModal({ exercise, exercises, onSwap, onClose }) {
 // ── Exercise card ──────────────────────────────────────────────────────────────
 
 function ExerciseCard({
-  exIdx, exEntry, exercise, exercises, lastSession,
+  exIdx, exEntry, exercise, exercises, lastSession, unit,
   onUpdateSet, onCompleteSet, onSwap,
 }) {
   const C = useTheme();
@@ -445,11 +445,12 @@ function ExerciseCard({
 
             {/* Set rows */}
             {sets.map((set, setIdx) => {
-              const prevSet  = lastSets[setIdx] || null;
-              const prevLabel = prevSet
+              const prevSet     = lastSets[setIdx] || null;
+              const hasPrevData = prevSet && (prevSet.weight > 0 || prevSet.reps > 0);
+              const prevLabel   = hasPrevData
                 ? isTime
-                  ? `${prevSet.weight ?? prevSet.w ?? ""}s`
-                  : `${prevSet.weight ?? prevSet.w ?? ""}×${prevSet.reps ?? prevSet.r ?? ""}`
+                  ? `${prevSet.weight}s`
+                  : `${prevSet.weight}×${prevSet.reps}`
                 : null;
               const completed = set.completed;
 
@@ -474,11 +475,9 @@ function ExerciseCard({
                   {/* Previous (tap to fill) */}
                   <div
                     onClick={() => {
-                      if (!prevLabel || !prevSet) return;
-                      const w = String(prevSet.weight ?? prevSet.w ?? "");
-                      const r = String(prevSet.reps ?? prevSet.r ?? "");
-                      if (w) onUpdateSet(exIdx, setIdx, "weight", w);
-                      if (r && !isTime) onUpdateSet(exIdx, setIdx, "reps", r);
+                      if (!hasPrevData) return;
+                      if (prevSet.weight > 0) onUpdateSet(exIdx, setIdx, "weight", String(prevSet.weight));
+                      if (prevSet.reps > 0 && !isTime) onUpdateSet(exIdx, setIdx, "reps", String(prevSet.reps));
                     }}
                     style={{
                       fontSize: 12, fontWeight: 500,
@@ -515,7 +514,7 @@ function ExerciseCard({
                     <input
                       type="number"
                       inputMode="decimal"
-                      placeholder="lb"
+                      placeholder={unit === "kg" ? "kg" : "lb"}
                       value={set.weight || ""}
                       disabled={completed}
                       onChange={e => onUpdateSet(exIdx, setIdx, "weight", e.target.value)}
@@ -589,6 +588,7 @@ export default function ActiveWorkout({
   session,
   exercises,
   logs,
+  unit,
   onUpdateSet,
   onCompleteSet,
   onFinish,
@@ -596,7 +596,9 @@ export default function ActiveWorkout({
   onSwapExercise,
 }) {
   const C = useTheme();
-  const [restBanner, setRestBanner] = useState(null);
+  const [restBanner,     setRestBanner]     = useState(null);
+  const [confirmCancel,  setConfirmCancel]  = useState(false);
+  const [warnFinish,     setWarnFinish]     = useState(false);
 
   const handleCompleteSet = useCallback((exIdx, setIdx) => {
     const wasCompleted = session.exercises[exIdx]?.sets?.[setIdx]?.completed;
@@ -620,6 +622,14 @@ export default function ActiveWorkout({
   const progress    = totalSets > 0 ? completedSets / totalSets : 0;
   const allComplete = totalSets > 0 && completedSets === totalSets;
 
+  function handleCancel() {
+    if (completedSets > 0) { setConfirmCancel(true); } else { onCancel(); }
+  }
+
+  function handleFinish() {
+    if (completedSets === 0) { setWarnFinish(true); } else { onFinish(); }
+  }
+
   return (
     <div style={{
       background: C.bg, minHeight: "100vh", fontFamily: FONT, position: "relative",
@@ -637,7 +647,7 @@ export default function ActiveWorkout({
           paddingTop: "calc(12px + env(safe-area-inset-top))",
         }}>
           <button
-            onClick={onCancel}
+            onClick={handleCancel}
             style={{
               width: 38, height: 38, borderRadius: 10,
               border: `1px solid ${C.border}`,
@@ -664,7 +674,7 @@ export default function ActiveWorkout({
           </div>
 
           <button
-            onClick={onFinish}
+            onClick={handleFinish}
             style={{
               padding: "9px 14px", borderRadius: 10,
               border: `1px solid ${allComplete ? C.green : C.border}`,
@@ -699,6 +709,7 @@ export default function ActiveWorkout({
               exercise={exercise}
               exercises={exercises}
               lastSession={getLastSession(logs || [], exEntry.exId)}
+              unit={unit}
               onUpdateSet={onUpdateSet}
               onCompleteSet={handleCompleteSet}
               onSwap={onSwapExercise}
@@ -733,7 +744,7 @@ export default function ActiveWorkout({
         padding: "12px 16px calc(12px + env(safe-area-inset-bottom))",
       }}>
         <button
-          onClick={onFinish}
+          onClick={handleFinish}
           style={{
             width: "100%", padding: "15px 0",
             borderRadius: 14, border: "none",
@@ -747,6 +758,98 @@ export default function ActiveWorkout({
           {allComplete ? "Finish Workout ✓" : `Finish Workout (${completedSets}/${totalSets} sets)`}
         </button>
       </div>
+
+      {/* Cancel confirmation */}
+      {confirmCancel && (
+        <div style={{
+          position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)",
+          zIndex: 400, display: "flex", alignItems: "center", justifyContent: "center",
+          padding: 20, fontFamily: FONT,
+        }}>
+          <div style={{
+            background: C.surface, borderRadius: 20,
+            padding: "24px 20px", width: "100%", maxWidth: 320,
+            boxShadow: "0 16px 48px rgba(0,0,0,0.3)",
+          }}>
+            <div style={{ fontSize: 17, fontWeight: 700, color: C.text1, marginBottom: 8 }}>
+              Discard workout?
+            </div>
+            <div style={{ fontSize: 14, color: C.text2, lineHeight: 1.5, marginBottom: 20 }}>
+              You have {completedSets} set{completedSets !== 1 ? "s" : ""} logged. Leaving now will discard all progress.
+            </div>
+            <div style={{ display: "flex", gap: 10 }}>
+              <button
+                onClick={() => setConfirmCancel(false)}
+                style={{
+                  flex: 1, padding: "13px 0", borderRadius: 12,
+                  border: `1px solid ${C.border}`, background: C.surface2,
+                  color: C.text1, fontSize: 15, fontWeight: 600,
+                  cursor: "pointer", fontFamily: FONT,
+                }}
+              >
+                Keep going
+              </button>
+              <button
+                onClick={onCancel}
+                style={{
+                  flex: 1, padding: "13px 0", borderRadius: 12,
+                  border: "none", background: C.red,
+                  color: "#fff", fontSize: 15, fontWeight: 600,
+                  cursor: "pointer", fontFamily: FONT,
+                }}
+              >
+                Discard
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Finish with 0 sets warning */}
+      {warnFinish && (
+        <div style={{
+          position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)",
+          zIndex: 400, display: "flex", alignItems: "center", justifyContent: "center",
+          padding: 20, fontFamily: FONT,
+        }}>
+          <div style={{
+            background: C.surface, borderRadius: 20,
+            padding: "24px 20px", width: "100%", maxWidth: 320,
+            boxShadow: "0 16px 48px rgba(0,0,0,0.3)",
+          }}>
+            <div style={{ fontSize: 17, fontWeight: 700, color: C.text1, marginBottom: 8 }}>
+              No sets completed
+            </div>
+            <div style={{ fontSize: 14, color: C.text2, lineHeight: 1.5, marginBottom: 20 }}>
+              You haven't logged any sets yet. Save the workout anyway?
+            </div>
+            <div style={{ display: "flex", gap: 10 }}>
+              <button
+                onClick={() => setWarnFinish(false)}
+                style={{
+                  flex: 1, padding: "13px 0", borderRadius: 12,
+                  border: `1px solid ${C.border}`, background: C.surface2,
+                  color: C.text1, fontSize: 15, fontWeight: 600,
+                  cursor: "pointer", fontFamily: FONT,
+                }}
+              >
+                Keep going
+              </button>
+              <button
+                onClick={onFinish}
+                style={{
+                  flex: 1, padding: "13px 0", borderRadius: 12,
+                  border: "none", background: C.green,
+                  color: "#fff", fontSize: 15, fontWeight: 600,
+                  cursor: "pointer", fontFamily: FONT,
+                }}
+              >
+                Save anyway
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

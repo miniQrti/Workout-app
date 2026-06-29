@@ -1,14 +1,15 @@
 import React, { useState, useMemo } from "react";
 import { useTheme, FONT } from "../theme.js";
 
-const DIFFICULTY_COLORS = {
-  Beginner:     { bg: "#E8F8F2", color: "#16A97C" },
+const DIFFICULTY_COLORS_STATIC = {
   Intermediate: { bg: "#FFF4ED", color: "#F97316" },
   Advanced:     { bg: "#FEE2E2", color: "#EF4444" },
 };
 
-function difficultyStyle(difficulty) {
-  return DIFFICULTY_COLORS[difficulty] || { bg: "#F5F5F0", color: "#6B7280" };
+function useDifficultyStyle(difficulty) {
+  const C = useTheme();
+  if (difficulty === "Beginner") return { bg: C.greenLight, color: C.green };
+  return DIFFICULTY_COLORS_STATIC[difficulty] || { bg: C.surface2, color: C.text2 };
 }
 
 const MUSCLE_FILTERS = ["All", "Chest", "Back", "Shoulders", "Arms", "Legs", "Core", "Cardio"];
@@ -55,7 +56,7 @@ function Badge({ label, bg, color, small }) {
 function PlanCard({ plan, isActive, onSwitch }) {
   const C = useTheme();
   const [confirmOpen, setConfirmOpen] = useState(false);
-  const dc = difficultyStyle(plan.difficulty);
+  const dc = useDifficultyStyle(plan.difficulty);
 
   return (
     <div style={{

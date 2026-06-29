@@ -11,7 +11,8 @@ function formatDuration(secs) {
 
 function formatDateLabel(raw) {
   if (!raw) return "";
-  const d    = new Date(raw);
+  const d = new Date(raw);
+  if (isNaN(d.getTime())) return "";
   const now  = new Date();
   const diff = Math.floor((now - d) / 86400000);
   if (diff === 0) return "Today";

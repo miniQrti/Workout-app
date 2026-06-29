@@ -288,6 +288,7 @@ export default function App() {
             session={session}
             exercises={EXERCISES}
             logs={store.logs || []}
+            unit={store.unit || "lbs"}
             onUpdateSet={updateSet}
             onCompleteSet={completeSet}
             onFinish={finishWorkout}

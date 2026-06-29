@@ -78,7 +78,7 @@ export function getExerciseHistory(logs, exerciseId) {
       if (!set) continue;
       const weight = parseFloat(set.weight);
       const reps = parseInt(set.reps, 10);
-      if (isNaN(weight) || isNaN(reps) || reps < 1) continue;
+      if (isNaN(weight) || weight <= 0 || isNaN(reps) || reps < 1) continue;
       results.push({ date, weight, reps, sessionId });
     }
   }
