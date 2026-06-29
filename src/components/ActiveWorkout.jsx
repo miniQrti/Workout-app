@@ -74,6 +74,7 @@ function ElapsedTimer({ startTime }) {
 // ── Rest banner ────────────────────────────────────────────────────────────────
 
 const REST_PRESETS = [
+  { label: "0:30", secs: 30 },
   { label: "1:00", secs: 60 },
   { label: "1:30", secs: 90 },
   { label: "2:00", secs: 120 },
@@ -345,7 +346,7 @@ const FEEL_OPTIONS = [
 
 function ExerciseCard({
   exIdx, exEntry, exercise, exercises, lastSession, progressionSuggestion, unit,
-  onUpdateSet, onCompleteSet, onUpdateFeel, onSwap,
+  onUpdateSet, onCompleteSet, onUpdateFeel, onSwap, onStartRest,
 }) {
   const C = useTheme();
   const [expanded, setExpanded] = useState(false);
@@ -409,6 +410,25 @@ function ExerciseCard({
           </div>
 
           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <button
+              onClick={e => { e.stopPropagation(); onStartRest(exIdx); }}
+              style={{
+                height: 34, padding: "0 10px", borderRadius: 8,
+                border: `1px solid ${C.border}`,
+                background: C.surface2,
+                display: "flex", alignItems: "center", justifyContent: "center",
+                gap: 4, cursor: "pointer", color: C.text2, flexShrink: 0,
+                fontSize: 12, fontWeight: 600, fontFamily: FONT,
+              }}
+              title="Start rest timer"
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
+                <circle cx="12" cy="12" r="10"/>
+                <polyline points="12,6 12,12 16,14"/>
+              </svg>
+              Rest
+            </button>
             <button
               onClick={e => { e.stopPropagation(); setShowSwap(true); }}
               style={{
@@ -829,15 +849,15 @@ export default function ActiveWorkout({
   const [warnFinish,     setWarnFinish]     = useState(false);
 
   const handleCompleteSet = useCallback((exIdx, setIdx) => {
-    const wasCompleted = session.exercises[exIdx]?.sets?.[setIdx]?.completed;
     onCompleteSet(exIdx, setIdx);
-    if (!wasCompleted) {
-      const exEntry  = session.exercises[exIdx];
-      const ex       = exercises[exEntry?.exId];
-      const restSecs = ex?.restSecs || exEntry?.restSecs || 60;
-      setRestBanner({ restSecs, key: Date.now() });
-    }
-  }, [onCompleteSet, session, exercises]);
+  }, [onCompleteSet]);
+
+  const startRest = useCallback((exIdx) => {
+    const exEntry  = session.exercises[exIdx];
+    const ex       = exercises[exEntry?.exId];
+    const restSecs = ex?.restSecs || exEntry?.restSecs || 60;
+    setRestBanner({ restSecs, key: Date.now() });
+  }, [session, exercises]);
 
   const dismissBanner = useCallback(() => setRestBanner(null), []);
 
@@ -945,6 +965,7 @@ export default function ActiveWorkout({
               onCompleteSet={handleCompleteSet}
               onUpdateFeel={onUpdateFeel}
               onSwap={onSwapExercise}
+              onStartRest={startRest}
             />
           );
         })}
