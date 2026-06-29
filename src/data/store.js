@@ -307,6 +307,76 @@ export async function shareOrDownloadCSV(csvContent, filename) {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
+/**
+ * Smart progression suggestion for next session, based on the last logged
+ * session for this exercise. Returns null if no history exists.
+ *
+ * Rules (mimic a personal trainer):
+ *  • All sets completed + felt Easy  → +10 lb
+ *  • All sets completed + felt Good  → +5 lb
+ *  • All sets completed + felt Hard  → hold
+ *  • All sets completed + felt Tough → −5 lb (deload)
+ *  • All sets completed + no feel    → +5 lb (default progression)
+ *  • Not all sets completed          → hold (earn the weight first)
+ *
+ * @param {Array}  logs
+ * @param {string} exId
+ * @returns {{ suggestedWeight: number, lastWeight: number, action: "increase"|"hold"|"decrease", reason: string } | null}
+ */
+export function getProgressionSuggestion(logs, exId) {
+  if (!Array.isArray(logs) || !exId) return null;
+
+  for (let i = logs.length - 1; i >= 0; i--) {
+    const log = logs[i];
+    if (!log?.exercises) continue;
+    const entry = log.exercises.find(e => e?.exId === exId);
+    if (!entry?.sets?.length) continue;
+
+    const weightSets = entry.sets.filter(s => {
+      const w = parseFloat(s.weight);
+      return !isNaN(w) && w > 0;
+    });
+    if (weightSets.length === 0) continue;
+
+    const lastWeight    = Math.max(...weightSets.map(s => parseFloat(s.weight)));
+    const allCompleted  = entry.sets.every(s => s.completed !== false);
+    const feel          = entry.feel || "";
+
+    let suggestedWeight = lastWeight;
+    let action          = "hold";
+    let reason          = "";
+
+    if (allCompleted) {
+      if (feel === "Easy") {
+        suggestedWeight = lastWeight + 10;
+        action = "increase";
+        reason = "felt easy — bigger jump";
+      } else if (feel === "Tough") {
+        suggestedWeight = Math.max(lastWeight - 5, 0);
+        action = "decrease";
+        reason = "was very tough — back off slightly";
+      } else if (feel === "Hard") {
+        suggestedWeight = lastWeight;
+        action = "hold";
+        reason = "still challenging — hold weight";
+      } else {
+        // Good or no feel recorded
+        suggestedWeight = lastWeight + 5;
+        action = "increase";
+        reason = feel === "Good" ? "felt good — move up" : "all sets complete";
+      }
+    } else {
+      suggestedWeight = lastWeight;
+      action = "hold";
+      reason = "complete all sets before adding weight";
+    }
+
+    return { suggestedWeight, lastWeight, action, reason, feel };
+  }
+
+  return null;
+}
+
 // ── Internal helpers ─────────────────────────────────────────────────────────
 
 /**

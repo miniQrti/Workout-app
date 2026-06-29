@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { getLastSession } from "../data/store.js";
+import { getLastSession, getProgressionSuggestion } from "../data/store.js";
 import { useTheme, FONT } from "../theme.js";
 import { MACHINE_SETTINGS } from "../data/historicalLogs.js";
 
@@ -302,7 +302,7 @@ function SwapModal({ exercise, exercises, onSwap, onClose }) {
 // ── Exercise card ──────────────────────────────────────────────────────────────
 
 function ExerciseCard({
-  exIdx, exEntry, exercise, exercises, lastSession, unit,
+  exIdx, exEntry, exercise, exercises, lastSession, progressionSuggestion, unit,
   onUpdateSet, onCompleteSet, onSwap,
 }) {
   const C = useTheme();
@@ -430,6 +430,44 @@ function ExerciseCard({
                   color: C.isDark ? "#A78BFA" : "#7C3AED",
                 }}>
                   {MACHINE_SETTINGS[exercise.id]}
+                </span>
+              </div>
+            )}
+
+            {/* Progression suggestion */}
+            {progressionSuggestion && !isTime && (
+              <div style={{
+                display: "flex", alignItems: "center", gap: 6,
+                marginBottom: 10,
+                background: progressionSuggestion.action === "increase"
+                  ? C.greenLight
+                  : progressionSuggestion.action === "decrease"
+                    ? (C.isDark ? "#2D1A1A" : "#FFF0F0")
+                    : C.surface2,
+                border: `1px solid ${
+                  progressionSuggestion.action === "increase"
+                    ? C.green + "66"
+                    : progressionSuggestion.action === "decrease"
+                      ? (C.isDark ? "#7F2020" : "#FECACA")
+                      : C.border
+                }`,
+                borderRadius: 8, padding: "7px 10px",
+              }}>
+                <span style={{ fontSize: 14, lineHeight: 1 }}>
+                  {progressionSuggestion.action === "increase" ? "↑" : progressionSuggestion.action === "decrease" ? "↓" : "→"}
+                </span>
+                <span style={{
+                  fontSize: 12, fontWeight: 600,
+                  color: progressionSuggestion.action === "increase"
+                    ? C.green
+                    : progressionSuggestion.action === "decrease"
+                      ? (C.isDark ? "#F87171" : "#DC2626")
+                      : C.text2,
+                }}>
+                  Try {progressionSuggestion.suggestedWeight} {unit}
+                </span>
+                <span style={{ fontSize: 11, color: C.text3 }}>
+                  — {progressionSuggestion.reason}
                 </span>
               </div>
             )}
@@ -723,6 +761,7 @@ export default function ActiveWorkout({
               exercise={exercise}
               exercises={exercises}
               lastSession={getLastSession(logs || [], exEntry.exId)}
+              progressionSuggestion={getProgressionSuggestion(logs || [], exEntry.exId)}
               unit={unit}
               onUpdateSet={onUpdateSet}
               onCompleteSet={handleCompleteSet}
