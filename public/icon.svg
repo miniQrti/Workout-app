@@ -4,25 +4,10 @@
       <stop offset="0" stop-color="#22D3A4"/>
       <stop offset="1" stop-color="#0B8A60"/>
     </linearGradient>
-    <linearGradient id="bar" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#FFFFFF"/>
-      <stop offset="1" stop-color="#E3F6EE"/>
-    </linearGradient>
   </defs>
   <rect width="512" height="512" rx="120" fill="url(#bg)"/>
-  <g transform="translate(256,256) rotate(-45)">
-    <g transform="translate(4,6)" fill="#06432F" opacity="0.22">
-      <rect x="-104" y="-22" width="208" height="44" rx="16"/>
-      <rect x="-148" y="-58" width="54" height="116" rx="18"/>
-      <rect x="94" y="-58" width="54" height="116" rx="18"/>
-      <rect x="-182" y="-40" width="38" height="80" rx="13"/>
-      <rect x="144" y="-40" width="38" height="80" rx="13"/>
-    </g>
-    <rect x="-104" y="-22" width="208" height="44" rx="16" fill="url(#bar)"/>
-    <rect x="-148" y="-58" width="54" height="116" rx="18" fill="url(#bar)"/>
-    <rect x="94" y="-58" width="54" height="116" rx="18" fill="url(#bar)"/>
-    <rect x="-182" y="-40" width="38" height="80" rx="13" fill="url(#bar)"/>
-    <rect x="144" y="-40" width="38" height="80" rx="13" fill="url(#bar)"/>
-    <rect x="-88" y="-22" width="176" height="9" rx="4.5" fill="#FFFFFF" opacity="0.55"/>
-  </g>
+  <text x="256" y="355"
+    font-size="300"
+    text-anchor="middle"
+    font-family="Noto Color Emoji, Apple Color Emoji, Segoe UI Emoji, sans-serif">💪</text>
 </svg>
