@@ -357,7 +357,7 @@ export default function Home({ store, plans, exercises, onStartWorkout, onContin
                             <span style={{ fontSize: 13, fontWeight: 600, color: C.text1 }}>{item.name}</span>
                             {item.suggestedWeight !== null && (
                               <span style={{ fontSize: 13, fontWeight: 700, color: actionColor }}>
-                                {item.suggestedWeight} lbs
+                                {item.suggestedWeight} lbs{item.targetReps ? ` × ${item.targetReps} reps` : ""}
                               </span>
                             )}
                             {item.isNewPR && (

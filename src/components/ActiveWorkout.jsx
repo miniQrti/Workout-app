@@ -402,7 +402,12 @@ function ExerciseCard({
               )}
             </div>
             <div style={{ fontSize: 12, color: C.text2, marginTop: 2 }}>
-              {sets.filter(s => s.completed).length}/{sets.length} sets done
+              {exEntry.targetSets && exEntry.targetReps
+                ? <span style={{ fontWeight: 600, color: C.text1 }}>{exEntry.targetSets}×{exEntry.targetReps} reps</span>
+                : null
+              }
+              {exEntry.targetSets && exEntry.targetReps ? <span style={{ color: C.text3 }}> · </span> : null}
+              {sets.filter(s => s.completed).length}/{sets.length} done
               {exercise.restSecs && (
                 <span style={{ color: C.text3 }}> · {exercise.restSecs}s rest</span>
               )}
@@ -526,7 +531,7 @@ function ExerciseCard({
                       ? (C.isDark ? "#F87171" : "#DC2626")
                       : C.text2,
                 }}>
-                  Try {progressionSuggestion.suggestedWeight} {unit}
+                  Try {progressionSuggestion.suggestedWeight} {unit}{exEntry.targetReps ? ` × ${exEntry.targetReps} reps` : ""}
                 </span>
                 <span style={{ fontSize: 11, color: C.text3 }}>
                   — {progressionSuggestion.reason}

@@ -551,9 +551,11 @@ export default function App() {
       warmup:    day.warmup || [],
       startTime: Date.now(),
       exercises: exList.map(e => ({
-        exId:     e.exId,
-        sets:     Array.from({ length: e.sets }, () => ({ weight: "", reps: "", completed: false })),
-        restSecs: e.restSecs,
+        exId:       e.exId,
+        targetSets: e.sets,
+        targetReps: e.reps,
+        sets:       Array.from({ length: e.sets }, () => ({ weight: "", reps: "", completed: false })),
+        restSecs:   e.restSecs,
       })),
     });
     setView("workout");
