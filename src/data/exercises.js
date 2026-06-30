@@ -460,15 +460,15 @@ export const EXERCISES = {
   },
   "hanging-knee-raise": {
     id: "hanging-knee-raise",
-    name: "Hanging Knee Raise",
+    name: "Captain's Chair Knee Raise",
     primaryMuscle: "core",
     muscles: ["core","hip-flexors"],
-    equipment: "bodyweight",
+    equipment: "machine",
     defaultSets: 3,
     defaultReps: 15,
     restSecs: 60,
     isTime: false,
-    tip: "Hang from a pull-up bar with a shoulder-width grip. Draw your knees to your chest by rounding your lower back — don't just lift your legs. Avoid swinging. Lower slowly to a full hang before the next rep.",
+    tip: "Use the captain's chair station (vertical knee raise rack) — brace your forearms on the pads and let your legs hang. Draw your knees to your chest by rounding your lower back, not just lifting your legs with hip flexors. Lower slowly and avoid swinging.",
   },
   "cable-crunch": {
     id: "cable-crunch",
