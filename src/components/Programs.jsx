@@ -71,9 +71,10 @@ function Badge({ label, bg, color, small }) {
 
 // ── Plan card ─────────────────────────────────────────────────────────────────
 
-function PlanCard({ plan, isActive, onSwitch }) {
+function PlanCard({ plan, isActive, onSwitch, exercises }) {
   const C = useTheme();
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
   const dc = useDifficultyStyle(plan.difficulty);
 
   return (
@@ -111,25 +112,81 @@ function PlanCard({ plan, isActive, onSwitch }) {
         <Badge label={`~${plan.estimatedMins} min`} />
       </div>
 
-      {isActive && plan.schedule?.rotation?.length > 0 && (
-        <div style={{
-          background: C.greenLight, borderRadius: 10,
-          padding: "10px 12px", marginBottom: 12,
-        }}>
-          <div style={{
-            fontSize: 11, fontWeight: 600, color: C.green,
-            textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6,
-          }}>
-            Planned Order · {plan.schedule.cycleLength}-day cycle
-          </div>
-          <div style={{ fontSize: 12, color: C.greenDark, lineHeight: 1.6 }}>
-            {plan.schedule.rotation.map((entry, i) => (
-              <span key={i}>
-                {i > 0 && <span style={{ opacity: 0.5 }}> → </span>}
-                {rotationEntryLabel(entry, plan)}
-              </span>
-            ))}
-          </div>
+      <button
+        onClick={() => setPreviewOpen(p => !p)}
+        style={{
+          width: "100%", padding: "10px 0", marginBottom: 12,
+          display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+          borderRadius: 10, cursor: "pointer",
+          fontSize: 13, fontWeight: 600, fontFamily: FONT,
+          background: "none", color: C.green,
+          border: `1px solid ${C.green}`,
+        }}
+      >
+        {previewOpen ? "Hide preview" : "Preview workouts"}
+        <svg width="12" height="12" viewBox="0 0 16 16" fill="none"
+          stroke={C.green} strokeWidth="2" strokeLinecap="round">
+          <path d={previewOpen ? "M4 10l4-4 4 4" : "M4 6l4 4 4-4"} />
+        </svg>
+      </button>
+
+      {previewOpen && (
+        <div style={{ marginBottom: 12 }}>
+          {plan.schedule?.rotation?.length > 0 && (
+            <div style={{
+              background: C.greenLight, borderRadius: 10,
+              padding: "10px 12px", marginBottom: 10,
+            }}>
+              <div style={{
+                fontSize: 11, fontWeight: 600, color: C.green,
+                textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6,
+              }}>
+                Planned Order · {plan.schedule.cycleLength}-day cycle
+              </div>
+              <div style={{ fontSize: 12, color: C.greenDark, lineHeight: 1.6 }}>
+                {plan.schedule.rotation.map((entry, i) => (
+                  <span key={i}>
+                    {i > 0 && <span style={{ opacity: 0.5 }}> → </span>}
+                    {rotationEntryLabel(entry, plan)}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {plan.days.map(day => (
+            <div key={day.id} style={{
+              background: C.surface2, borderRadius: 10,
+              padding: "10px 12px", marginBottom: 8,
+              border: `1px solid ${C.border}`,
+            }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: C.text1, marginBottom: 6 }}>
+                {day.name}
+              </div>
+
+              {day.warmup?.length > 0 && (
+                <div style={{ fontSize: 11, color: C.text3, marginBottom: 8, lineHeight: 1.5 }}>
+                  Warm-up: {day.warmup.map(w => w.name).join(", ")}
+                </div>
+              )}
+
+              {day.exercises.map((ex, i) => {
+                const meta = exercises?.[ex.exId];
+                return (
+                  <div key={`${ex.exId}-${i}`} style={{
+                    display: "flex", justifyContent: "space-between", gap: 8,
+                    fontSize: 12.5, color: C.text2, padding: "4px 0",
+                    borderTop: i > 0 ? `1px solid ${C.border}` : "none",
+                  }}>
+                    <span style={{ color: C.text1 }}>{meta?.name || ex.exId}</span>
+                    <span style={{ flexShrink: 0, whiteSpace: "nowrap" }}>
+                      {ex.sets}×{ex.reps}{meta?.isTime ? "s" : ""} · {ex.restSecs}s rest
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          ))}
         </div>
       )}
 
@@ -409,6 +466,7 @@ export default function Programs({ store, plans, exercises, onSelectPlan, onUpda
             <PlanCard
               key={plan.id}
               plan={plan}
+              exercises={exercises}
               isActive={plan.id === activePlanId}
               onSwitch={planId => {
                 onSelectPlan(planId);
