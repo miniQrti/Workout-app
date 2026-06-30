@@ -205,6 +205,7 @@ export function exportWorkoutCSV(logs, exercises, plans, unit = "lbs") {
     "Plan",
     "Day",
     "Exercise",
+    "Feel",
     "Set",
     `Weight (${unit})`,
     "Reps",
@@ -233,7 +234,7 @@ export function exportWorkoutCSV(logs, exercises, plans, unit = "lbs") {
     const durationMin = log.durationSecs ? Math.round(log.durationSecs / 60) : "";
 
     if (!Array.isArray(log.exercises) || log.exercises.length === 0) {
-      rows.push([dateLabel, planName, dayName, "", "", "", "", "", durationMin]);
+      rows.push([dateLabel, planName, dayName, "", "", "", "", "", "", durationMin]);
       continue;
     }
 
@@ -241,9 +242,10 @@ export function exportWorkoutCSV(logs, exercises, plans, unit = "lbs") {
 
     for (const entry of log.exercises) {
       const exName = exercises?.[entry.exId]?.name || entry.exId || "";
+      const feel   = entry.feel || "";
 
       if (!Array.isArray(entry.sets) || entry.sets.length === 0) {
-        rows.push([dateLabel, planName, dayName, exName, "", "", "", "", sessionFirstRow ? durationMin : ""]);
+        rows.push([dateLabel, planName, dayName, exName, feel, "", "", "", "", sessionFirstRow ? durationMin : ""]);
         sessionFirstRow = false;
         continue;
       }
@@ -255,6 +257,7 @@ export function exportWorkoutCSV(logs, exercises, plans, unit = "lbs") {
           planName,
           dayName,
           exName,
+          feel,
           i + 1,
           s.weight ?? "",
           s.reps   ?? "",
@@ -515,6 +518,7 @@ export function importWorkoutCSV(csvText, exercises, plans) {
     const planName  = cells[COL["plan"]]      || "";
     const dayName   = cells[COL["day"]]       || "";
     const exName    = cells[COL["exercise"]]  || "";
+    const feel      = COL["feel"] != null ? (cells[COL["feel"]] || "") : "";
     const setNum    = parseInt(cells[COL["set"]], 10) || 1;
     const weight    = cells[COL["weight"]]    || "";
     const reps      = cells[COL["reps"]]      || "";
@@ -540,10 +544,11 @@ export function importWorkoutCSV(csvText, exercises, plans) {
     }
     if (!exName) continue;
 
-    if (!sess.exercises.has(exName)) sess.exercises.set(exName, []);
-    const sets = sess.exercises.get(exName);
-    while (sets.length < setNum) sets.push(null);
-    sets[setNum - 1] = { weight, reps, completed };
+    if (!sess.exercises.has(exName)) sess.exercises.set(exName, { feel: feel || null, sets: [] });
+    const exRecord = sess.exercises.get(exName);
+    if (feel && !exRecord.feel) exRecord.feel = feel;
+    while (exRecord.sets.length < setNum) exRecord.sets.push(null);
+    exRecord.sets[setNum - 1] = { weight, reps, completed };
   }
 
   // Convert to log entries
@@ -553,9 +558,9 @@ export function importWorkoutCSV(csvText, exercises, plans) {
     const planId  = nameToPlanId[sess.planName.toLowerCase()] || "beginner-3day";
 
     const exEntries = [];
-    for (const [exName, sets] of sess.exercises) {
+    for (const [exName, { feel, sets }] of sess.exercises) {
       const exId = nameToExId[exName.toLowerCase()] || slugify(exName);
-      exEntries.push({ exId, feel: null, sets: sets.filter(Boolean) });
+      exEntries.push({ exId, feel: feel || null, sets: sets.filter(Boolean) });
     }
 
     logs.push({
