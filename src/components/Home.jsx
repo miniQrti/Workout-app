@@ -139,9 +139,12 @@ function StatCard({ value, label }) {
 export default function Home({ store, plans, exercises, onStartWorkout, onContinueSession, onUpdateStore, onOpenMenu }) {
   const C = useTheme();
 
-  const plan       = plans[store.activePlanId];
-  const dayIdx     = store.nextDayIdx || 0;
-  const day        = plan?.days?.[dayIdx % (plan?.days?.length || 1)];
+  const plan         = plans[store.activePlanId];
+  const scheduledIdx = (store.nextDayIdx || 0) % (plan?.days?.length || 1);
+  const dayIdx       = store.overrideDayIdx !== undefined
+    ? store.overrideDayIdx % (plan?.days?.length || 1)
+    : scheduledIdx;
+  const day          = plan?.days?.[dayIdx];
   const logs       = store.logs || [];
   const hasLogs    = logs.length > 0;
   const recentLogs = [...logs].reverse().slice(0, 3);
@@ -157,11 +160,12 @@ export default function Home({ store, plans, exercises, onStartWorkout, onContin
   const hasActiveSession = !!onContinueSession;
 
   const [coachOpen, setCoachOpen] = useState(true);
+  const [dayPickerOpen, setDayPickerOpen] = useState(false);
 
   const sessionPlan = useMemo(() => {
     if (!plan || !day) return [];
-    return buildSessionPlan(logs, plan, dayIdx % (plan.days.length || 1), exercises, store.swaps || {});
-  }, [logs, store.activePlanId, store.nextDayIdx, store.swaps]); // eslint-disable-line
+    return buildSessionPlan(logs, plan, dayIdx, exercises, store.swaps || {});
+  }, [logs, store.activePlanId, store.nextDayIdx, store.overrideDayIdx, store.swaps]); // eslint-disable-line
 
   return (
     <div style={{
@@ -399,6 +403,92 @@ export default function Home({ store, plans, exercises, onStartWorkout, onContin
             Start Workout
             <span style={{ fontSize: 18 }}>→</span>
           </button>
+
+          {/* Day switcher */}
+          {plan && (
+            <div style={{ marginTop: 12 }}>
+              {!dayPickerOpen ? (
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", minHeight: 28 }}>
+                  {store.overrideDayIdx !== undefined ? (
+                    <>
+                      <span style={{ fontSize: 12, color: C.text2 }}>
+                        Switched to:{" "}
+                        <span style={{ fontWeight: 600, color: C.text1 }}>{day?.name}</span>
+                      </span>
+                      <button
+                        onClick={() => onUpdateStore({ overrideDayIdx: undefined })}
+                        style={{
+                          fontSize: 12, color: C.text3, background: "none", border: "none",
+                          cursor: "pointer", padding: "2px 6px", fontFamily: FONT,
+                        }}
+                      >
+                        Reset ×
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      onClick={() => setDayPickerOpen(true)}
+                      style={{
+                        fontSize: 12, color: C.text3, background: "none", border: "none",
+                        cursor: "pointer", padding: 0, fontFamily: FONT,
+                        textDecoration: "underline", textDecorationColor: C.border,
+                      }}
+                    >
+                      Switch to a different day
+                    </button>
+                  )}
+                </div>
+              ) : (
+                <div>
+                  <div style={{ fontSize: 12, color: C.text2, marginBottom: 8, fontWeight: 600 }}>
+                    Choose workout day:
+                  </div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                    {plan.days.map((d, i) => {
+                      const isScheduled = i === scheduledIdx;
+                      const isSelected  = i === dayIdx;
+                      return (
+                        <button
+                          key={d.id}
+                          onClick={() => {
+                            onUpdateStore({ overrideDayIdx: isScheduled ? undefined : i });
+                            setDayPickerOpen(false);
+                          }}
+                          style={{
+                            width: "100%", padding: "10px 12px", borderRadius: 10,
+                            background: isSelected ? C.greenLight : C.surface2,
+                            border: `1.5px solid ${isSelected ? C.green : C.border}`,
+                            display: "flex", alignItems: "center", justifyContent: "space-between",
+                            cursor: "pointer", fontFamily: FONT, textAlign: "left",
+                          }}
+                        >
+                          <span style={{ fontSize: 13, fontWeight: 600, color: C.text1 }}>{d.name}</span>
+                          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                            {isScheduled && (
+                              <span style={{ fontSize: 11, color: C.text3 }}>scheduled</span>
+                            )}
+                            {isSelected && (
+                              <span style={{ fontSize: 13, color: C.green, fontWeight: 700 }}>✓</span>
+                            )}
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <button
+                    onClick={() => setDayPickerOpen(false)}
+                    style={{
+                      marginTop: 8, fontSize: 12, color: C.text3,
+                      background: "none", border: "none", cursor: "pointer",
+                      padding: 0, fontFamily: FONT,
+                    }}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* This Week */}

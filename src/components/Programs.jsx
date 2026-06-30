@@ -51,7 +51,7 @@ function rotationEntryLabel(entry, plan) {
 
 function demoUrl(name) {
   return "https://www.youtube.com/results?search_query=" +
-    encodeURIComponent(name + " exercise how to gym");
+    encodeURIComponent(name + " exercise planet fitness how to");
 }
 
 // ── Badge ──────────────────────────────────────────────────────────────────────

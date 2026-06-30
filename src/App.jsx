@@ -539,7 +539,8 @@ export default function App() {
   function startWorkout() {
     const plan   = PLANS[store.activePlanId];
     if (!plan) return;
-    const dayIdx = (store.nextDayIdx || 0) % plan.days.length;
+    const rawIdx = store.overrideDayIdx !== undefined ? store.overrideDayIdx : (store.nextDayIdx || 0);
+    const dayIdx = rawIdx % plan.days.length;
     const day    = plan.days[dayIdx];
     const exList = getDayExercises(plan, dayIdx, store.swaps);
 
@@ -635,7 +636,7 @@ export default function App() {
       }
     }
 
-    setStore(prev => ({ ...prev, nextDayIdx, logs: newLogs }));
+    setStore(prev => ({ ...prev, nextDayIdx, logs: newLogs, overrideDayIdx: undefined }));
     setSession(null);
     setView("home");
     setSummary({ durationSecs, log, newPRs });
@@ -691,7 +692,7 @@ export default function App() {
 
   // ── Plan switching ────────────────────────────────────────────────────────
   function selectPlan(planId) {
-    updateStore({ activePlanId: planId, nextDayIdx: 0 });
+    updateStore({ activePlanId: planId, nextDayIdx: 0, overrideDayIdx: undefined });
   }
 
   // ── Render ────────────────────────────────────────────────────────────────
