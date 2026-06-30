@@ -31,6 +31,24 @@ function matchesMuscle(exercise, filter) {
   return exercise.primaryMuscle === filter;
 }
 
+const GOAL_FILTERS = ["All", "Strength", "Hypertrophy", "Functional & Longevity", "Time-Efficient", "Weight Loss"];
+
+const GOAL_MAP = {
+  All:                      null,
+  Strength:                 "strength",
+  Hypertrophy:              "hypertrophy",
+  "Functional & Longevity": "functional-longevity",
+  "Time-Efficient":         "time-efficient",
+  "Weight Loss":            "weight-loss",
+};
+
+function rotationEntryLabel(entry, plan) {
+  if (entry.type === "rest") return "Rest";
+  if (entry.type === "cardio") return "Cardio";
+  const day = plan.days.find(d => d.id === entry.dayId);
+  return day ? day.name : entry.dayId;
+}
+
 // ── Badge ──────────────────────────────────────────────────────────────────────
 
 function Badge({ label, bg, color, small }) {
@@ -93,7 +111,7 @@ function PlanCard({ plan, isActive, onSwitch }) {
         <Badge label={`~${plan.estimatedMins} min`} />
       </div>
 
-      {isActive && plan.days.length > 1 && (
+      {isActive && plan.schedule?.rotation?.length > 0 && (
         <div style={{
           background: C.greenLight, borderRadius: 10,
           padding: "10px 12px", marginBottom: 12,
@@ -102,26 +120,15 @@ function PlanCard({ plan, isActive, onSwitch }) {
             fontSize: 11, fontWeight: 600, color: C.green,
             textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6,
           }}>
-            Day Rotation
+            Planned Order · {plan.schedule.cycleLength}-day cycle
           </div>
           <div style={{ fontSize: 12, color: C.greenDark, lineHeight: 1.6 }}>
-            {plan.days.map((d, i) => (
-              <span key={d.id}>
+            {plan.schedule.rotation.map((entry, i) => (
+              <span key={i}>
                 {i > 0 && <span style={{ opacity: 0.5 }}> → </span>}
-                {`Day ${i + 1}: ${d.name}`}
+                {rotationEntryLabel(entry, plan)}
               </span>
             ))}
-          </div>
-        </div>
-      )}
-
-      {isActive && plan.days.length === 1 && (
-        <div style={{
-          background: C.greenLight, borderRadius: 10,
-          padding: "10px 12px", marginBottom: 12,
-        }}>
-          <div style={{ fontSize: 12, color: C.greenDark }}>
-            {plan.days[0].exercises.length} exercises · repeated each session
           </div>
         </div>
       )}
@@ -285,8 +292,14 @@ export default function Programs({ store, plans, exercises, onSelectPlan, onUpda
   const [tab,          setTab]    = useState("plans");
   const [search,       setSearch] = useState("");
   const [muscleFilter, setMuscle] = useState("All");
+  const [goalFilter,   setGoal]   = useState("All");
 
   const activePlanId = store.activePlanId;
+
+  const filteredPlans = useMemo(() => {
+    const goal = GOAL_MAP[goalFilter];
+    return Object.values(plans).filter(p => !goal || p.goal === goal);
+  }, [plans, goalFilter]);
 
   const filteredExercises = useMemo(() => {
     const q      = search.toLowerCase().trim();
@@ -357,7 +370,42 @@ export default function Programs({ store, plans, exercises, onSelectPlan, onUpda
       {/* Plans tab */}
       {tab === "plans" && (
         <div style={{ padding: "16px 16px 0" }}>
-          {Object.values(plans).map(plan => (
+
+          {/* Goal filter chips */}
+          <div style={{
+            display: "flex", gap: 8, overflowX: "auto",
+            paddingBottom: 4, marginBottom: 14,
+            scrollbarWidth: "none", WebkitOverflowScrolling: "touch",
+          }}>
+            {GOAL_FILTERS.map(f => (
+              <button
+                key={f}
+                onClick={() => setGoal(f)}
+                style={{
+                  flexShrink: 0, padding: "8px 14px", borderRadius: 20,
+                  fontSize: 13, fontWeight: goalFilter === f ? 600 : 500,
+                  cursor: "pointer", fontFamily: FONT,
+                  background: goalFilter === f ? C.green : C.surface,
+                  color:      goalFilter === f ? "#fff"  : C.text2,
+                  border: goalFilter === f
+                    ? `1.5px solid ${C.green}`
+                    : `1px solid ${C.border}`,
+                }}
+              >
+                {f}
+              </button>
+            ))}
+          </div>
+
+          {filteredPlans.length === 0 ? (
+            <div style={{
+              background: C.surface, border: `1px solid ${C.border}`,
+              borderRadius: 14, padding: "20px", textAlign: "center",
+              color: C.text2, fontSize: 13,
+            }}>
+              No plans match this category
+            </div>
+          ) : filteredPlans.map(plan => (
             <PlanCard
               key={plan.id}
               plan={plan}
