@@ -49,6 +49,11 @@ function rotationEntryLabel(entry, plan) {
   return day ? day.name : entry.dayId;
 }
 
+function demoUrl(name) {
+  return "https://www.youtube.com/results?search_query=" +
+    encodeURIComponent(name + " exercise how to gym");
+}
+
 // ── Badge ──────────────────────────────────────────────────────────────────────
 
 function Badge({ label, bg, color, small }) {
@@ -172,13 +177,31 @@ function PlanCard({ plan, isActive, onSwitch, exercises }) {
 
               {day.exercises.map((ex, i) => {
                 const meta = exercises?.[ex.exId];
+                const name = meta?.name || ex.exId;
                 return (
                   <div key={`${ex.exId}-${i}`} style={{
-                    display: "flex", justifyContent: "space-between", gap: 8,
-                    fontSize: 12.5, color: C.text2, padding: "4px 0",
+                    display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8,
+                    fontSize: 12.5, color: C.text2, padding: "5px 0",
                     borderTop: i > 0 ? `1px solid ${C.border}` : "none",
                   }}>
-                    <span style={{ color: C.text1 }}>{meta?.name || ex.exId}</span>
+                    <a
+                      href={demoUrl(name)}
+                      target="_blank"
+                      rel="noreferrer"
+                      style={{
+                        color: C.text1, textDecoration: "none", display: "flex",
+                        alignItems: "center", gap: 4, flexShrink: 1, minWidth: 0,
+                      }}
+                    >
+                      <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        {name}
+                      </span>
+                      <svg width="10" height="10" viewBox="0 0 12 12" fill="none"
+                        stroke={C.text3} strokeWidth="1.8" strokeLinecap="round" style={{ flexShrink: 0 }}>
+                        <path d="M5 2H2a1 1 0 0 0-1 1v7a1 1 0 0 0 1 1h7a1 1 0 0 0 1-1V7"/>
+                        <path d="M8 1h3v3M11 1L6 6"/>
+                      </svg>
+                    </a>
                     <span style={{ flexShrink: 0, whiteSpace: "nowrap" }}>
                       {ex.sets}×{ex.reps}{meta?.isTime ? "s" : ""} · {ex.restSecs}s rest
                     </span>
@@ -324,17 +347,36 @@ function ExerciseCard({ exercise }) {
           )}
 
           <div style={{
-            display: "flex", gap: 16, marginTop: 10,
-            fontSize: 12, color: C.text2,
+            display: "flex", justifyContent: "space-between", alignItems: "center",
+            gap: 16, marginTop: 10, fontSize: 12, color: C.text2,
           }}>
-            <span>
-              <strong>{exercise.defaultSets}</strong> sets ×{" "}
-              <strong>{exercise.defaultReps}</strong>
-              {exercise.isTime ? "s" : " reps"}
-            </span>
-            {exercise.restSecs > 0 && (
-              <span><strong>{exercise.restSecs}s</strong> rest</span>
-            )}
+            <div style={{ display: "flex", gap: 16 }}>
+              <span>
+                <strong>{exercise.defaultSets}</strong> sets ×{" "}
+                <strong>{exercise.defaultReps}</strong>
+                {exercise.isTime ? "s" : " reps"}
+              </span>
+              {exercise.restSecs > 0 && (
+                <span><strong>{exercise.restSecs}s</strong> rest</span>
+              )}
+            </div>
+            <a
+              href={demoUrl(exercise.name)}
+              target="_blank"
+              rel="noreferrer"
+              style={{
+                display: "flex", alignItems: "center", gap: 4,
+                color: C.green, fontSize: 12, fontWeight: 600,
+                textDecoration: "none", flexShrink: 0,
+              }}
+            >
+              Watch demo
+              <svg width="11" height="11" viewBox="0 0 12 12" fill="none"
+                stroke={C.green} strokeWidth="1.8" strokeLinecap="round">
+                <path d="M5 2H2a1 1 0 0 0-1 1v7a1 1 0 0 0 1 1h7a1 1 0 0 0 1-1V7"/>
+                <path d="M8 1h3v3M11 1L6 6"/>
+              </svg>
+            </a>
           </div>
         </div>
       )}
