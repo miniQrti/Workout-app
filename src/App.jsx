@@ -423,7 +423,7 @@ function HamburgerMenu({ view, onNavigate, store, onUpdateStore, plans, exercise
 
           {/* Reload */}
           <button
-            onClick={() => { onClose(); setTimeout(() => window.location.reload(true), 150); }}
+            onClick={() => { onClose(); setTimeout(() => window.location.reload(), 150); }}
             style={{
               width: "100%", padding: "13px 16px", borderRadius: 10, marginBottom: 8,
               cursor: "pointer", fontSize: 14, fontWeight: 600, fontFamily: FONT,
