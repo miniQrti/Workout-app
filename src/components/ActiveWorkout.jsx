@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { getLastSession, getProgressionSuggestion } from "../data/store.js";
 import { useTheme, FONT } from "../theme.js";
 import { MACHINE_SETTINGS } from "../data/historicalLogs.js";
@@ -238,10 +238,10 @@ function SwapModal({ exercise, exercises, onSwap, onClose }) {
   const C = useTheme();
   const primaryMuscle = exercise.primaryMuscle || null;
 
-  const candidates = Object.values(exercises).filter(ex => {
+  const candidates = useMemo(() => Object.values(exercises).filter(ex => {
     if (ex.id === exercise.id) return false;
     return ex.primaryMuscle === primaryMuscle;
-  });
+  }), [exercises, exercise.id, primaryMuscle]);
 
   return (
     <div
