@@ -346,40 +346,45 @@ const FEEL_OPTIONS = [
 
 function ExerciseCard({
   exIdx, exEntry, exercise, exercises, lastSession, progressionSuggestion, unit,
-  onUpdateSet, onCompleteSet, onUpdateFeel, onSwap, onStartRest,
+  onUpdateSet, onCompleteSet, onUpdateFeel, onSwap, onStartRest, alwaysExpanded,
 }) {
   const C = useTheme();
   const [expanded, setExpanded] = useState(false);
   const [showSwap, setShowSwap] = useState(false);
+  const isOpen = alwaysExpanded || expanded;
 
   if (!exercise) return null;
 
-  const sets     = exEntry.sets || [];
-  const allDone  = sets.length > 0 && sets.every(s => s.completed);
-  const someDone = sets.some(s => s.completed);
-  const lastSets = lastSession ? lastSession.sets || [] : [];
-  const isTime   = !!exercise.isTime;
+  const sets      = exEntry.sets || [];
+  const allDone   = sets.length > 0 && sets.every(s => s.completed);
+  const someDone  = sets.some(s => s.completed);
+  const needsFeel = allDone && !exEntry.feel;
+  const lastSets  = lastSession ? lastSession.sets || [] : [];
+  const isTime    = !!exercise.isTime;
+
+  const cardBg     = allDone ? (needsFeel ? (C.isDark ? "#2D2000" : "#FFFBEB") : C.greenLight) : C.surface;
+  const cardBorder = allDone ? (needsFeel ? "#F59E0B" : C.green) : C.border;
 
   return (
     <>
       <div style={{
-        background: allDone ? C.greenLight : C.surface,
-        border: `1px solid ${allDone ? C.green : C.border}`,
+        background: cardBg,
+        border: `1px solid ${cardBorder}`,
         borderRadius: 14, marginBottom: 10, overflow: "hidden",
         transition: "border-color 0.2s, background 0.2s",
       }}>
         {/* Header */}
         <div
-          onClick={() => setExpanded(e => !e)}
+          onClick={alwaysExpanded ? undefined : () => setExpanded(e => !e)}
           style={{
             display: "flex", alignItems: "center", gap: 10,
-            padding: "13px 14px", cursor: "pointer", userSelect: "none",
+            padding: "13px 14px", cursor: alwaysExpanded ? "default" : "pointer", userSelect: "none",
           }}
         >
           <div style={{
             width: 10, height: 10, borderRadius: "50%", flexShrink: 0,
-            background: allDone ? C.green : someDone ? C.green + "66" : C.border,
-            border: `2px solid ${allDone ? C.green : someDone ? C.green : C.text3}`,
+            background: allDone ? (needsFeel ? "#F59E0B" : C.green) : someDone ? C.green + "66" : C.border,
+            border: `2px solid ${allDone ? (needsFeel ? "#F59E0B" : C.green) : someDone ? C.green : C.text3}`,
             transition: "all 0.2s",
           }}/>
 
@@ -387,7 +392,7 @@ function ExerciseCard({
             <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
               <span style={{
                 fontSize: 15, fontWeight: 600,
-                color: allDone ? C.greenDark : C.text1,
+                color: allDone ? (needsFeel ? "#B45309" : C.greenDark) : C.text1,
               }}>
                 {exercise.name}
               </span>
@@ -447,17 +452,19 @@ function ExerciseCard({
             >
               <IconSwap/>
             </button>
-            <span style={{
-              fontSize: 11, color: C.text3,
-              display: "inline-block",
-              transform: expanded ? "rotate(180deg)" : "none",
-              transition: "transform 0.2s",
-            }}>▼</span>
+            {!alwaysExpanded && (
+              <span style={{
+                fontSize: 11, color: C.text3,
+                display: "inline-block",
+                transform: expanded ? "rotate(180deg)" : "none",
+                transition: "transform 0.2s",
+              }}>▼</span>
+            )}
           </div>
         </div>
 
         {/* Body */}
-        {expanded && (
+        {isOpen && (
           <div style={{ padding: "0 14px 14px", borderTop: `1px solid ${C.border}` }}>
             {/* Tip */}
             {exercise.tip && (
@@ -852,6 +859,7 @@ export default function ActiveWorkout({
   const [restBanner,     setRestBanner]     = useState(null);
   const [confirmCancel,  setConfirmCancel]  = useState(false);
   const [warnFinish,     setWarnFinish]     = useState(false);
+  const [focusedIdx,     setFocusedIdx]     = useState(null);
 
   const handleCompleteSet = useCallback((exIdx, setIdx) => {
     onCompleteSet(exIdx, setIdx);
@@ -950,40 +958,171 @@ export default function ActiveWorkout({
         </div>
       </div>
 
-      {/* Exercise list */}
-      <div style={{ padding: "14px 14px 130px" }}>
-        <WarmupCard items={session.warmup || []} />
+      {/* List mode — all exercises as compact rows */}
+      {focusedIdx === null && (
+        <div style={{ padding: "14px 14px 130px" }}>
+          <WarmupCard items={session.warmup || []} />
 
-        {(session.exercises || []).map((exEntry, exIdx) => {
-          const exercise = exercises[exEntry.exId];
-          return (
-            <ExerciseCard
-              key={exEntry.exId + "-" + exIdx}
-              exIdx={exIdx}
-              exEntry={exEntry}
-              exercise={exercise}
-              exercises={exercises}
-              lastSession={getLastSession(logs || [], exEntry.exId)}
-              progressionSuggestion={getProgressionSuggestion(logs || [], exEntry.exId)}
-              unit={unit}
-              onUpdateSet={onUpdateSet}
-              onCompleteSet={handleCompleteSet}
-              onUpdateFeel={onUpdateFeel}
-              onSwap={onSwapExercise}
-              onStartRest={startRest}
-            />
-          );
-        })}
+          {session.exercises?.length === 0 && (
+            <div style={{ textAlign: "center", padding: "48px 24px", color: C.text3, fontSize: 14 }}>
+              No exercises in this session.
+            </div>
+          )}
 
-        {session.exercises?.length === 0 && (
-          <div style={{
-            textAlign: "center", padding: "48px 24px",
-            color: C.text3, fontSize: 14,
-          }}>
-            No exercises in this session.
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {(session.exercises || []).map((exEntry, exIdx) => {
+              const exercise = exercises[exEntry.exId];
+              if (!exercise) return null;
+              const sets     = exEntry.sets || [];
+              const allDone   = sets.length > 0 && sets.every(s => s.completed);
+              const someDone  = sets.some(s => s.completed);
+              const doneSets  = sets.filter(s => s.completed).length;
+              const needsFeel = allDone && !exEntry.feel;
+              return (
+                <div
+                  key={exEntry.exId + "-" + exIdx}
+                  onClick={() => setFocusedIdx(exIdx)}
+                  style={{
+                    background: allDone ? (needsFeel ? (C.isDark ? "#2D2000" : "#FFFBEB") : C.greenLight) : C.surface,
+                    border: `1px solid ${allDone ? (needsFeel ? "#F59E0B" : C.green) : C.border}`,
+                    borderRadius: 14, padding: "14px",
+                    display: "flex", alignItems: "center", gap: 12,
+                    cursor: "pointer", userSelect: "none",
+                    transition: "border-color 0.2s, background 0.2s",
+                  }}
+                >
+                  <div style={{
+                    width: 10, height: 10, borderRadius: "50%", flexShrink: 0,
+                    background: allDone ? (needsFeel ? "#F59E0B" : C.green) : someDone ? C.green + "66" : C.border,
+                    border: `2px solid ${allDone ? (needsFeel ? "#F59E0B" : C.green) : someDone ? C.green : C.text3}`,
+                  }}/>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 15, fontWeight: 600, color: allDone ? (needsFeel ? "#B45309" : C.greenDark) : C.text1 }}>
+                      {exercise.name}
+                    </div>
+                    <div style={{ fontSize: 12, color: C.text2, marginTop: 2 }}>
+                      {exEntry.targetSets && exEntry.targetReps
+                        ? <><span style={{ fontWeight: 600, color: C.text1 }}>{exEntry.targetSets}×{exEntry.targetReps} reps</span><span style={{ color: C.text3 }}> · </span></>
+                        : null}
+                      {doneSets}/{sets.length} done
+                    </div>
+                  </div>
+                  {exercise.primaryMuscle && (
+                    <span style={{
+                      fontSize: 10, fontWeight: 600, padding: "2px 7px", borderRadius: 6,
+                      background: C.greenLight, color: C.green,
+                      textTransform: "capitalize", flexShrink: 0,
+                    }}>
+                      {exercise.primaryMuscle}
+                    </span>
+                  )}
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                    stroke={C.text3} strokeWidth="2" strokeLinecap="round">
+                    <polyline points="9,18 15,12 9,6"/>
+                  </svg>
+                </div>
+              );
+            })}
           </div>
-        )}
-      </div>
+        </div>
+      )}
+
+      {/* Focus mode — single exercise, no scrolling */}
+      {focusedIdx !== null && (() => {
+        const exEntry  = session.exercises?.[focusedIdx];
+        const exercise = exercises[exEntry?.exId];
+        const totalEx  = session.exercises?.length ?? 0;
+        return (
+          <div style={{ paddingBottom: 130 }}>
+            {/* Navigator bar */}
+            <div style={{
+              display: "flex", alignItems: "center", gap: 8,
+              padding: "10px 14px 6px",
+            }}>
+              <button
+                onClick={() => setFocusedIdx(null)}
+                style={{
+                  fontSize: 13, color: C.text3, background: "none", border: "none",
+                  cursor: "pointer", padding: 0, fontFamily: FONT,
+                }}
+              >
+                ‹ All
+              </button>
+              <div style={{ flex: 1 }}/>
+              <button
+                onClick={() => setFocusedIdx(Math.max(0, focusedIdx - 1))}
+                disabled={focusedIdx === 0}
+                style={{
+                  width: 32, height: 32, borderRadius: 8,
+                  border: `1px solid ${C.border}`, background: C.surface2,
+                  cursor: focusedIdx === 0 ? "default" : "pointer",
+                  opacity: focusedIdx === 0 ? 0.35 : 1,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  color: C.text2, fontSize: 17, fontFamily: FONT,
+                }}
+              >‹</button>
+              <span style={{ fontSize: 12, color: C.text2, minWidth: 40, textAlign: "center" }}>
+                {focusedIdx + 1} / {totalEx}
+              </span>
+              <button
+                onClick={() => setFocusedIdx(Math.min(totalEx - 1, focusedIdx + 1))}
+                disabled={focusedIdx === totalEx - 1}
+                style={{
+                  width: 32, height: 32, borderRadius: 8,
+                  border: `1px solid ${C.border}`, background: C.surface2,
+                  cursor: focusedIdx === totalEx - 1 ? "default" : "pointer",
+                  opacity: focusedIdx === totalEx - 1 ? 0.35 : 1,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  color: C.text2, fontSize: 17, fontFamily: FONT,
+                }}
+              >›</button>
+            </div>
+
+            {/* Exercise dot strip */}
+            <div style={{ display: "flex", gap: 4, padding: "0 14px 10px", flexWrap: "wrap" }}>
+              {(session.exercises || []).map((ex, i) => {
+                const done      = ex.sets?.length > 0 && ex.sets.every(s => s.completed);
+                const noFeel    = done && !ex.feel;
+                const active    = i === focusedIdx;
+                const dotColor  = done ? (noFeel ? "#F59E0B" : C.green) : active ? C.green : C.border;
+                return (
+                  <div
+                    key={i}
+                    onClick={() => setFocusedIdx(i)}
+                    style={{
+                      width: active ? 22 : 8, height: 8, borderRadius: 4,
+                      background: dotColor,
+                      cursor: "pointer", transition: "all 0.2s", flexShrink: 0,
+                    }}
+                  />
+                );
+              })}
+            </div>
+
+            {/* Focused exercise card */}
+            <div style={{ padding: "0 14px" }}>
+              {exercise ? (
+                <ExerciseCard
+                  key={exEntry.exId + "-" + focusedIdx}
+                  exIdx={focusedIdx}
+                  exEntry={exEntry}
+                  exercise={exercise}
+                  exercises={exercises}
+                  lastSession={getLastSession(logs || [], exEntry.exId)}
+                  progressionSuggestion={getProgressionSuggestion(logs || [], exEntry.exId)}
+                  unit={unit}
+                  onUpdateSet={onUpdateSet}
+                  onCompleteSet={handleCompleteSet}
+                  onUpdateFeel={onUpdateFeel}
+                  onSwap={onSwapExercise}
+                  onStartRest={startRest}
+                  alwaysExpanded={true}
+                />
+              ) : null}
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Rest banner */}
       {restBanner && (
@@ -1001,20 +1140,35 @@ export default function ActiveWorkout({
         borderTop: `1px solid ${C.border}`,
         padding: "12px 16px calc(12px + env(safe-area-inset-bottom))",
       }}>
-        <button
-          onClick={handleFinish}
-          style={{
-            width: "100%", padding: "15px 0",
-            borderRadius: 14, border: "none",
-            background: allComplete ? C.green : C.green + "CC",
-            color: "#fff", fontSize: 16, fontWeight: 700,
-            cursor: "pointer", fontFamily: FONT,
-            boxShadow: allComplete ? `0 4px 16px ${C.green}55` : "none",
-            transition: "all 0.2s",
-          }}
-        >
-          {allComplete ? "Finish Workout ✓" : `Finish Workout (${completedSets}/${totalSets} sets)`}
-        </button>
+        {focusedIdx !== null && focusedIdx < (session.exercises?.length ?? 0) - 1 ? (
+          <button
+            onClick={() => setFocusedIdx(focusedIdx + 1)}
+            style={{
+              width: "100%", padding: "15px 0",
+              borderRadius: 14, border: "none",
+              background: C.green, color: "#fff",
+              fontSize: 16, fontWeight: 700, cursor: "pointer",
+              fontFamily: FONT, letterSpacing: "0.01em",
+            }}
+          >
+            Next exercise →
+          </button>
+        ) : (
+          <button
+            onClick={handleFinish}
+            style={{
+              width: "100%", padding: "15px 0",
+              borderRadius: 14, border: "none",
+              background: allComplete ? C.green : C.green + "CC",
+              color: "#fff", fontSize: 16, fontWeight: 700,
+              cursor: "pointer", fontFamily: FONT,
+              boxShadow: allComplete ? `0 4px 16px ${C.green}55` : "none",
+              transition: "all 0.2s",
+            }}
+          >
+            {allComplete ? "Finish Workout ✓" : `Finish Workout (${completedSets}/${totalSets} sets)`}
+          </button>
+        )}
       </div>
 
       {/* Cancel confirmation */}
