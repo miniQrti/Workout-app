@@ -164,8 +164,8 @@ export default function Home({ store, plans, exercises, unit, onStartWorkout, on
 
   const sessionPlan = useMemo(() => {
     if (!plan || !day) return [];
-    return buildSessionPlan(logs, plan, dayIdx, exercises, store.swaps || {});
-  }, [logs, store.activePlanId, store.nextDayIdx, store.overrideDayIdx, store.swaps]); // eslint-disable-line
+    return buildSessionPlan(store.logs || [], plan, dayIdx, exercises, store.swaps || {});
+  }, [store.logs, store.swaps, plan, dayIdx, exercises]);
 
   return (
     <div style={{
