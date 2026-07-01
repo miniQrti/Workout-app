@@ -880,15 +880,20 @@ export default function ActiveWorkout({
   const completedSets = (session.exercises || []).reduce(
     (acc, ex) => acc + (ex.sets?.filter(s => s.completed).length || 0), 0
   );
-  const progress    = totalSets > 0 ? completedSets / totalSets : 0;
-  const allComplete = totalSets > 0 && completedSets === totalSets;
+  const progress       = totalSets > 0 ? completedSets / totalSets : 0;
+  const allComplete    = totalSets > 0 && completedSets === totalSets;
+  const incompleteSets = totalSets - completedSets;
+  const missingFeel    = (session.exercises || []).filter(ex => {
+    const s = ex.sets || [];
+    return s.length > 0 && s.every(s => s.completed) && !ex.feel;
+  }).length;
 
   function handleCancel() {
     if (completedSets > 0) { setConfirmCancel(true); } else { onCancel(); }
   }
 
   function handleFinish() {
-    if (completedSets === 0) { setWarnFinish(true); } else { onFinish(); }
+    if (incompleteSets > 0 || missingFeel > 0) { setWarnFinish(true); } else { onFinish(); }
   }
 
   return (
@@ -1230,10 +1235,25 @@ export default function ActiveWorkout({
             boxShadow: "0 16px 48px rgba(0,0,0,0.3)",
           }}>
             <div style={{ fontSize: 17, fontWeight: 700, color: C.text1, marginBottom: 8 }}>
-              No sets completed
+              Workout incomplete
             </div>
-            <div style={{ fontSize: 14, color: C.text2, lineHeight: 1.5, marginBottom: 20 }}>
-              You haven't logged any sets yet. Save the workout anyway?
+            <div style={{ marginBottom: 20 }}>
+              {incompleteSets > 0 && (
+                <div style={{ display: "flex", gap: 8, marginBottom: 8, alignItems: "flex-start" }}>
+                  <span style={{ color: "#F59E0B", fontWeight: 700, fontSize: 15, flexShrink: 0 }}>•</span>
+                  <span style={{ fontSize: 14, color: C.text2, lineHeight: 1.5 }}>
+                    <strong style={{ color: C.text1 }}>{incompleteSets} set{incompleteSets !== 1 ? "s" : ""}</strong> not logged yet
+                  </span>
+                </div>
+              )}
+              {missingFeel > 0 && (
+                <div style={{ display: "flex", gap: 8, marginBottom: 8, alignItems: "flex-start" }}>
+                  <span style={{ color: "#F59E0B", fontWeight: 700, fontSize: 15, flexShrink: 0 }}>•</span>
+                  <span style={{ fontSize: 14, color: C.text2, lineHeight: 1.5 }}>
+                    <strong style={{ color: C.text1 }}>{missingFeel} exercise{missingFeel !== 1 ? "s" : ""}</strong> missing feel rating
+                  </span>
+                </div>
+              )}
             </div>
             <div style={{ display: "flex", gap: 10 }}>
               <button
@@ -1256,7 +1276,7 @@ export default function ActiveWorkout({
                   cursor: "pointer", fontFamily: FONT,
                 }}
               >
-                Save anyway
+                Finish anyway
               </button>
             </div>
           </div>
