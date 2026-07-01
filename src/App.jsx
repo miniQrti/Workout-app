@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { PLANS }    from "./data/plans.js";
 import { EXERCISES } from "./data/exercises.js";
 import { loadStore, saveStore, getDayExercises, getPR, exportWorkoutCSV, shareOrDownloadCSV, importWorkoutCSV } from "./data/store.js";
@@ -529,7 +529,7 @@ export default function App() {
     document.documentElement.dataset.theme = store.theme || "light";
   }, [store.theme]);
 
-  const theme = buildTheme(store.theme || "light", store.accent || "green");
+  const theme = useMemo(() => buildTheme(store.theme || "light", store.accent || "green"), [store.theme, store.accent]);
 
   const updateStore = useCallback((partial) => {
     setStore(prev => ({ ...prev, ...partial }));
