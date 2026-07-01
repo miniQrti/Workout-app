@@ -730,6 +730,7 @@ export default function App() {
             store={store}
             plans={PLANS}
             exercises={EXERCISES}
+            unit={store.unit || "lbs"}
             onStartWorkout={startWorkout}
             onContinueSession={hasSession ? () => setView("workout") : null}
             onUpdateStore={updateStore}

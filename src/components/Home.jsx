@@ -136,7 +136,7 @@ function StatCard({ value, label }) {
 
 // ── Main component ────────────────────────────────────────────────────────────
 
-export default function Home({ store, plans, exercises, onStartWorkout, onContinueSession, onUpdateStore, onOpenMenu }) {
+export default function Home({ store, plans, exercises, unit, onStartWorkout, onContinueSession, onUpdateStore, onOpenMenu }) {
   const C = useTheme();
 
   const plan         = plans[store.activePlanId];
@@ -357,7 +357,7 @@ export default function Home({ store, plans, exercises, onStartWorkout, onContin
                             <span style={{ fontSize: 13, fontWeight: 600, color: C.text1 }}>{item.name}</span>
                             {item.suggestedWeight !== null && (
                               <span style={{ fontSize: 13, fontWeight: 700, color: actionColor }}>
-                                {item.suggestedWeight} lbs{item.targetReps ? ` × ${item.targetReps} reps` : ""}
+                                {item.suggestedWeight} {unit}{item.targetReps ? ` × ${item.targetReps} reps` : ""}
                               </span>
                             )}
                             {item.isNewPR && (
@@ -373,7 +373,7 @@ export default function Home({ store, plans, exercises, onStartWorkout, onContin
                           </div>
                           <div style={{ fontSize: 11, color: C.text3, marginTop: 2 }}>
                             {item.lastSets ? (
-                              <>last: {item.lastWeight} lbs · {item.lastSets.length} sets{item.reason ? ` — ${item.reason}` : ""}</>
+                              <>last: {item.lastWeight} {unit} · {item.lastSets.length} sets{item.reason ? ` — ${item.reason}` : ""}</>
                             ) : (
                               item.reason || "no history yet — try the plan weight"
                             )}
