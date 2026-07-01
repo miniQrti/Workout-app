@@ -573,34 +573,6 @@ function ExerciseCard({
               <div/>
             </div>
 
-            {/* How did it feel */}
-            <div style={{ marginBottom: 12 }}>
-              <div style={{ fontSize: 10, fontWeight: 600, color: C.text3, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 6 }}>
-                {t("exercise.how_feel")}
-              </div>
-              <div style={{ display: "flex", gap: 6 }}>
-                {FEEL_OPTIONS.map(f => {
-                  const selected = exEntry.feel === f.label;
-                  return (
-                    <button
-                      key={f.label}
-                      onClick={() => onUpdateFeel(exIdx, selected ? null : f.label)}
-                      style={{
-                        flex: 1, padding: "7px 2px", borderRadius: 8, cursor: "pointer",
-                        border: `1.5px solid ${selected ? f.color : C.border}`,
-                        background: selected ? f.bg : C.surface2,
-                        color: selected ? f.color : C.text2,
-                        fontSize: 12, fontWeight: 600, fontFamily: FONT,
-                        transition: "all 0.15s",
-                      }}
-                    >
-                      {t("feel." + f.label)}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
             {/* Set rows */}
             {sets.map((set, setIdx) => {
               const prevSet     = lastSets[setIdx] || null;
@@ -724,6 +696,34 @@ function ExerciseCard({
                 </div>
               );
             })}
+
+            {/* How did it feel */}
+            <div style={{ marginTop: 12 }}>
+              <div style={{ fontSize: 10, fontWeight: 600, color: C.text3, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 6 }}>
+                {t("exercise.how_feel")}
+              </div>
+              <div style={{ display: "flex", gap: 6 }}>
+                {FEEL_OPTIONS.map(f => {
+                  const selected = exEntry.feel === f.label;
+                  return (
+                    <button
+                      key={f.label}
+                      onClick={() => onUpdateFeel(exIdx, selected ? null : f.label)}
+                      style={{
+                        flex: 1, padding: "7px 2px", borderRadius: 8, cursor: "pointer",
+                        border: `1.5px solid ${selected ? f.color : C.border}`,
+                        background: selected ? f.bg : C.surface2,
+                        color: selected ? f.color : C.text2,
+                        fontSize: 12, fontWeight: 600, fontFamily: FONT,
+                        transition: "all 0.15s",
+                      }}
+                    >
+                      {t("feel." + f.label)}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
           </div>
         )}
       </div>
@@ -1084,7 +1084,7 @@ export default function ActiveWorkout({
       {/* List mode — all exercises as compact rows */}
       {focusedIdx === null && (
         <div style={{ padding: "14px 14px 130px" }}>
-          <WarmupCard key={session.dayIdx} items={session.warmup || []} />
+          <WarmupCard key={"warmup-" + session.dayIdx} items={session.warmup || []} />
 
           {session.exercises?.length === 0 && (
             <div style={{ textAlign: "center", padding: "48px 24px", color: C.text3, fontSize: 14 }}>
@@ -1148,7 +1148,7 @@ export default function ActiveWorkout({
             })}
           </div>
 
-          <CooldownCard key={session.dayIdx} />
+          <CooldownCard key={"cooldown-" + session.dayIdx} />
         </div>
       )}
 
