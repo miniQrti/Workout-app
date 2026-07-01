@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useTheme, FONT } from "../theme.js";
+import { useT } from "../i18n.js";
 
 const PRESETS = [
   { label: "60s",  seconds: 60  },
@@ -10,6 +11,7 @@ const PRESETS = [
 
 export default function RestTimer({ onClose }) {
   const C = useTheme();
+  const t = useT();
   const [total,   setTotal]   = useState(90);
   const [left,    setLeft]    = useState(90);
   const [running, setRunning] = useState(false);
@@ -67,12 +69,12 @@ export default function RestTimer({ onClose }) {
   const timeLabel = `${mins}:${String(secs).padStart(2, "0")}`;
 
   const subLabel = done
-    ? "tap to reset"
+    ? t("timer.tap_reset")
     : running
-    ? "tap to pause"
+    ? t("timer.tap_pause")
     : left < total
-    ? "tap to resume"
-    : "tap to start";
+    ? t("timer.tap_resume")
+    : t("timer.tap_start");
 
   return (
     <div
@@ -100,7 +102,7 @@ export default function RestTimer({ onClose }) {
           display: "flex", alignItems: "center", justifyContent: "space-between",
           width: "100%",
         }}>
-          <div style={{ fontSize: 17, fontWeight: 700, color: C.text1 }}>Rest Timer</div>
+          <div style={{ fontSize: 17, fontWeight: 700, color: C.text1 }}>{t("timer.title")}</div>
           <button
             onClick={onClose}
             style={{
@@ -181,7 +183,7 @@ export default function RestTimer({ onClose }) {
               fontVariantNumeric: "tabular-nums",
               transition: "font-size 0.2s, color 0.2s",
             }}>
-              {done ? "Done!" : timeLabel}
+              {done ? t("timer.done") : timeLabel}
             </div>
             <div style={{ fontSize: 11, color: C.text3, fontWeight: 500, letterSpacing: "0.02em" }}>
               {subLabel}
@@ -214,7 +216,7 @@ export default function RestTimer({ onClose }) {
             cursor: "pointer", fontFamily: FONT,
           }}
         >
-          Close
+          {t("timer.close")}
         </button>
       </div>
     </div>

@@ -1,18 +1,19 @@
 import React, { useState, useMemo } from "react";
 import { useTheme, FONT } from "../theme.js";
 import { buildSessionPlan } from "../data/store.js";
+import { useT } from "../i18n.js";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-function greeting() {
+function greeting(t) {
   const h = new Date().getHours();
-  if (h < 12) return "Good morning";
-  if (h < 17) return "Good afternoon";
-  return "Good evening";
+  if (h < 12) return t("greeting.morning");
+  if (h < 17) return t("greeting.afternoon");
+  return t("greeting.evening");
 }
 
-function todayStr() {
-  return new Date().toLocaleDateString("en-US", {
+function todayStr(t) {
+  return new Date().toLocaleDateString(t("date.locale"), {
     weekday: "long", month: "long", day: "numeric",
   });
 }
@@ -24,14 +25,14 @@ function formatDuration(secs) {
   return s > 0 ? `${m}m ${s}s` : `${m} min`;
 }
 
-function formatDateLabel(isoString) {
+function formatDateLabel(isoString, t) {
   if (!isoString) return "";
   const d    = new Date(isoString);
   const now  = new Date();
   const diff = Math.floor((now - d) / 86400000);
-  if (diff === 0) return "Today";
-  if (diff === 1) return "Yesterday";
-  return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  if (diff === 0) return t("date.today");
+  if (diff === 1) return t("date.yesterday");
+  return d.toLocaleDateString(t("date.locale"), { month: "short", day: "numeric" });
 }
 
 function getWeekDots(logs) {
@@ -138,6 +139,7 @@ function StatCard({ value, label }) {
 
 export default function Home({ store, plans, exercises, unit, onStartWorkout, onContinueSession, onUpdateStore, onOpenMenu }) {
   const C = useTheme();
+  const t = useT();
 
   const plan         = plans[store.activePlanId];
   const scheduledIdx = (store.nextDayIdx || 0) % (plan?.days?.length || 1);
@@ -199,10 +201,10 @@ export default function Home({ store, plans, exercises, unit, onStartWorkout, on
         </button>
         <div>
           <div style={{ fontSize: 20, fontWeight: 700, color: C.text1, lineHeight: 1.2 }}>
-            {greeting()}
+            {greeting(t)}
           </div>
           <div style={{ fontSize: 13, color: C.text2, marginTop: 1 }}>
-            {todayStr()}
+            {todayStr(t)}
           </div>
         </div>
       </div>
@@ -219,10 +221,10 @@ export default function Home({ store, plans, exercises, unit, onStartWorkout, on
           }}>
             <div>
               <div style={{ fontSize: 13, fontWeight: 600, color: C.green }}>
-                Workout in progress
+                {t("home.workout_in_progress")}
               </div>
               <div style={{ fontSize: 12, color: C.text2, marginTop: 1 }}>
-                Tap to pick up where you left off
+                {t("home.pickup_where_left")}
               </div>
             </div>
             <button
@@ -234,7 +236,7 @@ export default function Home({ store, plans, exercises, unit, onStartWorkout, on
                 fontFamily: FONT,
               }}
             >
-              Resume
+              {t("home.resume")}
             </button>
           </div>
         )}
@@ -251,25 +253,25 @@ export default function Home({ store, plans, exercises, unit, onStartWorkout, on
             color: C.green, fontSize: 11, fontWeight: 600,
             marginBottom: 8, letterSpacing: "0.02em",
           }}>
-            {plan?.name || "No plan selected"}
+            {plan?.name || t("home.no_plan")}
           </div>
 
           <div style={{ fontSize: 24, fontWeight: 700, color: C.text1, lineHeight: 1.2 }}>
-            {day?.name || "Rest Day"}
+            {day?.name || t("home.rest_day")}
           </div>
 
           {day && (
             <div style={{ display: "flex", gap: 16, marginTop: 8, marginBottom: 12 }}>
               <span style={{ fontSize: 13, color: C.text2 }}>
                 <span style={{ color: C.text1, fontWeight: 600 }}>{exerciseCount}</span>
-                {" exercises"}
+                {" "}{t("home.exercises")}
               </span>
               <span style={{ color: C.border, fontSize: 13 }}>·</span>
               <span style={{ fontSize: 13, color: C.text2 }}>
                 <span style={{ color: C.text1, fontWeight: 600 }}>
                   {plan?.estimatedMins || "?"}
                 </span>
-                {" min est."}
+                {" "}{t("home.min_est")}
               </span>
             </div>
           )}
@@ -282,7 +284,7 @@ export default function Home({ store, plans, exercises, unit, onStartWorkout, on
                   padding: "4px 10px", borderRadius: 20, fontSize: 12,
                   color: C.text3, border: `1px dashed ${C.border}`,
                 }}>
-                  +{exerciseCount - 4} more
+                  {t("home.more", { n: exerciseCount - 4 })}
                 </span>
               )}
             </div>
@@ -293,7 +295,7 @@ export default function Home({ store, plans, exercises, unit, onStartWorkout, on
               fontSize: 13, color: C.text2, fontStyle: "italic",
               marginBottom: 14, lineHeight: 1.5,
             }}>
-              Ready to start your first workout? Let's go!
+              {t("home.first_workout")}
             </div>
           )}
 
@@ -314,12 +316,12 @@ export default function Home({ store, plans, exercises, unit, onStartWorkout, on
               >
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                   <span style={{ fontSize: 15 }}>🎯</span>
-                  <span style={{ fontSize: 13, fontWeight: 700, color: C.text1 }}>Coach's Notes</span>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: C.text1 }}>{t("home.coaches_notes")}</span>
                   <span style={{
                     fontSize: 11, padding: "2px 7px", borderRadius: 10,
                     background: C.greenLight, color: C.green, fontWeight: 600,
                   }}>
-                    {sessionPlan.filter(e => e.action === "increase").length} increases
+                    {sessionPlan.filter(e => e.action === "increase").length} {t("home.increases")}
                   </span>
                 </div>
                 <span style={{
@@ -357,25 +359,25 @@ export default function Home({ store, plans, exercises, unit, onStartWorkout, on
                             <span style={{ fontSize: 13, fontWeight: 600, color: C.text1 }}>{item.name}</span>
                             {item.suggestedWeight !== null && (
                               <span style={{ fontSize: 13, fontWeight: 700, color: actionColor }}>
-                                {item.suggestedWeight} {unit}{item.targetReps ? ` × ${item.targetReps} reps` : ""}
+                                {item.suggestedWeight} {unit}{item.targetReps ? ` × ${item.targetReps} ${t("home.reps")}` : ""}
                               </span>
                             )}
                             {item.isNewPR && (
                               <span style={{ fontSize: 10, fontWeight: 700, color: "#F59E0B", background: "#FEF3C7", padding: "1px 5px", borderRadius: 5 }}>
-                                PR attempt
+                                {t("home.pr_attempt")}
                               </span>
                             )}
                             {item.deload && (
                               <span style={{ fontSize: 10, fontWeight: 700, color: "#EF4444", background: "#FEE2E2", padding: "1px 5px", borderRadius: 5 }}>
-                                deload
+                                {t("home.deload")}
                               </span>
                             )}
                           </div>
                           <div style={{ fontSize: 11, color: C.text3, marginTop: 2 }}>
                             {item.lastSets ? (
-                              <>last: {item.lastWeight} {unit} · {item.lastSets.length} sets{item.reason ? ` — ${item.reason}` : ""}</>
+                              <>{t("home.last")}: {item.lastWeight} {unit} · {item.lastSets.length} sets{item.reason ? ` — ${item.reason}` : ""}</>
                             ) : (
-                              item.reason || "no history yet — try the plan weight"
+                              item.reason || t("home.no_history")
                             )}
                           </div>
                         </div>
@@ -400,7 +402,7 @@ export default function Home({ store, plans, exercises, unit, onStartWorkout, on
               letterSpacing: "0.01em",
             }}
           >
-            Start Workout
+            {t("home.start_workout")}
             <span style={{ fontSize: 18 }}>→</span>
           </button>
 
@@ -412,7 +414,7 @@ export default function Home({ store, plans, exercises, unit, onStartWorkout, on
                   {store.overrideDayIdx !== undefined ? (
                     <>
                       <span style={{ fontSize: 12, color: C.text2 }}>
-                        Switched to:{" "}
+                        {t("home.switched_to")}{" "}
                         <span style={{ fontWeight: 600, color: C.text1 }}>{day?.name}</span>
                       </span>
                       <button
@@ -422,7 +424,7 @@ export default function Home({ store, plans, exercises, unit, onStartWorkout, on
                           cursor: "pointer", padding: "2px 6px", fontFamily: FONT,
                         }}
                       >
-                        Reset ×
+                        {t("home.reset")}
                       </button>
                     </>
                   ) : (
@@ -434,14 +436,14 @@ export default function Home({ store, plans, exercises, unit, onStartWorkout, on
                         textDecoration: "underline", textDecorationColor: C.border,
                       }}
                     >
-                      Switch to a different day
+                      {t("home.switch_day")}
                     </button>
                   )}
                 </div>
               ) : (
                 <div>
                   <div style={{ fontSize: 12, color: C.text2, marginBottom: 8, fontWeight: 600 }}>
-                    Choose workout day:
+                    {t("home.choose_day")}
                   </div>
                   <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                     {plan.days.map((d, i) => {
@@ -465,7 +467,7 @@ export default function Home({ store, plans, exercises, unit, onStartWorkout, on
                           <span style={{ fontSize: 13, fontWeight: 600, color: C.text1 }}>{d.name}</span>
                           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                             {isScheduled && (
-                              <span style={{ fontSize: 11, color: C.text3 }}>scheduled</span>
+                              <span style={{ fontSize: 11, color: C.text3 }}>{t("home.scheduled")}</span>
                             )}
                             {isSelected && (
                               <span style={{ fontSize: 13, color: C.green, fontWeight: 700 }}>✓</span>
@@ -483,7 +485,7 @@ export default function Home({ store, plans, exercises, unit, onStartWorkout, on
                       padding: 0, fontFamily: FONT,
                     }}
                   >
-                    Cancel
+                    {t("home.cancel")}
                   </button>
                 </div>
               )}
@@ -501,9 +503,9 @@ export default function Home({ store, plans, exercises, unit, onStartWorkout, on
             display: "flex", alignItems: "center",
             justifyContent: "space-between", marginBottom: 12,
           }}>
-            <div style={{ fontSize: 15, fontWeight: 600, color: C.text1 }}>This Week</div>
+            <div style={{ fontSize: 15, fontWeight: 600, color: C.text1 }}>{t("home.this_week")}</div>
             <div style={{ fontSize: 13, color: C.text2 }}>
-              {workoutsThisWeek(logs)} workout{workoutsThisWeek(logs) !== 1 ? "s" : ""}
+              {workoutsThisWeek(logs) === 1 ? t("home.workouts_1") : t("home.workouts_n", { n: workoutsThisWeek(logs) })}
             </div>
           </div>
           <div style={{ display: "flex", gap: 6, justifyContent: "space-between" }}>
@@ -533,16 +535,16 @@ export default function Home({ store, plans, exercises, unit, onStartWorkout, on
         {/* Stats row */}
         {hasLogs && (
           <div style={{ display: "flex", gap: 10, marginBottom: 16 }}>
-            <StatCard value={logs.length} label="Total Workouts" />
-            <StatCard value={currentStreak(logs)} label="Day Streak" />
-            <StatCard value={totalPRs(logs, exercises)} label="Records Set" />
+            <StatCard value={logs.length} label={t("home.total_workouts")} />
+            <StatCard value={currentStreak(logs)} label={t("home.day_streak")} />
+            <StatCard value={totalPRs(logs, exercises)} label={t("home.records_set")} />
           </div>
         )}
 
         {/* Recent Workouts */}
         <div style={{ marginBottom: 16 }}>
           <div style={{ fontSize: 15, fontWeight: 600, color: C.text1, marginBottom: 12 }}>
-            Recent Workouts
+            {t("home.recent_workouts")}
           </div>
 
           {!hasLogs ? (
@@ -552,7 +554,7 @@ export default function Home({ store, plans, exercises, unit, onStartWorkout, on
             }}>
               <div style={{ fontSize: 28, marginBottom: 8 }}>🏋️</div>
               <div style={{ fontSize: 14, color: C.text2, lineHeight: 1.5 }}>
-                Your completed workouts will appear here
+                {t("home.no_workouts_yet")}
               </div>
             </div>
           ) : (
@@ -560,7 +562,7 @@ export default function Home({ store, plans, exercises, unit, onStartWorkout, on
               {recentLogs.map((log, i) => {
                 const exCount  = log.exercises?.length || 0;
                 const dayLabel = log.dayName || `Day ${(log.dayIdx ?? 0) + 1}`;
-                const dateLabel = formatDateLabel(log.date || log.completedAt || log.startedAt);
+                const dateLabel = formatDateLabel(log.date || log.completedAt || log.startedAt, t);
                 const duration  = formatDuration(log.durationSecs);
                 return (
                   <div key={log.id || i} style={{
@@ -574,7 +576,7 @@ export default function Home({ store, plans, exercises, unit, onStartWorkout, on
                       </div>
                       <div style={{ fontSize: 12, color: C.text2, marginTop: 2 }}>
                         {dateLabel}
-                        {exCount > 0 && ` · ${exCount} exercise${exCount !== 1 ? "s" : ""}`}
+                        {exCount > 0 && ` · ${exCount === 1 ? t("home.exercise_count_1") : t("home.exercise_count_n", { n: exCount })}`}
                       </div>
                     </div>
                     <div style={{ fontSize: 13, color: C.text2, fontWeight: 500 }}>

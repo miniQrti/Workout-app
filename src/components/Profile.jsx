@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useTheme, FONT } from "../theme.js";
 import { HISTORICAL_LOGS } from "../data/historicalLogs.js";
+import { useT } from "../i18n.js";
 
 // ── Static profile data ───────────────────────────────────────────────────────
 
@@ -95,6 +96,7 @@ function TargetRow({ exercise, target, last }) {
 
 export default function Profile({ store, onOpenMenu, onImportHistory }) {
   const C = useTheme();
+  const t = useT();
   const [targetDay, setTargetDay] = useState("Day A");
   const alreadyImported = store.historicalImported;
   const logCount = (store.logs || []).length;
@@ -128,7 +130,7 @@ export default function Profile({ store, onOpenMenu, onImportHistory }) {
             <path d="M0 1h18M0 7h18M0 13h18" stroke={C.text2} strokeWidth="1.8" strokeLinecap="round"/>
           </svg>
         </button>
-        <div style={{ fontSize: 20, fontWeight: 700, color: C.text1 }}>Profile</div>
+        <div style={{ fontSize: 20, fontWeight: 700, color: C.text1 }}>{t("profile.title")}</div>
       </div>
 
       <div style={{ padding: "16px 16px 0" }}>
@@ -181,7 +183,7 @@ export default function Profile({ store, onOpenMenu, onImportHistory }) {
         </div>
 
         {/* Machine settings */}
-        <Section title="Machine Settings">
+        <Section title={t("profile.machine_settings")}>
           {MACHINE_SETTINGS.map((row, i) => (
             <div key={row.machine} style={{
               display: "flex", alignItems: "flex-start",
@@ -201,7 +203,7 @@ export default function Profile({ store, onOpenMenu, onImportHistory }) {
         </Section>
 
         {/* Next session targets */}
-        <Section title="Next Session Targets">
+        <Section title={t("profile.targets")}>
           <div style={{ display: "flex", gap: 6, marginBottom: 14 }}>
             {Object.keys(TARGETS).map(day => (
               <button
@@ -230,7 +232,7 @@ export default function Profile({ store, onOpenMenu, onImportHistory }) {
         </Section>
 
         {/* Historical data import */}
-        <Section title="Workout History">
+        <Section title={t("profile.history")}>
           {alreadyImported ? (
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
               <div style={{
@@ -245,17 +247,17 @@ export default function Profile({ store, onOpenMenu, onImportHistory }) {
               </div>
               <div>
                 <div style={{ fontSize: 14, fontWeight: 600, color: C.text1 }}>
-                  Historical data imported
+                  {t("profile.history_imported")}
                 </div>
                 <div style={{ fontSize: 12, color: C.text2, marginTop: 1 }}>
-                  {HISTORICAL_LOGS.length} sessions from Weeks 1–7 · {logCount} total in app
+                  {t("profile.sessions_from", { n: HISTORICAL_LOGS.length })} · {t("profile.total_in_app", { n: logCount })}
                 </div>
               </div>
             </div>
           ) : (
             <>
               <div style={{ fontSize: 13, color: C.text2, marginBottom: 14, lineHeight: 1.6 }}>
-                Import your 7 weeks of pre-app workout history ({HISTORICAL_LOGS.length} sessions) to populate your Progress charts and personal records.
+                {t("profile.import_desc", { n: HISTORICAL_LOGS.length })}
               </div>
               <button
                 onClick={onImportHistory}
@@ -272,7 +274,7 @@ export default function Profile({ store, onOpenMenu, onImportHistory }) {
                   stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M12 3v12M5 10l7 7 7-7"/><path d="M3 21h18"/>
                 </svg>
-                Import {HISTORICAL_LOGS.length} Sessions (Weeks 1–7)
+                {t("profile.import_btn", { n: HISTORICAL_LOGS.length })}
               </button>
             </>
           )}

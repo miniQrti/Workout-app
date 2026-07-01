@@ -14,6 +14,7 @@ export function freshStore() {
     unit: "lbs",
     theme: "light",
     accent: "green",
+    lang: "en",
     logs: [],
     swaps: {},
   };

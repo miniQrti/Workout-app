@@ -3,6 +3,7 @@ import { PLANS }    from "./data/plans.js";
 import { EXERCISES } from "./data/exercises.js";
 import { loadStore, saveStore, getDayExercises, getPR, exportWorkoutCSV, shareOrDownloadCSV, importWorkoutCSV } from "./data/store.js";
 import { ThemeContext, buildTheme, useTheme, FONT, ACCENT_OPTIONS } from "./theme.js";
+import { LangContext, makeT, useT, useLang } from "./i18n.js";
 import Home          from "./components/Home.jsx";
 import ActiveWorkout from "./components/ActiveWorkout.jsx";
 import Progress      from "./components/Progress.jsx";
@@ -15,6 +16,7 @@ import { HISTORICAL_LOGS } from "./data/historicalLogs.js";
 
 function WorkoutSummary({ summary, onClose }) {
   const C = useTheme();
+  const t = useT();
   const { durationSecs, log, newPRs } = summary;
 
   const totalSets     = log.exercises.reduce((acc, ex) => acc + (ex.sets?.length || 0), 0);
@@ -55,7 +57,7 @@ function WorkoutSummary({ summary, onClose }) {
             </svg>
           </div>
           <div style={{ fontSize: 22, fontWeight: 800, color: C.text1 }}>
-            Workout Complete!
+            {t("summary.title")}
           </div>
           <div style={{ fontSize: 14, color: C.text2, marginTop: 4 }}>
             {log.dayName}
@@ -68,9 +70,9 @@ function WorkoutSummary({ summary, onClose }) {
           gap: 10, marginBottom: newPRs.length > 0 ? 16 : 20,
         }}>
           {[
-            { value: durationLabel, label: "Duration" },
-            { value: log.exercises.length, label: "Exercises" },
-            { value: completedSets, label: "Sets Done" },
+            { value: durationLabel,        label: t("summary.duration")  },
+            { value: log.exercises.length, label: t("summary.exercises") },
+            { value: completedSets,        label: t("summary.sets_done") },
           ].map(({ value, label }) => (
             <div key={label} style={{
               background: C.bg, borderRadius: 12,
@@ -89,7 +91,7 @@ function WorkoutSummary({ summary, onClose }) {
             padding: "12px 14px", marginBottom: 20,
           }}>
             <div style={{ fontSize: 13, fontWeight: 700, color: C.orange, marginBottom: 6 }}>
-              🏆 New Personal Records!
+              {t("summary.new_prs")}
             </div>
             {newPRs.map((pr, i) => (
               <div key={i} style={{
@@ -112,7 +114,7 @@ function WorkoutSummary({ summary, onClose }) {
             fontFamily: FONT,
           }}
         >
-          Done
+          {t("summary.done")}
         </button>
       </div>
     </div>
@@ -169,8 +171,10 @@ const CHANGELOG = [
 
 function HamburgerMenu({ view, onNavigate, store, onUpdateStore, plans, exercises, onClose }) {
   const C      = useTheme();
+  const { t }  = useLang();
   const unit   = store.unit   || "lbs";
   const theme  = store.theme  || "light";
+  const lang   = store.lang   || "en";
   const importRef = useRef(null);
   const [importStatus, setImportStatus] = useState(null); // null | {count, dupes} | "error"
 
@@ -213,23 +217,19 @@ function HamburgerMenu({ view, onNavigate, store, onUpdateStore, plans, exercise
 
   const NAV = [
     {
-      id: "home", label: "Home",
+      id: "home", label: t("nav.home"),
       icon: <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>,
     },
     {
-      id: "progress", label: "Progress",
+      id: "progress", label: t("nav.progress"),
       icon: <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>,
     },
     {
-      id: "programs", label: "Programs",
+      id: "programs", label: t("nav.programs"),
       icon: <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>,
     },
     {
-      id: "timer", label: "Rest Timer",
-      icon: <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>,
-    },
-    {
-      id: "profile", label: "Profile",
+      id: "profile", label: t("nav.profile"),
       icon: <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>,
     },
   ];
@@ -252,10 +252,10 @@ function HamburgerMenu({ view, onNavigate, store, onUpdateStore, plans, exercise
         }}
       >
         <div style={{ width: 36, height: 4, borderRadius: 2, background: C.border, margin: "0 auto 20px" }} />
-        <div style={{ fontSize: 17, fontWeight: 700, color: C.text1, marginBottom: 16 }}>Menu</div>
+        <div style={{ fontSize: 17, fontWeight: 700, color: C.text1, marginBottom: 16 }}>{t("menu.title")}</div>
 
         {/* Navigation */}
-        <div style={{ fontSize: 12, color: C.text2, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 10 }}>Navigate</div>
+        <div style={{ fontSize: 12, color: C.text2, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 10 }}>{t("menu.navigate")}</div>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 20 }}>
           {NAV.map(item => {
             const isActive = view === item.id;
@@ -284,7 +284,7 @@ function HamburgerMenu({ view, onNavigate, store, onUpdateStore, plans, exercise
 
         {/* Weight Unit */}
         <div style={{ marginBottom: 20 }}>
-          <div style={{ fontSize: 12, color: C.text2, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 10 }}>Weight Unit</div>
+          <div style={{ fontSize: 12, color: C.text2, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 10 }}>{t("menu.weight_unit")}</div>
           <div style={{ display: "flex", gap: 10 }}>
             {["lbs", "kg"].map(u => (
               <button key={u} onClick={() => onUpdateStore({ unit: u })} style={{
@@ -301,9 +301,9 @@ function HamburgerMenu({ view, onNavigate, store, onUpdateStore, plans, exercise
 
         {/* Appearance */}
         <div style={{ marginBottom: 20 }}>
-          <div style={{ fontSize: 12, color: C.text2, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 10 }}>Appearance</div>
+          <div style={{ fontSize: 12, color: C.text2, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 10 }}>{t("menu.appearance")}</div>
           <div style={{ display: "flex", gap: 10 }}>
-            {[{ value: "light", label: "Light", icon: "☀️" }, { value: "dark", label: "Dark", icon: "🌙" }].map(opt => (
+            {[{ value: "light", label: t("menu.light"), icon: "☀️" }, { value: "dark", label: t("menu.dark"), icon: "🌙" }].map(opt => (
               <button key={opt.value} onClick={() => onUpdateStore({ theme: opt.value })} style={{
                 flex: 1, padding: "12px 0", borderRadius: 10, cursor: "pointer",
                 fontSize: 14, fontWeight: 600, fontFamily: FONT,
@@ -320,8 +320,8 @@ function HamburgerMenu({ view, onNavigate, store, onUpdateStore, plans, exercise
         </div>
 
         {/* Accent Color */}
-        <div style={{ marginBottom: 24 }}>
-          <div style={{ fontSize: 12, color: C.text2, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 10 }}>Accent Color</div>
+        <div style={{ marginBottom: 20 }}>
+          <div style={{ fontSize: 12, color: C.text2, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 10 }}>{t("menu.accent_color")}</div>
           <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
             {ACCENT_OPTIONS.map(opt => {
               const isActive = accent === opt.key;
@@ -349,9 +349,29 @@ function HamburgerMenu({ view, onNavigate, store, onUpdateStore, plans, exercise
           </div>
         </div>
 
+        {/* Language */}
+        <div style={{ marginBottom: 24 }}>
+          <div style={{ fontSize: 12, color: C.text2, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 10 }}>{t("menu.language")}</div>
+          <div style={{ display: "flex", gap: 10 }}>
+            {[{ value: "en", flag: "🇬🇧", label: "English" }, { value: "de", flag: "🇩🇪", label: "Deutsch" }].map(opt => (
+              <button key={opt.value} onClick={() => onUpdateStore({ lang: opt.value })} style={{
+                flex: 1, padding: "12px 0", borderRadius: 10, cursor: "pointer",
+                fontSize: 14, fontWeight: 600, fontFamily: FONT,
+                display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+                background: lang === opt.value ? C.greenLight : C.surface2,
+                color:      lang === opt.value ? C.green : C.text2,
+                border: lang === opt.value ? `1.5px solid ${C.green}` : `1px solid ${C.border}`,
+                transition: "all 0.15s",
+              }}>
+                <span style={{ fontSize: 16 }}>{opt.flag}</span>{opt.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
         {/* Data */}
         <div style={{ marginBottom: 24 }}>
-          <div style={{ fontSize: 12, color: C.text2, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 10 }}>Data</div>
+          <div style={{ fontSize: 12, color: C.text2, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 10 }}>{t("menu.data")}</div>
 
           {/* Export */}
           <button onClick={hasLogs ? handleExport : undefined} disabled={!hasLogs} style={{
@@ -361,7 +381,7 @@ function HamburgerMenu({ view, onNavigate, store, onUpdateStore, plans, exercise
             background: C.surface2, color: hasLogs ? C.text1 : C.text3,
             border: `1px solid ${C.border}`, opacity: hasLogs ? 1 : 0.5,
           }}>
-            <span>Export Workout Log (CSV)</span>
+            <span>{t("menu.export_csv")}</span>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
             </svg>
@@ -384,7 +404,7 @@ function HamburgerMenu({ view, onNavigate, store, onUpdateStore, plans, exercise
               background: C.surface2, color: C.text1, border: `1px solid ${C.border}`,
             }}
           >
-            <span>Import from CSV</span>
+            <span>{t("menu.import_csv")}</span>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
             </svg>
@@ -406,20 +426,21 @@ function HamburgerMenu({ view, onNavigate, store, onUpdateStore, plans, exercise
               fontWeight: 500,
             }}>
               {importStatus === "error"
-                ? "Could not read file. Make sure it's a CSV exported from this app."
+                ? t("menu.import_error")
                 : importStatus.count === 0
-                  ? `No new sessions found${importStatus.dupes > 0 ? ` (${importStatus.dupes} already imported)` : ""}.`
-                  : `Imported ${importStatus.count} session${importStatus.count !== 1 ? "s" : ""}${importStatus.dupes > 0 ? ` · ${importStatus.dupes} duplicate${importStatus.dupes !== 1 ? "s" : ""} skipped` : ""}.`
+                  ? t("menu.import_none") + (importStatus.dupes > 0 ? " " + t("menu.import_already_1", { n: importStatus.dupes }) : "")
+                  : (importStatus.count === 1 ? t("menu.import_added_1") : t("menu.import_added_n", { n: importStatus.count }))
+                    + (importStatus.dupes > 0 ? " · " + (importStatus.dupes === 1 ? t("menu.import_dupe_1") : t("menu.import_dupe_n", { n: importStatus.dupes })) : "")
               }
             </div>
           )}
 
-          {!hasLogs && <div style={{ fontSize: 12, color: C.text3, marginTop: 6, paddingLeft: 2 }}>Export is available once you complete a workout</div>}
+          {!hasLogs && <div style={{ fontSize: 12, color: C.text3, marginTop: 6, paddingLeft: 2 }}>{t("menu.export_unavailable")}</div>}
         </div>
 
         {/* App */}
         <div style={{ marginBottom: 20 }}>
-          <div style={{ fontSize: 12, color: C.text2, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 10 }}>App</div>
+          <div style={{ fontSize: 12, color: C.text2, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 10 }}>{t("menu.app")}</div>
 
           {/* Reload */}
           <button
@@ -431,7 +452,7 @@ function HamburgerMenu({ view, onNavigate, store, onUpdateStore, plans, exercise
               background: C.surface2, color: C.text1, border: `1px solid ${C.border}`,
             }}
           >
-            <span>Reload App</span>
+            <span>{t("menu.reload")}</span>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
               <polyline points="23 4 23 10 17 10"/>
               <path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/>
@@ -451,7 +472,7 @@ function HamburgerMenu({ view, onNavigate, store, onUpdateStore, plans, exercise
                 background: "none", border: "none", cursor: "pointer", fontFamily: FONT,
               }}
             >
-              <span style={{ fontSize: 14, fontWeight: 600, color: C.text1 }}>What's New</span>
+              <span style={{ fontSize: 14, fontWeight: 600, color: C.text1 }}>{t("menu.whats_new")}</span>
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                 <span style={{
                   fontSize: 11, padding: "2px 7px", borderRadius: 10,
@@ -499,7 +520,7 @@ function HamburgerMenu({ view, onNavigate, store, onUpdateStore, plans, exercise
           border: `1px solid ${C.border}`, background: C.surface2, color: C.text1,
           fontSize: 15, fontWeight: 600, cursor: "pointer", fontFamily: FONT,
         }}>
-          Close
+          {t("menu.close")}
         </button>
       </div>
     </div>
@@ -529,7 +550,8 @@ export default function App() {
     document.documentElement.dataset.theme = store.theme || "light";
   }, [store.theme]);
 
-  const theme = useMemo(() => buildTheme(store.theme || "light", store.accent || "green"), [store.theme, store.accent]);
+  const theme    = useMemo(() => buildTheme(store.theme || "light", store.accent || "green"), [store.theme, store.accent]);
+  const langValue = useMemo(() => ({ lang: store.lang || "en", t: makeT(store.lang || "en") }), [store.lang]);
 
   const updateStore = useCallback((partial) => {
     setStore(prev => ({ ...prev, ...partial }));
@@ -702,27 +724,30 @@ export default function App() {
 
   if (view === "workout" && session) {
     return (
-      <ThemeContext.Provider value={theme}>
-        <div style={{ fontFamily: FONT, background: theme.bg, minHeight: "100vh" }}>
-          <ActiveWorkout
-            session={session}
-            exercises={EXERCISES}
-            logs={store.logs || []}
-            unit={store.unit || "lbs"}
-            onUpdateSet={updateSet}
-            onCompleteSet={completeSet}
-            onUpdateFeel={updateFeel}
-            onFinish={finishWorkout}
-            onCancel={cancelWorkout}
-            onSwapExercise={swapExercise}
-          />
-          {showTimer && <RestTimer onClose={() => setTimer(false)}/>}
-        </div>
-      </ThemeContext.Provider>
+      <LangContext.Provider value={langValue}>
+        <ThemeContext.Provider value={theme}>
+          <div style={{ fontFamily: FONT, background: theme.bg, minHeight: "100vh" }}>
+            <ActiveWorkout
+              session={session}
+              exercises={EXERCISES}
+              logs={store.logs || []}
+              unit={store.unit || "lbs"}
+              onUpdateSet={updateSet}
+              onCompleteSet={completeSet}
+              onUpdateFeel={updateFeel}
+              onFinish={finishWorkout}
+              onCancel={cancelWorkout}
+              onSwapExercise={swapExercise}
+            />
+            {showTimer && <RestTimer onClose={() => setTimer(false)}/>}
+          </div>
+        </ThemeContext.Provider>
+      </LangContext.Provider>
     );
   }
 
   return (
+    <LangContext.Provider value={langValue}>
     <ThemeContext.Provider value={theme}>
       <div style={{ background: theme.bg, minHeight: "100vh", fontFamily: FONT }}>
         {view === "home" && (
@@ -787,5 +812,6 @@ export default function App() {
         )}
       </div>
     </ThemeContext.Provider>
+    </LangContext.Provider>
   );
 }
