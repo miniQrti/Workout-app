@@ -966,7 +966,7 @@ export default function ActiveWorkout({
       {/* List mode — all exercises as compact rows */}
       {focusedIdx === null && (
         <div style={{ padding: "14px 14px 130px" }}>
-          <WarmupCard items={session.warmup || []} />
+          <WarmupCard key={session.dayIdx} items={session.warmup || []} />
 
           {session.exercises?.length === 0 && (
             <div style={{ textAlign: "center", padding: "48px 24px", color: C.text3, fontSize: 14 }}>
