@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from "react";
 import { useTheme, FONT } from "../theme.js";
+import { useT } from "../i18n.js";
 
 const DIFFICULTY_COLORS_STATIC = {
   Intermediate: { bg: "#FFF4ED", color: "#F97316" },
@@ -78,6 +79,7 @@ function Badge({ label, bg, color, small }) {
 
 function PlanCard({ plan, isActive, onSwitch, exercises }) {
   const C = useTheme();
+  const t = useT();
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
   const dc = useDifficultyStyle(plan.difficulty);
@@ -98,7 +100,7 @@ function PlanCard({ plan, isActive, onSwitch, exercises }) {
           background: C.green, color: "#fff",
           fontSize: 11, fontWeight: 700, letterSpacing: "0.03em",
         }}>
-          ACTIVE
+          {t("programs.active_badge")}
         </div>
       )}
 
@@ -128,7 +130,7 @@ function PlanCard({ plan, isActive, onSwitch, exercises }) {
           border: `1px solid ${C.green}`,
         }}
       >
-        {previewOpen ? "Hide preview" : "Preview workouts"}
+        {previewOpen ? t("programs.preview_hide") : t("programs.preview_show")}
         <svg width="12" height="12" viewBox="0 0 16 16" fill="none"
           stroke={C.green} strokeWidth="2" strokeLinecap="round">
           <path d={previewOpen ? "M4 10l4-4 4 4" : "M4 6l4 4 4-4"} />
@@ -146,7 +148,7 @@ function PlanCard({ plan, isActive, onSwitch, exercises }) {
                 fontSize: 11, fontWeight: 600, color: C.green,
                 textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6,
               }}>
-                Planned Order · {plan.schedule.cycleLength}-day cycle
+                {t("programs.planned_order", { n: plan.schedule.cycleLength })}
               </div>
               <div style={{ fontSize: 12, color: C.greenDark, lineHeight: 1.6 }}>
                 {plan.schedule.rotation.map((entry, i) => (
@@ -171,7 +173,7 @@ function PlanCard({ plan, isActive, onSwitch, exercises }) {
 
               {day.warmup?.length > 0 && (
                 <div style={{ fontSize: 11, color: C.text3, marginBottom: 8, lineHeight: 1.5 }}>
-                  Warm-up: {day.warmup.map(w => w.name).join(", ")}
+                  {t("programs.warmup_label")} {day.warmup.map(w => w.name).join(", ")}
                 </div>
               )}
 
@@ -203,7 +205,7 @@ function PlanCard({ plan, isActive, onSwitch, exercises }) {
                       </svg>
                     </a>
                     <span style={{ flexShrink: 0, whiteSpace: "nowrap" }}>
-                      {ex.sets}×{ex.reps}{meta?.isTime ? "s" : ""} · {ex.restSecs}s rest
+                      {ex.sets}×{ex.reps}{meta?.isTime ? "s" : ""} · {ex.restSecs}s {t("programs.rest_label")}
                     </span>
                   </div>
                 );
@@ -224,7 +226,7 @@ function PlanCard({ plan, isActive, onSwitch, exercises }) {
             border: `1px solid ${C.border}`,
           }}
         >
-          Switch to this plan
+          {t("programs.switch_to")}
         </button>
       )}
 
@@ -234,7 +236,7 @@ function PlanCard({ plan, isActive, onSwitch, exercises }) {
           padding: "12px", border: `1px solid ${C.border}`,
         }}>
           <div style={{ fontSize: 13, color: C.text2, marginBottom: 10, lineHeight: 1.5 }}>
-            Switch to <strong style={{ color: C.text1 }}>{plan.name}</strong>? Your progress tracking will continue.
+            {t("programs.confirm_body", { name: plan.name })}
           </div>
           <div style={{ display: "flex", gap: 8 }}>
             <button
@@ -246,7 +248,7 @@ function PlanCard({ plan, isActive, onSwitch, exercises }) {
                 fontFamily: FONT,
               }}
             >
-              Cancel
+              {t("programs.confirm_cancel")}
             </button>
             <button
               onClick={() => { setConfirmOpen(false); onSwitch(plan.id); }}
@@ -257,7 +259,7 @@ function PlanCard({ plan, isActive, onSwitch, exercises }) {
                 fontFamily: FONT,
               }}
             >
-              Confirm
+              {t("programs.confirm_yes")}
             </button>
           </div>
         </div>
@@ -270,6 +272,7 @@ function PlanCard({ plan, isActive, onSwitch, exercises }) {
 
 function ExerciseCard({ exercise }) {
   const C = useTheme();
+  const t = useT();
   const [expanded, setExpanded] = useState(false);
   const muscleLabel = exercise.primaryMuscle.charAt(0).toUpperCase() +
     exercise.primaryMuscle.slice(1);
@@ -330,7 +333,7 @@ function ExerciseCard({ exercise }) {
                 fontSize: 11, fontWeight: 600, color: C.text3,
                 textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6,
               }}>
-                Muscles Worked
+                {t("programs.muscles_worked")}
               </div>
               <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                 {exercise.muscles.map(m => (
@@ -357,7 +360,7 @@ function ExerciseCard({ exercise }) {
                 {exercise.isTime ? "s" : " reps"}
               </span>
               {exercise.restSecs > 0 && (
-                <span><strong>{exercise.restSecs}s</strong> rest</span>
+                <span><strong>{exercise.restSecs}s</strong> {t("programs.rest_label")}</span>
               )}
             </div>
             <a
@@ -370,7 +373,7 @@ function ExerciseCard({ exercise }) {
                 textDecoration: "none", flexShrink: 0,
               }}
             >
-              Watch demo
+              {t("programs.watch_demo")}
               <svg width="11" height="11" viewBox="0 0 12 12" fill="none"
                 stroke={C.green} strokeWidth="1.8" strokeLinecap="round">
                 <path d="M5 2H2a1 1 0 0 0-1 1v7a1 1 0 0 0 1 1h7a1 1 0 0 0 1-1V7"/>
@@ -388,6 +391,7 @@ function ExerciseCard({ exercise }) {
 
 export default function Programs({ store, plans, exercises, onSelectPlan, onUpdateStore, onOpenMenu }) {
   const C = useTheme();
+  const t = useT();
   const [tab,          setTab]    = useState("plans");
   const [search,       setSearch] = useState("");
   const [muscleFilter, setMuscle] = useState("All");
@@ -440,26 +444,29 @@ export default function Programs({ store, plans, exercises, onSelectPlan, onUpda
               </svg>
             </button>
             <div style={{ fontSize: 20, fontWeight: 700, color: C.text1 }}>
-              Programs
+              {t("programs.title")}
             </div>
           </div>
           <div style={{ display: "flex" }}>
-            {["plans", "exercises"].map(t => (
+            {[
+              { id: "plans",     label: t("programs.tab_plans") },
+              { id: "exercises", label: t("programs.tab_exercises") },
+            ].map(tabItem => (
               <button
-                key={t}
-                onClick={() => setTab(t)}
+                key={tabItem.id}
+                onClick={() => setTab(tabItem.id)}
                 style={{
                   flex: 1, padding: "10px 0",
                   background: "none", border: "none", cursor: "pointer",
-                  fontSize: 14, fontWeight: tab === t ? 600 : 500,
-                  color: tab === t ? C.green : C.text2,
-                  borderBottom: tab === t ? `2px solid ${C.green}` : "2px solid transparent",
+                  fontSize: 14, fontWeight: tab === tabItem.id ? 600 : 500,
+                  color: tab === tabItem.id ? C.green : C.text2,
+                  borderBottom: tab === tabItem.id ? `2px solid ${C.green}` : "2px solid transparent",
                   letterSpacing: "0.01em",
                   transition: "all 0.15s",
                   fontFamily: FONT,
                 }}
               >
-                {t.charAt(0).toUpperCase() + t.slice(1)}
+                {tabItem.label}
               </button>
             ))}
           </div>
@@ -502,7 +509,7 @@ export default function Programs({ store, plans, exercises, onSelectPlan, onUpda
               borderRadius: 14, padding: "20px", textAlign: "center",
               color: C.text2, fontSize: 13,
             }}>
-              No plans match this category
+              {t("programs.no_plans")}
             </div>
           ) : filteredPlans.map(plan => (
             <PlanCard
@@ -537,7 +544,7 @@ export default function Programs({ store, plans, exercises, onSelectPlan, onUpda
             </div>
             <input
               type="text"
-              placeholder="Search exercises…"
+              placeholder={t("programs.search_placeholder")}
               value={search}
               onChange={e => setSearch(e.target.value)}
               style={{
@@ -576,7 +583,7 @@ export default function Programs({ store, plans, exercises, onSelectPlan, onUpda
           </div>
 
           <div style={{ fontSize: 12, color: C.text3, marginBottom: 10, fontWeight: 500 }}>
-            {filteredExercises.length} exercise{filteredExercises.length !== 1 ? "s" : ""}
+            {filteredExercises.length === 1 ? t("programs.ex_count_1") : t("programs.ex_count_n", { n: filteredExercises.length })}
           </div>
 
           {filteredExercises.length === 0 ? (
@@ -585,7 +592,7 @@ export default function Programs({ store, plans, exercises, onSelectPlan, onUpda
               borderRadius: 14, padding: "20px", textAlign: "center",
               color: C.text2, fontSize: 13,
             }}>
-              No exercises match your search
+              {t("programs.no_exercises")}
             </div>
           ) : (
             filteredExercises.map(ex => (

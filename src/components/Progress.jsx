@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from "react";
 import { getExerciseHistory, getPR } from "../data/store.js";
 import { useTheme, FONT } from "../theme.js";
+import { useT } from "../i18n.js";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -9,15 +10,15 @@ function formatDuration(secs) {
   return `${Math.floor(secs / 60)} min`;
 }
 
-function formatDateLabel(raw) {
+function formatDateLabel(raw, t) {
   if (!raw) return "";
   const d = new Date(raw);
   if (isNaN(d.getTime())) return "";
   const now  = new Date();
   const diff = Math.floor((now - d) / 86400000);
-  if (diff === 0) return "Today";
-  if (diff === 1) return "Yesterday";
-  return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  if (diff === 0) return t("date.today");
+  if (diff === 1) return t("date.yesterday");
+  return d.toLocaleDateString(t("date.locale"), { month: "short", day: "numeric" });
 }
 
 function monthWorkouts(logs) {
@@ -60,6 +61,7 @@ function currentStreak(logs) {
 
 function LineChart({ history, prWeight }) {
   const C = useTheme();
+  const t = useT();
   const W = 300, H = 80, PAD = 10;
   const innerW = W - PAD * 2;
   const innerH = H - PAD * 2;
@@ -72,7 +74,7 @@ function LineChart({ history, prWeight }) {
         height: 80, display: "flex", alignItems: "center", justifyContent: "center",
         color: C.text3, fontSize: 13,
       }}>
-        Log more sessions to see your chart
+        {t("progress.chart_more")}
       </div>
     );
   }
@@ -142,9 +144,10 @@ function StatCard({ value, label, color }) {
 
 function SessionLogItem({ log, exercises }) {
   const C = useTheme();
+  const t = useT();
   const [expanded, setExpanded] = useState(false);
   const exCount   = log.exercises?.length || 0;
-  const dateLabel = formatDateLabel(log.date || log.completedAt || log.startedAt);
+  const dateLabel = formatDateLabel(log.date || log.completedAt || log.startedAt, t);
   const duration  = formatDuration(log.durationSecs);
   const dayLabel  = log.dayName || `Day ${(log.dayIdx ?? 0) + 1}`;
 
@@ -166,7 +169,7 @@ function SessionLogItem({ log, exercises }) {
           <div style={{ fontSize: 14, fontWeight: 600, color: C.text1 }}>{dayLabel}</div>
           <div style={{ fontSize: 12, color: C.text2, marginTop: 2 }}>
             {dateLabel}
-            {exCount > 0 && ` · ${exCount} exercises`}
+            {exCount > 0 && ` · ${exCount === 1 ? t("progress.exercises_1") : t("progress.exercises_n", { n: exCount })}`}
           </div>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -190,11 +193,11 @@ function SessionLogItem({ log, exercises }) {
                   <div key={si} style={{
                     fontSize: 12, color: C.text2, marginTop: 2, display: "flex", gap: 8,
                   }}>
-                    <span style={{ color: C.text3 }}>Set {si + 1}</span>
+                    <span style={{ color: C.text3 }}>{t("progress.set_label")} {si + 1}</span>
                     {s.weight && <span>{s.weight} lbs</span>}
-                    {s.reps   && <span>× {s.reps} reps</span>}
+                    {s.reps   && <span>× {s.reps} {t("exercise.reps_label")}</span>}
                     {s.completed === false && (
-                      <span style={{ color: C.red }}>incomplete</span>
+                      <span style={{ color: C.red }}>{t("progress.incomplete")}</span>
                     )}
                   </div>
                 ))}
@@ -211,6 +214,7 @@ function SessionLogItem({ log, exercises }) {
 
 export default function Progress({ store, exercises, plans, onOpenMenu }) {
   const C = useTheme();
+  const t = useT();
   const [selectedExId, setSelectedExId] = useState("");
   const [showAllPRs,   setShowAllPRs]   = useState(false);
   const logs = store.logs || [];
@@ -271,16 +275,16 @@ export default function Progress({ store, exercises, plans, onOpenMenu }) {
             <path d="M0 1h18M0 7h18M0 13h18" stroke={C.text2} strokeWidth="1.8" strokeLinecap="round"/>
           </svg>
         </button>
-        <div style={{ fontSize: 20, fontWeight: 700, color: C.text1 }}>Progress</div>
+        <div style={{ fontSize: 20, fontWeight: 700, color: C.text1 }}>{t("progress.title")}</div>
       </div>
 
       <div style={{ padding: "16px 16px 0" }}>
 
         {/* Summary stats */}
         <div style={{ display: "flex", gap: 10, marginBottom: 16 }}>
-          <StatCard value={logs.length}         label="Total Workouts" />
-          <StatCard value={currentStreak(logs)} label="Day Streak"     color={C.green} />
-          <StatCard value={monthWorkouts(logs)} label="This Month" />
+          <StatCard value={logs.length}         label={t("progress.total_workouts")} />
+          <StatCard value={currentStreak(logs)} label={t("progress.day_streak")}     color={C.green} />
+          <StatCard value={monthWorkouts(logs)} label={t("progress.this_month")} />
         </div>
 
         {/* Personal Records */}
@@ -293,13 +297,13 @@ export default function Progress({ store, exercises, plans, onOpenMenu }) {
             marginBottom: prs.length ? 14 : 10,
             display: "flex", alignItems: "center", gap: 8,
           }}>
-            <span>Personal Records</span>
+            <span>{t("progress.personal_records")}</span>
             <span style={{ fontSize: 18 }}>🏆</span>
           </div>
 
           {prs.length === 0 ? (
             <div style={{ fontSize: 13, color: C.text2, textAlign: "center", padding: "12px 0" }}>
-              Complete some workouts to see your records here
+              {t("progress.no_prs")}
             </div>
           ) : (
             <>
@@ -328,7 +332,7 @@ export default function Progress({ store, exercises, plans, onOpenMenu }) {
                     fontWeight: 500, cursor: "pointer", fontFamily: FONT,
                   }}
                 >
-                  {showAllPRs ? "Show less" : `Show all ${prs.length}`}
+                  {showAllPRs ? t("progress.show_less") : t("progress.show_all", { n: prs.length })}
                 </button>
               )}
             </>
@@ -341,12 +345,12 @@ export default function Progress({ store, exercises, plans, onOpenMenu }) {
           borderRadius: 16, padding: "16px", marginBottom: 16,
         }}>
           <div style={{ fontSize: 15, fontWeight: 700, color: C.text1, marginBottom: 12 }}>
-            Exercise Progress
+            {t("progress.exercise_progress")}
           </div>
 
           {exercisesWithHistory.length === 0 ? (
             <div style={{ fontSize: 13, color: C.text2, textAlign: "center", padding: "16px 0" }}>
-              Log some workouts to see progress charts
+              {t("progress.no_charts")}
             </div>
           ) : (
             <>
@@ -373,11 +377,11 @@ export default function Progress({ store, exercises, plans, onOpenMenu }) {
                 <div style={{ display: "flex", gap: 16, marginTop: 4, justifyContent: "center" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
                     <div style={{ width: 8, height: 8, borderRadius: "50%", background: C.green }} />
-                    <span style={{ fontSize: 12, color: C.text2 }}>Session</span>
+                    <span style={{ fontSize: 12, color: C.text2 }}>{t("progress.chart_session")}</span>
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
                     <div style={{ width: 10, height: 10, borderRadius: "50%", background: C.orange }} />
-                    <span style={{ fontSize: 12, color: C.text2 }}>PR</span>
+                    <span style={{ fontSize: 12, color: C.text2 }}>{t("progress.chart_pr")}</span>
                   </div>
                 </div>
               )}
@@ -389,7 +393,7 @@ export default function Progress({ store, exercises, plans, onOpenMenu }) {
                   display: "flex", justifyContent: "space-between", alignItems: "center",
                 }}>
                   <span style={{ fontSize: 13, color: C.orange, fontWeight: 600 }}>
-                    Personal Record
+                    {t("progress.personal_record")}
                   </span>
                   <span style={{ fontSize: 13, color: C.orange, fontWeight: 700 }}>
                     {chartPR.weight} lbs × {chartPR.reps} reps
@@ -403,7 +407,7 @@ export default function Progress({ store, exercises, plans, onOpenMenu }) {
         {/* Session History */}
         <div style={{ marginBottom: 16 }}>
           <div style={{ fontSize: 15, fontWeight: 700, color: C.text1, marginBottom: 12 }}>
-            Workout Log
+            {t("progress.workout_log")}
           </div>
 
           {sortedLogs.length === 0 ? (
@@ -411,7 +415,7 @@ export default function Progress({ store, exercises, plans, onOpenMenu }) {
               background: C.surface, border: `1px solid ${C.border}`,
               borderRadius: 14, padding: "20px 16px", textAlign: "center",
             }}>
-              <div style={{ fontSize: 13, color: C.text2 }}>No workouts logged yet</div>
+              <div style={{ fontSize: 13, color: C.text2 }}>{t("progress.no_logs")}</div>
             </div>
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>

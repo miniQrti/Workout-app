@@ -14,7 +14,8 @@ A personal gym workout tracker PWA (Progressive Web App) built for iPhone. It wa
 ## Repo
 - Owner: `miniqrti`
 - Repo: `workout-app`
-- Dev branch: `claude/iphone-artifact-compat-bf42iz`
+- Dev branch: `claude/review-fixes` (PR target: `claude/iphone-artifact-compat-bf42iz`)
+- Feature branch: `claude/iphone-artifact-compat-bf42iz`
 - Deploy target: `https://miniqrti.github.io/workout-app/`
 
 ## Current status
