@@ -43,8 +43,8 @@ export function loadStore() {
 export function saveStore(store) {
   try {
     localStorage.setItem(STORE_KEY, JSON.stringify(store));
-  } catch {
-    // Silently ignore storage quota or access errors (private browsing etc.)
+  } catch (e) {
+    console.warn("[workout] Could not save to localStorage:", e?.message || e);
   }
 }
 
