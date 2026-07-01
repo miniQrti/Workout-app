@@ -1114,7 +1114,7 @@ export default function ActiveWorkout({
                   exercise={exercise}
                   exercises={exercises}
                   lastSession={getLastSession(logs || [], exEntry.exId)}
-                  progressionSuggestion={getProgressionSuggestion(logs || [], exEntry.exId)}
+                  progressionSuggestion={getProgressionSuggestion(logs || [], exEntry.exId, exercises[exEntry.exId])}
                   unit={unit}
                   onUpdateSet={onUpdateSet}
                   onCompleteSet={handleCompleteSet}
