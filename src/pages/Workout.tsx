@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useApp } from "../store/appState";
 import { EXERCISES, exerciseName } from "../data/exercises";
 import { PLANS } from "../data/plans";
-import { SUBSTITUTIONS, EXERCISE_OVERRIDES } from "../data/coach";
+import { SUBSTITUTIONS, EXERCISE_OVERRIDES, COOLDOWN } from "../data/coach";
 import { muscleGroupOf } from "../data/muscles";
 import { suggestProgression } from "../store/progression";
 import { lastEntry } from "../store/selectors";
@@ -349,6 +349,9 @@ export default function Workout({
 
   if (!session) return null;
 
+  const allSetsDone = counts.total > 0 && counts.done === counts.total;
+  const cooldownComplete = session.cooldownDone.length >= COOLDOWN.length;
+
   function buildLog(): WorkoutLog | null {
     if (!session) return null;
     const exercises = session.exercises
@@ -377,7 +380,7 @@ export default function Workout({
   function tryFinish() {
     const log = buildLog();
     if (!log) { setConfirm("discard"); return; }
-    if (counts.logged < counts.total) { setConfirm("incomplete"); return; }
+    if (counts.logged < counts.total || !cooldownComplete) { setConfirm("incomplete"); return; }
     onFinished(log);
   }
 
@@ -419,7 +422,16 @@ export default function Workout({
             {t("workout.progress", { done: counts.done, total: counts.total })}
           </div>
         </div>
-        <Button small variant="primary" onClick={tryFinish}>{t("workout.finish")}</Button>
+        <Button
+          small
+          variant={allSetsDone && !cooldownComplete ? "default" : "primary"}
+          onClick={tryFinish}
+          style={allSetsDone && !cooldownComplete
+            ? { background: "var(--gold-soft)", color: "var(--gold)", borderColor: "var(--gold)" }
+            : undefined}
+        >
+          {allSetsDone && !cooldownComplete ? t("workout.cooldown_first") : t("workout.finish")}
+        </Button>
       </div>
 
       <div className="page-body">
@@ -436,6 +448,8 @@ export default function Workout({
             onOpenSwap={() => setSwapFor(i)}
           />
         ))}
+
+        <CooldownCard autoExpand={allSetsDone && !cooldownComplete} />
       </div>
 
       {rest && <RestBanner rest={rest} onSkip={() => setRest(null)} />}
@@ -481,8 +495,11 @@ export default function Workout({
       {confirm === "incomplete" && (
         <Modal onClose={() => setConfirm(null)}>
           <div className="card-title">{t("workout.incomplete_title")}</div>
-          <div style={{ fontSize: 13, color: "var(--text-2)", margin: "6px 0 16px" }}>
-            {t("workout.sets_missing", { count: counts.total - counts.logged })}
+          <div style={{ fontSize: 13, color: "var(--text-2)", margin: "6px 0 16px", display: "flex", flexDirection: "column", gap: 4 }}>
+            {counts.logged < counts.total && (
+              <span>• {t("workout.sets_missing", { count: counts.total - counts.logged })}</span>
+            )}
+            {!cooldownComplete && <span>• {t("workout.cooldown_missing")}</span>}
           </div>
           <div style={{ display: "flex", gap: 8 }}>
             <Button block onClick={() => setConfirm(null)}>{t("workout.keep_going")}</Button>
@@ -493,6 +510,65 @@ export default function Workout({
             }}>{t("workout.finish_anyway")}</Button>
           </div>
         </Modal>
+      )}
+    </div>
+  );
+}
+
+// ── Cooldown checklist (auto-expands once every set is done) ──────────────────
+
+function CooldownCard({ autoExpand }: { autoExpand: boolean }) {
+  const { state, dispatch } = useApp();
+  const { t, lang } = useLang();
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const session = state.session;
+
+  useEffect(() => {
+    if (autoExpand) {
+      setOpen(true);
+      const id = setTimeout(
+        () => ref.current?.scrollIntoView({ behavior: "smooth", block: "center" }),
+        350
+      );
+      return () => clearTimeout(id);
+    }
+    return undefined;
+  }, [autoExpand]);
+
+  if (!session) return null;
+  const done = session.cooldownDone.length;
+
+  return (
+    <div ref={ref} className="card" style={{ padding: 0, overflow: "hidden" }}>
+      <button onClick={() => setOpen((o) => !o)}
+        style={{ width: "100%", padding: "13px 16px", background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 10 }}>
+        <div style={{ flex: 1, textAlign: "left", fontSize: 14, fontWeight: 700, color: "var(--text-1)" }}>
+          {t("workout.cooldown")}
+        </div>
+        <Chip tone={done >= COOLDOWN.length ? "accent" : "default"}>{done}/{COOLDOWN.length}</Chip>
+        <span style={{ color: "var(--text-3)" }}>{open ? <IconChevronUp size={14} /> : <IconChevronDown size={14} />}</span>
+      </button>
+      {open && (
+        <div style={{ padding: "0 16px 14px", display: "flex", flexDirection: "column", gap: 8 }}>
+          {COOLDOWN.map((c, i) => {
+            const checked = session.cooldownDone.includes(i);
+            return (
+              <button key={i} onClick={() => dispatch({ type: "toggleCooldown", idx: i })}
+                style={{ display: "flex", alignItems: "center", gap: 10, background: "none", border: "none", cursor: "pointer", textAlign: "left", padding: 0 }}>
+                <span className={`set-check${checked ? " done" : ""}`} style={{ width: 26, height: 26, borderRadius: 8, flexShrink: 0 }}>
+                  <IconCheck size={14} />
+                </span>
+                <span style={{ flex: 1 }}>
+                  <span style={{ fontSize: 13, fontWeight: 600, color: checked ? "var(--text-3)" : "var(--text-1)", textDecoration: checked ? "line-through" : "none" }}>
+                    {localize(c.name, lang)}
+                  </span>
+                  <span style={{ fontSize: 12, color: "var(--text-3)", display: "block" }}>{localize(c.detail, lang)}</span>
+                </span>
+              </button>
+            );
+          })}
+        </div>
       )}
     </div>
   );

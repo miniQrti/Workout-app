@@ -154,6 +154,7 @@ export default function App() {
       dayName: localize(day.name, lang),
       startedAt: new Date().toISOString(),
       warmupDone: [],
+      cooldownDone: [],
       exercises: day.exercises.map((pe) => {
         const ex = EXERCISES[pe.exerciseId];
         return {

@@ -123,3 +123,23 @@ export const DEFAULT_MACHINE_NOTES: Record<string, string> = {
   "calf-raise-machine":     "Seat 6",
   "rotary-torso":           "Seat 3",
 };
+
+/** Post-workout cooldown checklist (global, not plan-specific). */
+export const COOLDOWN: { name: LocalizedText; detail: LocalizedText }[] = [
+  { name: { en: "Zone 2 Cardio", de: "Zone-2-Cardio" },
+    detail: { en: "15–20 min · treadmill incline 1–2% or bike · 60–70% max HR", de: "15–20 Min. · Laufband Steigung 1–2 % oder Rad · 60–70 % max. HF" } },
+  { name: { en: "Hip flexor stretch", de: "Hüftbeuger dehnen" },
+    detail: { en: "30 s each side — lunge position, hips forward", de: "30 s pro Seite — Ausfallschritt, Hüfte nach vorn" } },
+  { name: { en: "Quad stretch", de: "Quadrizeps dehnen" },
+    detail: { en: "30 s each side — standing, heel to glute", de: "30 s pro Seite — stehend, Ferse zum Gesäß" } },
+  { name: { en: "Hamstring stretch", de: "Beinbizeps dehnen" },
+    detail: { en: "30 s each side — seated or standing toe touch", de: "30 s pro Seite — sitzend oder stehend zu den Zehen" } },
+  { name: { en: "Chest opener", de: "Brustöffner" },
+    detail: { en: "30 s — clasp hands behind back, open chest, chin up", de: "30 s — Hände hinter dem Rücken falten, Brust öffnen, Kinn hoch" } },
+  { name: { en: "Cross-body shoulder stretch", de: "Schulter quer dehnen" },
+    detail: { en: "20 s each arm", de: "20 s pro Arm" } },
+  { name: { en: "Lat / tricep overhead", de: "Lat/Trizeps über Kopf" },
+    detail: { en: "20 s each arm — reach over head, side-bend", de: "20 s pro Arm — über den Kopf greifen, zur Seite neigen" } },
+  { name: { en: "Cat-cow / spinal twist", de: "Katze-Kuh / Wirbelsäulendrehung" },
+    detail: { en: "5 slow reps each — on mat", de: "je 5 langsame Wdh. — auf der Matte" } },
+];

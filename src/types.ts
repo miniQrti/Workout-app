@@ -133,6 +133,7 @@ export interface ActiveSession {
   dayName: string;
   startedAt: string;
   warmupDone: number[];
+  cooldownDone: number[];
   exercises: DraftExercise[];
 }
 

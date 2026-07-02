@@ -58,6 +58,7 @@ export type Action =
   | { type: "toggleSet"; exIdx: number; setIdx: number }
   | { type: "setFeel"; exIdx: number; feel: Feel | null }
   | { type: "toggleWarmup"; idx: number }
+  | { type: "toggleCooldown"; idx: number }
   | { type: "swapExercise"; exIdx: number; exerciseId: string }
   | { type: "discardSession" }
   | { type: "finishSession"; log: WorkoutLog; nextDayIdx: number }
@@ -80,7 +81,14 @@ function reducer(state: AppState, action: Action): AppState {
         loaded: true,
         settings: action.settings,
         logs: action.logs,
-        session: action.session,
+        // fill defaults so sessions saved by older builds stay loadable
+        session: action.session
+          ? {
+              ...action.session,
+              warmupDone: action.session.warmupDone ?? [],
+              cooldownDone: action.session.cooldownDone ?? [],
+            }
+          : null,
         sessionRecovered: action.session !== null,
       };
 
@@ -131,6 +139,14 @@ function reducer(state: AppState, action: Action): AppState {
         warmupDone: s.warmupDone.includes(action.idx)
           ? s.warmupDone.filter((i) => i !== action.idx)
           : [...s.warmupDone, action.idx],
+      }));
+
+    case "toggleCooldown":
+      return mutateSession(state, (s) => ({
+        ...s,
+        cooldownDone: s.cooldownDone.includes(action.idx)
+          ? s.cooldownDone.filter((i) => i !== action.idx)
+          : [...s.cooldownDone, action.idx],
       }));
 
     case "swapExercise": {

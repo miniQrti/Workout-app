@@ -2,7 +2,7 @@ name: CI & Deploy to GitHub Pages
 
 on:
   push:
-    branches: [main, claude/workout-app-professional-0p0q7e]
+    branches: [main, claude/iphone-artifact-compat-bf42iz, claude/workout-app-professional-0p0q7e]
   pull_request:
   workflow_dispatch:
 
