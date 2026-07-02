@@ -9,34 +9,89 @@ const PRESETS = [
   { label: "3:00", seconds: 180 },
 ];
 
+const STORAGE_KEY = "rest-timer-state";
+
+function saveState(endMs, total) {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ endMs, total })); } catch {}
+}
+function clearState() {
+  try { localStorage.removeItem(STORAGE_KEY); } catch {}
+}
+function loadState() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || "null"); } catch { return null; }
+}
+
 export default function RestTimer({ onClose }) {
   const C = useTheme();
   const t = useT();
-  const [total,   setTotal]   = useState(90);
-  const [left,    setLeft]    = useState(90);
-  const [running, setRunning] = useState(false);
+
+  // Restore state from a previous session if the timer was running when the app closed
+  const restored = useRef(null);
+  if (restored.current === null) {
+    const s = loadState();
+    if (s && s.endMs > Date.now()) {
+      const remaining = Math.round((s.endMs - Date.now()) / 1000);
+      restored.current = { endMs: s.endMs, total: s.total, left: remaining, running: true };
+    } else {
+      if (s) clearState();
+      restored.current = { endMs: null, total: 90, left: 90, running: false };
+    }
+  }
+  const init = restored.current;
+
+  const [total,   setTotal]   = useState(init.total);
+  const [left,    setLeft]    = useState(init.left);
+  const [running, setRunning] = useState(init.running);
   const [done,    setDone]    = useState(false);
+
+  // Absolute timestamp when the timer should expire — source of truth
+  const endMsRef    = useRef(init.endMs);
   const intervalRef = useRef(null);
 
+  // Called when the countdown reaches zero
+  const finish = useCallback(() => {
+    clearInterval(intervalRef.current);
+    clearState();
+    setRunning(false);
+    setDone(true);
+    setLeft(0);
+    if (navigator.vibrate) navigator.vibrate([400, 150, 400]);
+  }, []);
+
+  // Recompute remaining from wall clock and apply, firing finish() if expired
+  const syncLeft = useCallback(() => {
+    if (!endMsRef.current) return;
+    const remaining = Math.round((endMsRef.current - Date.now()) / 1000);
+    if (remaining <= 0) {
+      finish();
+    } else {
+      setLeft(remaining);
+    }
+  }, [finish]);
+
+  // Interval: tick every 500ms so we're never more than half a second off after
+  // returning from background
   useEffect(() => {
     if (!running) return;
-    intervalRef.current = setInterval(() => {
-      setLeft(l => {
-        if (l <= 1) {
-          clearInterval(intervalRef.current);
-          setRunning(false);
-          setDone(true);
-          if (navigator.vibrate) navigator.vibrate([400, 150, 400]);
-          return 0;
-        }
-        return l - 1;
-      });
-    }, 1000);
+    intervalRef.current = setInterval(syncLeft, 500);
     return () => clearInterval(intervalRef.current);
-  }, [running]);
+  }, [running, syncLeft]);
+
+  // Page Visibility API: when the tab/app comes back to the foreground,
+  // immediately recalculate rather than waiting for the next interval tick
+  useEffect(() => {
+    const onVisible = () => {
+      if (document.visibilityState === "visible" && running) syncLeft();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => document.removeEventListener("visibilitychange", onVisible);
+  }, [running, syncLeft]);
 
   const startPreset = useCallback((seconds) => {
     clearInterval(intervalRef.current);
+    const endMs = Date.now() + seconds * 1000;
+    endMsRef.current = endMs;
+    saveState(endMs, seconds);
     setTotal(seconds);
     setLeft(seconds);
     setRunning(true);
@@ -45,16 +100,31 @@ export default function RestTimer({ onClose }) {
 
   const handleRingTap = useCallback(() => {
     if (done) {
+      endMsRef.current = null;
+      clearState();
       setDone(false);
       setLeft(total);
       setRunning(false);
     } else if (running) {
       clearInterval(intervalRef.current);
+      endMsRef.current = null;
+      clearState();
       setRunning(false);
     } else {
+      // Resume from current left
+      const endMs = Date.now() + left * 1000;
+      endMsRef.current = endMs;
+      saveState(endMs, total);
       setRunning(true);
     }
-  }, [done, running, total]);
+  }, [done, running, total, left]);
+
+  // Clean up storage when the modal closes
+  const handleClose = useCallback(() => {
+    clearInterval(intervalRef.current);
+    clearState();
+    onClose();
+  }, [onClose]);
 
   const R    = 54;
   const CIRC = 2 * Math.PI * R;
@@ -78,7 +148,7 @@ export default function RestTimer({ onClose }) {
 
   return (
     <div
-      onClick={e => { if (e.target === e.currentTarget) onClose(); }}
+      onClick={e => { if (e.target === e.currentTarget) handleClose(); }}
       style={{
         position: "fixed", inset: 0,
         background: "rgba(0,0,0,0.58)",
@@ -104,7 +174,7 @@ export default function RestTimer({ onClose }) {
         }}>
           <div style={{ fontSize: 17, fontWeight: 700, color: C.text1 }}>{t("timer.title")}</div>
           <button
-            onClick={onClose}
+            onClick={handleClose}
             style={{
               width: 32, height: 32, borderRadius: "50%",
               border: `1px solid ${C.border}`,
@@ -165,7 +235,7 @@ export default function RestTimer({ onClose }) {
               strokeDasharray={`${dash} ${CIRC}`}
               style={{
                 transition: running
-                  ? "stroke-dasharray 0.95s linear, stroke 0.3s"
+                  ? "stroke-dasharray 0.45s linear, stroke 0.3s"
                   : "stroke 0.3s",
               }}
             />
@@ -201,13 +271,13 @@ export default function RestTimer({ onClose }) {
             width: done ? "100%" : `${(1 - left / total) * 100}%`,
             background: done ? C.red : C.green,
             borderRadius: 2,
-            transition: running ? "width 0.95s linear" : "none",
+            transition: running ? "width 0.45s linear" : "none",
           }}/>
         </div>
 
         {/* Close button */}
         <button
-          onClick={onClose}
+          onClick={handleClose}
           style={{
             width: "100%", padding: "14px 0",
             fontSize: 15, fontWeight: 600, borderRadius: 12,

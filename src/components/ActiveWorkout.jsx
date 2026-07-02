@@ -49,13 +49,14 @@ function IconInfo() {
 
 function ElapsedTimer({ startTime }) {
   const C = useTheme();
-  const [elapsed, setElapsed] = useState(0);
+  const [elapsed, setElapsed] = useState(Math.floor((Date.now() - startTime) / 1000));
 
   useEffect(() => {
-    const id = setInterval(() => {
-      setElapsed(Math.floor((Date.now() - startTime) / 1000));
-    }, 1000);
-    return () => clearInterval(id);
+    const tick = () => setElapsed(Math.floor((Date.now() - startTime) / 1000));
+    const id = setInterval(tick, 500);
+    const onVisible = () => { if (document.visibilityState === "visible") tick(); };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => { clearInterval(id); document.removeEventListener("visibilitychange", onVisible); };
   }, [startTime]);
 
   const h = Math.floor(elapsed / 3600);
@@ -89,23 +90,36 @@ function RestBanner({ restSecs, onDismiss }) {
   const [left,     setLeft]     = useState(restSecs);
   const [running,  setRunning]  = useState(true);
   const intervalRef = useRef(null);
+  const endMsRef    = useRef(Date.now() + restSecs * 1000);
+
+  const finish = useCallback(() => {
+    clearInterval(intervalRef.current);
+    endMsRef.current = null;
+    setRunning(false);
+    setLeft(0);
+    if (navigator.vibrate) navigator.vibrate([300, 100, 300]);
+    setTimeout(onDismiss, 900);
+  }, [onDismiss]);
+
+  const syncLeft = useCallback(() => {
+    if (!endMsRef.current) return;
+    const remaining = Math.round((endMsRef.current - Date.now()) / 1000);
+    if (remaining <= 0) { finish(); } else { setLeft(remaining); }
+  }, [finish]);
 
   useEffect(() => {
     if (!running) return;
-    intervalRef.current = setInterval(() => {
-      setLeft(l => {
-        if (l <= 1) {
-          clearInterval(intervalRef.current);
-          setRunning(false);
-          if (navigator.vibrate) navigator.vibrate([300, 100, 300]);
-          setTimeout(onDismiss, 900);
-          return 0;
-        }
-        return l - 1;
-      });
-    }, 1000);
+    intervalRef.current = setInterval(syncLeft, 500);
     return () => clearInterval(intervalRef.current);
-  }, [running, onDismiss]);
+  }, [running, syncLeft]);
+
+  useEffect(() => {
+    const onVisible = () => {
+      if (document.visibilityState === "visible" && running) syncLeft();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => document.removeEventListener("visibilitychange", onVisible);
+  }, [running, syncLeft]);
 
   const pct  = duration > 0 ? (duration - left) / duration : 0;
   const m    = Math.floor(left / 60);
@@ -114,11 +128,19 @@ function RestBanner({ restSecs, onDismiss }) {
 
   function toggleRunning() {
     if (done) return;
-    setRunning(r => !r);
+    if (running) {
+      clearInterval(intervalRef.current);
+      endMsRef.current = null;
+      setRunning(false);
+    } else {
+      endMsRef.current = Date.now() + left * 1000;
+      setRunning(true);
+    }
   }
 
   function pickPreset(secs) {
     clearInterval(intervalRef.current);
+    endMsRef.current = null;
     setRunning(false);
     setDuration(secs);
     setLeft(secs);
