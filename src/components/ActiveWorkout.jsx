@@ -882,17 +882,24 @@ const COOLDOWN_ITEMS = [
   { name: "Cat-cow / spinal twist",     detail: "5 slow reps each — on mat" },
 ];
 
-function CooldownCard() {
+function CooldownCard({ autoExpand, onAllDone }) {
   const C = useTheme();
   const t = useT();
   const [expanded, setExpanded] = useState(false);
   const [done, setDone] = useState(() => new Array(COOLDOWN_ITEMS.length).fill(false));
 
+  // Open automatically when the parent signals all exercises are done
+  useEffect(() => { if (autoExpand) setExpanded(true); }, [autoExpand]);
+
   const completedCount = done.filter(Boolean).length;
   const allDone = completedCount === COOLDOWN_ITEMS.length;
 
   function toggle(i) {
-    setDone(prev => prev.map((v, idx) => idx === i ? !v : v));
+    setDone(prev => {
+      const next = prev.map((v, idx) => idx === i ? !v : v);
+      if (next.every(Boolean)) onAllDone?.();
+      return next;
+    });
   }
 
   return (
@@ -1001,6 +1008,8 @@ export default function ActiveWorkout({
   const [confirmCancel,  setConfirmCancel]  = useState(false);
   const [warnFinish,     setWarnFinish]     = useState(false);
   const [focusedIdx,     setFocusedIdx]     = useState(null);
+  const [cooldownDone,   setCooldownDone]   = useState(false);
+  const cooldownRef = useRef(null);
 
   const handleCompleteSet = useCallback((exIdx, setIdx) => {
     onCompleteSet(exIdx, setIdx);
@@ -1023,18 +1032,37 @@ export default function ActiveWorkout({
   );
   const progress       = totalSets > 0 ? completedSets / totalSets : 0;
   const allComplete    = totalSets > 0 && completedSets === totalSets;
+  const fullyComplete  = allComplete && cooldownDone;
   const incompleteSets = totalSets - completedSets;
   const missingFeel    = (session.exercises || []).filter(ex => {
     const s = ex.sets || [];
     return s.length > 0 && s.every(s => s.completed) && !ex.feel;
   }).length;
 
+  // When all exercises are done, scroll to and expand the cooldown card
+  useEffect(() => {
+    if (allComplete && !cooldownDone && focusedIdx === null) {
+      const id = setTimeout(() => {
+        cooldownRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+      }, 350);
+      return () => clearTimeout(id);
+    }
+  }, [allComplete]); // eslint-disable-line react-hooks/exhaustive-deps
+
   function handleCancel() {
     if (completedSets > 0) { setConfirmCancel(true); } else { onCancel(); }
   }
 
   function handleFinish() {
-    if (incompleteSets > 0 || missingFeel > 0) { setWarnFinish(true); } else { onFinish(); }
+    if (incompleteSets > 0 || missingFeel > 0) {
+      setWarnFinish(true);
+    } else if (!cooldownDone) {
+      // Nudge toward cooldown rather than silently skipping it
+      cooldownRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+      setWarnFinish(true);
+    } else {
+      onFinish();
+    }
   }
 
   return (
@@ -1084,14 +1112,14 @@ export default function ActiveWorkout({
             onClick={handleFinish}
             style={{
               padding: "9px 14px", borderRadius: 10,
-              border: `1px solid ${allComplete ? C.green : C.border}`,
-              background: allComplete ? C.green : C.surface2,
-              color: allComplete ? "#fff" : C.text2,
+              border: `1px solid ${fullyComplete ? C.green : allComplete ? "#F59E0B" : C.border}`,
+              background: fullyComplete ? C.green : allComplete ? "#FFF7ED" : C.surface2,
+              color: fullyComplete ? "#fff" : allComplete ? "#92400E" : C.text2,
               fontSize: 13, fontWeight: 600, cursor: "pointer",
               fontFamily: FONT, transition: "all 0.2s", flexShrink: 0,
             }}
           >
-            {t("workout.finish")}
+            {fullyComplete ? t("workout.finish") : allComplete ? t("workout.cooldown_first") : t("workout.finish")}
           </button>
         </div>
 
@@ -1171,7 +1199,13 @@ export default function ActiveWorkout({
             })}
           </div>
 
-          <CooldownCard key={"cooldown-" + session.dayIdx} />
+          <div ref={cooldownRef}>
+            <CooldownCard
+              key={"cooldown-" + session.dayIdx}
+              autoExpand={allComplete && !cooldownDone}
+              onAllDone={() => setCooldownDone(true)}
+            />
+          </div>
         </div>
       )}
 
@@ -1394,6 +1428,14 @@ export default function ActiveWorkout({
                   <span style={{ color: "#F59E0B", fontWeight: 700, fontSize: 15, flexShrink: 0 }}>•</span>
                   <span style={{ fontSize: 14, color: C.text2, lineHeight: 1.5 }}>
                     {missingFeel === 1 ? t("workout.feel_missing_1") : t("workout.feel_missing_n", { n: missingFeel })}
+                  </span>
+                </div>
+              )}
+              {!cooldownDone && (
+                <div style={{ display: "flex", gap: 8, marginBottom: 8, alignItems: "flex-start" }}>
+                  <span style={{ color: "#F59E0B", fontWeight: 700, fontSize: 15, flexShrink: 0 }}>•</span>
+                  <span style={{ fontSize: 14, color: C.text2, lineHeight: 1.5 }}>
+                    {t("workout.cooldown_missing")}
                   </span>
                 </div>
               )}
