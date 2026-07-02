@@ -154,6 +154,7 @@ const TRANSLATIONS = {
     "summary.exercises":"Exercises",
     "summary.sets_done":"Sets Done",
     "summary.done":     "Done",
+    "summary.volume":   "Volume",
     "summary.new_prs":  "🏆 New Personal Records!",
 
     // Progress page
@@ -177,6 +178,33 @@ const TRANSLATIONS = {
     "progress.exercises_n":      "{n} exercises",
     "progress.set_label":        "Set",
     "progress.incomplete":       "incomplete",
+    "progress.tab_strength":     "Strength",
+    "progress.tab_volume":       "Volume",
+    "progress.tab_consistency":  "Consistency",
+    "progress.metric_weight":    "Weight",
+    "progress.metric_e1rm":      "Est. 1RM",
+    "progress.e1rm_hint":        "Estimated one-rep max (Epley) from your best set each session",
+    "progress.weekly_volume":    "Weekly Volume",
+    "progress.weekly_volume_sub":"Total weight moved per week ({unit})",
+    "progress.no_volume":        "Complete workouts to see volume analytics",
+    "progress.muscle_sets":      "Sets per Muscle Group",
+    "progress.muscle_sets_sub":  "This week · target band {min}–{max} sets",
+    "progress.no_muscle_sets":   "No sets logged this week yet",
+    "progress.calendar":         "Training Calendar",
+    "progress.calendar_sub":     "Last {n} weeks · Mon–Sun",
+    "progress.avg_per_week":     "Avg / Week",
+    "progress.best_week":        "Best Week",
+    "progress.avg_duration":     "Avg Minutes",
+    "progress.total_volume":     "Total Volume",
+
+    // Muscle group labels
+    "muscle.chest":     "Chest",
+    "muscle.back":      "Back",
+    "muscle.shoulders": "Shoulders",
+    "muscle.arms":      "Arms",
+    "muscle.legs":      "Legs",
+    "muscle.core":      "Core",
+    "muscle.cardio":    "Cardio",
 
     // Profile page
     "profile.title":           "Profile",
@@ -363,6 +391,7 @@ const TRANSLATIONS = {
     "summary.exercises":"Übungen",
     "summary.sets_done":"Sätze",
     "summary.done":     "Fertig",
+    "summary.volume":   "Volumen",
     "summary.new_prs":  "🏆 Neue Bestleistungen!",
 
     // Progress page
@@ -386,6 +415,33 @@ const TRANSLATIONS = {
     "progress.exercises_n":      "{n} Übungen",
     "progress.set_label":        "Satz",
     "progress.incomplete":       "unvollständig",
+    "progress.tab_strength":     "Kraft",
+    "progress.tab_volume":       "Volumen",
+    "progress.tab_consistency":  "Konstanz",
+    "progress.metric_weight":    "Gewicht",
+    "progress.metric_e1rm":      "1RM (geschätzt)",
+    "progress.e1rm_hint":        "Geschätztes Maximalgewicht (Epley) aus dem besten Satz jeder Einheit",
+    "progress.weekly_volume":    "Wochenvolumen",
+    "progress.weekly_volume_sub":"Bewegtes Gesamtgewicht pro Woche ({unit})",
+    "progress.no_volume":        "Schließe Trainings ab, um Volumen-Analysen zu sehen",
+    "progress.muscle_sets":      "Sätze pro Muskelgruppe",
+    "progress.muscle_sets_sub":  "Diese Woche · Zielbereich {min}–{max} Sätze",
+    "progress.no_muscle_sets":   "Diese Woche noch keine Sätze geloggt",
+    "progress.calendar":         "Trainingskalender",
+    "progress.calendar_sub":     "Letzte {n} Wochen · Mo–So",
+    "progress.avg_per_week":     "Ø / Woche",
+    "progress.best_week":        "Beste Woche",
+    "progress.avg_duration":     "Ø Minuten",
+    "progress.total_volume":     "Gesamtvolumen",
+
+    // Muscle group labels
+    "muscle.chest":     "Brust",
+    "muscle.back":      "Rücken",
+    "muscle.shoulders": "Schultern",
+    "muscle.arms":      "Arme",
+    "muscle.legs":      "Beine",
+    "muscle.core":      "Rumpf",
+    "muscle.cardio":    "Cardio",
 
     // Profile page
     "profile.title":           "Profil",

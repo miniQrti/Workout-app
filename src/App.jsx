@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { PLANS }    from "./data/plans.js";
 import { EXERCISES } from "./data/exercises.js";
 import { loadStore, saveStore, getDayExercises, getPR, exportWorkoutCSV, shareOrDownloadCSV, importWorkoutCSV } from "./data/store.js";
+import { sessionTonnage, formatTonnage } from "./data/analytics.js";
 import { ThemeContext, buildTheme, useTheme, FONT, ACCENT_OPTIONS } from "./theme.js";
 import { LangContext, makeT, useT, useLang } from "./i18n.js";
 import Home          from "./components/Home.jsx";
@@ -14,15 +15,15 @@ import { HISTORICAL_LOGS } from "./data/historicalLogs.js";
 
 // ── Workout summary modal ─────────────────────────────────────────────────────
 
-function WorkoutSummary({ summary, onClose }) {
+function WorkoutSummary({ summary, unit, onClose }) {
   const C = useTheme();
   const t = useT();
   const { durationSecs, log, newPRs } = summary;
 
-  const totalSets     = log.exercises.reduce((acc, ex) => acc + (ex.sets?.length || 0), 0);
   const completedSets = log.exercises.reduce(
     (acc, ex) => acc + (ex.sets?.filter(s => s.completed !== false).length || 0), 0
   );
+  const tonnage = sessionTonnage(log);
   const m = Math.floor(durationSecs / 60);
   const s = durationSecs % 60;
   const durationLabel = `${m}:${String(s).padStart(2, "0")}`;
@@ -66,13 +67,14 @@ function WorkoutSummary({ summary, onClose }) {
 
         {/* Stats */}
         <div style={{
-          display: "grid", gridTemplateColumns: "1fr 1fr 1fr",
+          display: "grid", gridTemplateColumns: "1fr 1fr",
           gap: 10, marginBottom: newPRs.length > 0 ? 16 : 20,
         }}>
           {[
             { value: durationLabel,        label: t("summary.duration")  },
             { value: log.exercises.length, label: t("summary.exercises") },
             { value: completedSets,        label: t("summary.sets_done") },
+            { value: tonnage > 0 ? `${formatTonnage(tonnage)} ${unit}` : "—", label: t("summary.volume") },
           ].map(({ value, label }) => (
             <div key={label} style={{
               background: C.bg, borderRadius: 12,
@@ -124,6 +126,18 @@ function WorkoutSummary({ summary, onClose }) {
 // ── Changelog ─────────────────────────────────────────────────────────────────
 
 const CHANGELOG = [
+  {
+    label: "v1.0 · Jul 2 2026",
+    changes: [
+      "Progress page rebuilt with Strength / Volume / Consistency tabs",
+      "Estimated 1RM (Epley) chart toggle on every exercise",
+      "Weekly volume — total weight moved per week, last 8 weeks",
+      "Sets per muscle group vs. the 10–20 sets/week target band",
+      "Training calendar — 12-week consistency heatmap",
+      "Avg workouts/week, best week, avg duration & all-time volume stats",
+      "Session volume (total weight moved) in the workout summary",
+    ],
+  },
   {
     label: "v0.9 · Jun 29 2025",
     changes: [
@@ -807,6 +821,7 @@ export default function App() {
         {summary && (
           <WorkoutSummary
             summary={summary}
+            unit={store.unit || "lbs"}
             onClose={() => setSummary(null)}
           />
         )}
