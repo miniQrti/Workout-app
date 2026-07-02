@@ -1,12 +1,69 @@
-export const MUSCLES = ["chest","back","shoulders","biceps","triceps","legs","core","cardio"];
+// Muscle metadata: id → { label, group }
+// group is the broad category shown in filters; label is the specific display name
+export const MUSCLE_INFO = {
+  // Chest
+  "upper-chest":  { label: "Upper Chest",   group: "chest" },
+  "mid-chest":    { label: "Chest",          group: "chest" },
+  // Back
+  "lats":         { label: "Lats",           group: "back" },
+  "rhomboids":    { label: "Rhomboids",      group: "back" },
+  "traps":        { label: "Traps",          group: "back" },
+  "lower-back":   { label: "Lower Back",     group: "back" },
+  "rear-delts":   { label: "Rear Delts",     group: "back" },
+  // Shoulders
+  "front-delts":  { label: "Front Delts",    group: "shoulders" },
+  "side-delts":   { label: "Side Delts",     group: "shoulders" },
+  // Arms
+  "biceps":       { label: "Biceps",         group: "arms" },
+  "brachialis":   { label: "Brachialis",     group: "arms" },
+  "triceps":      { label: "Triceps",        group: "arms" },
+  "forearms":     { label: "Forearms",       group: "arms" },
+  // Legs
+  "quads":        { label: "Quads",          group: "legs" },
+  "hamstrings":   { label: "Hamstrings",     group: "legs" },
+  "glutes":       { label: "Glutes",         group: "legs" },
+  "calves":       { label: "Calves",         group: "legs" },
+  "abductors":    { label: "Hip Abductors",  group: "legs" },
+  "adductors":    { label: "Hip Adductors",  group: "legs" },
+  // Core
+  "abs":          { label: "Abs",            group: "core" },
+  "obliques":     { label: "Obliques",       group: "core" },
+  "hip-flexors":  { label: "Hip Flexors",    group: "core" },
+  // Cardio
+  "cardio":       { label: "Cardio",         group: "cardio" },
+};
+
+// Broad filter groups for the UI
+export const MUSCLE_GROUPS = {
+  chest:     "Chest",
+  back:      "Back",
+  shoulders: "Shoulders",
+  arms:      "Arms",
+  legs:      "Legs",
+  core:      "Core",
+  cardio:    "Cardio",
+};
+
+// Legacy array kept so any old code that imported MUSCLES still works
+export const MUSCLES = Object.keys(MUSCLE_INFO);
+
+// Helper: get display label for a muscle id
+export function muscleLabel(id) {
+  return MUSCLE_INFO[id]?.label ?? id.replace(/-/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+}
+
+// Helper: get the broad group for a muscle id
+export function muscleGroup(id) {
+  return MUSCLE_INFO[id]?.group ?? id;
+}
 
 export const EXERCISES = {
   // ── CHEST ────────────────────────────────────────────────────────────────
   "chest-press-machine": {
     id: "chest-press-machine",
     name: "Chest Press Machine",
-    primaryMuscle: "chest",
-    muscles: ["chest","triceps","shoulders"],
+    primaryMuscle: "mid-chest",
+    muscles: ["mid-chest", "triceps", "front-delts"],
     equipment: "machine",
     defaultSets: 3,
     defaultReps: 12,
@@ -17,8 +74,8 @@ export const EXERCISES = {
   "pec-deck": {
     id: "pec-deck",
     name: "Pec Deck (Butterfly)",
-    primaryMuscle: "chest",
-    muscles: ["chest","shoulders"],
+    primaryMuscle: "mid-chest",
+    muscles: ["mid-chest", "front-delts"],
     equipment: "machine",
     defaultSets: 3,
     defaultReps: 12,
@@ -29,8 +86,8 @@ export const EXERCISES = {
   "cable-crossover": {
     id: "cable-crossover",
     name: "Cable Crossover",
-    primaryMuscle: "chest",
-    muscles: ["chest","shoulders","triceps"],
+    primaryMuscle: "mid-chest",
+    muscles: ["mid-chest", "front-delts", "triceps"],
     equipment: "cable",
     defaultSets: 3,
     defaultReps: 12,
@@ -41,8 +98,8 @@ export const EXERCISES = {
   "dumbbell-press": {
     id: "dumbbell-press",
     name: "Dumbbell Chest Press",
-    primaryMuscle: "chest",
-    muscles: ["chest","triceps","shoulders"],
+    primaryMuscle: "mid-chest",
+    muscles: ["mid-chest", "triceps", "front-delts"],
     equipment: "dumbbell",
     defaultSets: 3,
     defaultReps: 12,
@@ -53,8 +110,8 @@ export const EXERCISES = {
   "incline-dumbbell-press": {
     id: "incline-dumbbell-press",
     name: "Incline Dumbbell Press",
-    primaryMuscle: "chest",
-    muscles: ["chest","shoulders","triceps"],
+    primaryMuscle: "upper-chest",
+    muscles: ["upper-chest", "front-delts", "triceps"],
     equipment: "dumbbell",
     defaultSets: 3,
     defaultReps: 10,
@@ -65,8 +122,8 @@ export const EXERCISES = {
   "dumbbell-fly": {
     id: "dumbbell-fly",
     name: "Dumbbell Fly",
-    primaryMuscle: "chest",
-    muscles: ["chest","shoulders"],
+    primaryMuscle: "mid-chest",
+    muscles: ["mid-chest", "front-delts"],
     equipment: "dumbbell",
     defaultSets: 3,
     defaultReps: 12,
@@ -79,8 +136,8 @@ export const EXERCISES = {
   "lat-pulldown": {
     id: "lat-pulldown",
     name: "Lat Pulldown",
-    primaryMuscle: "back",
-    muscles: ["back","biceps","shoulders"],
+    primaryMuscle: "lats",
+    muscles: ["lats", "biceps", "rear-delts"],
     equipment: "machine",
     defaultSets: 3,
     defaultReps: 12,
@@ -91,8 +148,8 @@ export const EXERCISES = {
   "seated-cable-row": {
     id: "seated-cable-row",
     name: "Seated Row",
-    primaryMuscle: "back",
-    muscles: ["back","biceps","rear-delts"],
+    primaryMuscle: "lats",
+    muscles: ["lats", "rhomboids", "rear-delts", "biceps"],
     equipment: "cable",
     defaultSets: 3,
     defaultReps: 12,
@@ -103,8 +160,8 @@ export const EXERCISES = {
   "back-extension": {
     id: "back-extension",
     name: "Lower Back Extension",
-    primaryMuscle: "back",
-    muscles: ["back","glutes","hamstrings"],
+    primaryMuscle: "lower-back",
+    muscles: ["lower-back", "glutes", "hamstrings"],
     equipment: "machine",
     defaultSets: 3,
     defaultReps: 15,
@@ -115,8 +172,8 @@ export const EXERCISES = {
   "dumbbell-row": {
     id: "dumbbell-row",
     name: "Dumbbell Row",
-    primaryMuscle: "back",
-    muscles: ["back","biceps","shoulders"],
+    primaryMuscle: "lats",
+    muscles: ["lats", "rhomboids", "biceps"],
     equipment: "dumbbell",
     defaultSets: 3,
     defaultReps: 10,
@@ -127,8 +184,8 @@ export const EXERCISES = {
   "cable-face-pull": {
     id: "cable-face-pull",
     name: "Cable Face Pull",
-    primaryMuscle: "shoulders",
-    muscles: ["shoulders","back","biceps"],
+    primaryMuscle: "rear-delts",
+    muscles: ["rear-delts", "traps", "rhomboids"],
     equipment: "cable",
     defaultSets: 3,
     defaultReps: 15,
@@ -139,8 +196,8 @@ export const EXERCISES = {
   "assisted-pull-up": {
     id: "assisted-pull-up",
     name: "Assisted Chin-Up / Pull-Up Machine",
-    primaryMuscle: "back",
-    muscles: ["back","biceps","shoulders"],
+    primaryMuscle: "lats",
+    muscles: ["lats", "biceps", "rear-delts"],
     equipment: "machine",
     defaultSets: 3,
     defaultReps: 10,
@@ -153,8 +210,8 @@ export const EXERCISES = {
   "shoulder-press-machine": {
     id: "shoulder-press-machine",
     name: "Shoulder Press Machine",
-    primaryMuscle: "shoulders",
-    muscles: ["shoulders","triceps"],
+    primaryMuscle: "front-delts",
+    muscles: ["front-delts", "side-delts", "triceps"],
     equipment: "machine",
     defaultSets: 3,
     defaultReps: 12,
@@ -165,8 +222,8 @@ export const EXERCISES = {
   "dumbbell-lateral-raise": {
     id: "dumbbell-lateral-raise",
     name: "Dumbbell Lateral Raise",
-    primaryMuscle: "shoulders",
-    muscles: ["shoulders"],
+    primaryMuscle: "side-delts",
+    muscles: ["side-delts", "traps"],
     equipment: "dumbbell",
     defaultSets: 3,
     defaultReps: 15,
@@ -177,8 +234,8 @@ export const EXERCISES = {
   "cable-lateral-raise": {
     id: "cable-lateral-raise",
     name: "Cable Lateral Raise",
-    primaryMuscle: "shoulders",
-    muscles: ["shoulders"],
+    primaryMuscle: "side-delts",
+    muscles: ["side-delts"],
     equipment: "cable",
     defaultSets: 3,
     defaultReps: 15,
@@ -189,8 +246,8 @@ export const EXERCISES = {
   "dumbbell-front-raise": {
     id: "dumbbell-front-raise",
     name: "Dumbbell Front Raise",
-    primaryMuscle: "shoulders",
-    muscles: ["shoulders","chest"],
+    primaryMuscle: "front-delts",
+    muscles: ["front-delts", "upper-chest"],
     equipment: "dumbbell",
     defaultSets: 3,
     defaultReps: 12,
@@ -201,8 +258,8 @@ export const EXERCISES = {
   "arnold-press": {
     id: "arnold-press",
     name: "Arnold Press",
-    primaryMuscle: "shoulders",
-    muscles: ["shoulders","triceps"],
+    primaryMuscle: "front-delts",
+    muscles: ["front-delts", "side-delts", "triceps"],
     equipment: "dumbbell",
     defaultSets: 3,
     defaultReps: 12,
@@ -216,7 +273,7 @@ export const EXERCISES = {
     id: "cable-curl",
     name: "Cable Curl",
     primaryMuscle: "biceps",
-    muscles: ["biceps","forearms"],
+    muscles: ["biceps", "forearms"],
     equipment: "cable",
     defaultSets: 3,
     defaultReps: 10,
@@ -228,7 +285,7 @@ export const EXERCISES = {
     id: "dumbbell-curl",
     name: "Dumbbell Curl",
     primaryMuscle: "biceps",
-    muscles: ["biceps","forearms"],
+    muscles: ["biceps", "forearms"],
     equipment: "dumbbell",
     defaultSets: 3,
     defaultReps: 12,
@@ -239,8 +296,8 @@ export const EXERCISES = {
   "hammer-curl": {
     id: "hammer-curl",
     name: "Hammer Curl",
-    primaryMuscle: "biceps",
-    muscles: ["biceps","forearms"],
+    primaryMuscle: "brachialis",
+    muscles: ["brachialis", "biceps", "forearms"],
     equipment: "dumbbell",
     defaultSets: 3,
     defaultReps: 12,
@@ -264,7 +321,7 @@ export const EXERCISES = {
     id: "preacher-curl",
     name: "Preacher Curl",
     primaryMuscle: "biceps",
-    muscles: ["biceps","forearms"],
+    muscles: ["biceps", "forearms"],
     equipment: "machine",
     defaultSets: 3,
     defaultReps: 12,
@@ -302,7 +359,7 @@ export const EXERCISES = {
     id: "tricep-dip-machine",
     name: "Seated Tricep Press",
     primaryMuscle: "triceps",
-    muscles: ["triceps","chest","shoulders"],
+    muscles: ["triceps", "mid-chest", "front-delts"],
     equipment: "machine",
     defaultSets: 3,
     defaultReps: 12,
@@ -327,8 +384,8 @@ export const EXERCISES = {
   "leg-press": {
     id: "leg-press",
     name: "Leg Press",
-    primaryMuscle: "legs",
-    muscles: ["legs","glutes"],
+    primaryMuscle: "quads",
+    muscles: ["quads", "glutes", "hamstrings"],
     equipment: "machine",
     defaultSets: 3,
     defaultReps: 15,
@@ -339,8 +396,8 @@ export const EXERCISES = {
   "leg-curl-machine": {
     id: "leg-curl-machine",
     name: "Seated Leg Curl",
-    primaryMuscle: "legs",
-    muscles: ["legs"],
+    primaryMuscle: "hamstrings",
+    muscles: ["hamstrings", "calves"],
     equipment: "machine",
     defaultSets: 3,
     defaultReps: 12,
@@ -351,8 +408,8 @@ export const EXERCISES = {
   "leg-extension-machine": {
     id: "leg-extension-machine",
     name: "Leg Extension",
-    primaryMuscle: "legs",
-    muscles: ["legs"],
+    primaryMuscle: "quads",
+    muscles: ["quads"],
     equipment: "machine",
     defaultSets: 3,
     defaultReps: 15,
@@ -363,8 +420,8 @@ export const EXERCISES = {
   "smith-machine-squat": {
     id: "smith-machine-squat",
     name: "Smith Machine Squat",
-    primaryMuscle: "legs",
-    muscles: ["legs","glutes","core"],
+    primaryMuscle: "quads",
+    muscles: ["quads", "glutes", "hamstrings", "abs"],
     equipment: "smith",
     defaultSets: 3,
     defaultReps: 10,
@@ -375,8 +432,8 @@ export const EXERCISES = {
   "dumbbell-lunge": {
     id: "dumbbell-lunge",
     name: "Dumbbell Lunge",
-    primaryMuscle: "legs",
-    muscles: ["legs","glutes","core"],
+    primaryMuscle: "quads",
+    muscles: ["quads", "glutes", "hamstrings", "abs"],
     equipment: "dumbbell",
     defaultSets: 3,
     defaultReps: 12,
@@ -387,8 +444,8 @@ export const EXERCISES = {
   "calf-raise-machine": {
     id: "calf-raise-machine",
     name: "Seated Calf Raise",
-    primaryMuscle: "legs",
-    muscles: ["legs"],
+    primaryMuscle: "calves",
+    muscles: ["calves"],
     equipment: "machine",
     defaultSets: 4,
     defaultReps: 20,
@@ -399,8 +456,8 @@ export const EXERCISES = {
   "hip-abductor": {
     id: "hip-abductor",
     name: "Hip Abductor Machine",
-    primaryMuscle: "legs",
-    muscles: ["legs","glutes"],
+    primaryMuscle: "abductors",
+    muscles: ["abductors", "glutes"],
     equipment: "machine",
     defaultSets: 3,
     defaultReps: 20,
@@ -411,8 +468,8 @@ export const EXERCISES = {
   "glute-kickback-machine": {
     id: "glute-kickback-machine",
     name: "Glute Kickback Machine",
-    primaryMuscle: "legs",
-    muscles: ["legs","glutes"],
+    primaryMuscle: "glutes",
+    muscles: ["glutes", "hamstrings"],
     equipment: "machine",
     defaultSets: 3,
     defaultReps: 15,
@@ -425,8 +482,8 @@ export const EXERCISES = {
   "plank": {
     id: "plank",
     name: "Plank",
-    primaryMuscle: "core",
-    muscles: ["core","shoulders"],
+    primaryMuscle: "abs",
+    muscles: ["abs", "obliques", "lower-back"],
     equipment: "bodyweight",
     defaultSets: 3,
     defaultReps: 30,
@@ -437,8 +494,8 @@ export const EXERCISES = {
   "ab-crunch-machine": {
     id: "ab-crunch-machine",
     name: "Abdominal Machine",
-    primaryMuscle: "core",
-    muscles: ["core"],
+    primaryMuscle: "abs",
+    muscles: ["abs"],
     equipment: "machine",
     defaultSets: 3,
     defaultReps: 15,
@@ -449,8 +506,8 @@ export const EXERCISES = {
   "rotary-torso": {
     id: "rotary-torso",
     name: "Rotary Torso Machine",
-    primaryMuscle: "core",
-    muscles: ["core"],
+    primaryMuscle: "obliques",
+    muscles: ["obliques", "abs"],
     equipment: "machine",
     defaultSets: 3,
     defaultReps: 15,
@@ -461,8 +518,8 @@ export const EXERCISES = {
   "hanging-knee-raise": {
     id: "hanging-knee-raise",
     name: "Captain's Chair Knee Raise",
-    primaryMuscle: "core",
-    muscles: ["core","hip-flexors"],
+    primaryMuscle: "abs",
+    muscles: ["abs", "hip-flexors", "obliques"],
     equipment: "machine",
     defaultSets: 3,
     defaultReps: 15,
@@ -473,8 +530,8 @@ export const EXERCISES = {
   "cable-crunch": {
     id: "cable-crunch",
     name: "Cable Crunch",
-    primaryMuscle: "core",
-    muscles: ["core"],
+    primaryMuscle: "abs",
+    muscles: ["abs", "obliques"],
     equipment: "cable",
     defaultSets: 3,
     defaultReps: 15,
@@ -488,7 +545,7 @@ export const EXERCISES = {
     id: "treadmill",
     name: "Treadmill",
     primaryMuscle: "cardio",
-    muscles: ["legs","cardio"],
+    muscles: ["cardio", "quads", "hamstrings", "calves", "glutes"],
     equipment: "machine",
     defaultSets: 1,
     defaultReps: 1200,
@@ -500,7 +557,7 @@ export const EXERCISES = {
     id: "elliptical",
     name: "Elliptical Trainer",
     primaryMuscle: "cardio",
-    muscles: ["legs","cardio","core"],
+    muscles: ["cardio", "quads", "hamstrings", "glutes", "abs"],
     equipment: "machine",
     defaultSets: 1,
     defaultReps: 1200,
@@ -512,7 +569,7 @@ export const EXERCISES = {
     id: "stationary-bike",
     name: "Stationary Bike",
     primaryMuscle: "cardio",
-    muscles: ["legs","cardio"],
+    muscles: ["cardio", "quads", "hamstrings", "glutes"],
     equipment: "machine",
     defaultSets: 1,
     defaultReps: 1200,
@@ -523,15 +580,19 @@ export const EXERCISES = {
 };
 
 /**
- * Returns exercises for the same primary muscle group as the given exercise,
- * excluding the exercise itself. Useful for suggesting alternatives/swaps.
- * @param {string} exerciseId
- * @returns {Array<object>} array of exercise objects
+ * Returns exercises that train the same muscle group as the given exercise,
+ * excluding itself. Falls back to same-group matching when no same-muscle alts exist.
  */
 export function getAlternatives(exerciseId) {
   const target = EXERCISES[exerciseId];
   if (!target) return [];
+  const targetGroup = muscleGroup(target.primaryMuscle);
+  // Prefer same primary muscle, then broaden to same group
+  const sameMuscle = Object.values(EXERCISES).filter(
+    ex => ex.id !== exerciseId && ex.primaryMuscle === target.primaryMuscle
+  );
+  if (sameMuscle.length > 0) return sameMuscle;
   return Object.values(EXERCISES).filter(
-    (ex) => ex.id !== exerciseId && ex.primaryMuscle === target.primaryMuscle
+    ex => ex.id !== exerciseId && muscleGroup(ex.primaryMuscle) === targetGroup
   );
 }
