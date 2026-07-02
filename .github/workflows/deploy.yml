@@ -1,8 +1,9 @@
-name: Deploy to GitHub Pages
+name: CI & Deploy to GitHub Pages
 
 on:
   push:
-    branches: [main, claude/iphone-artifact-compat-bf42iz]
+    branches: [main, claude/iphone-artifact-compat-bf42iz, claude/workout-app-professional-0p0q7e]
+  pull_request:
   workflow_dispatch:
 
 permissions:
@@ -11,18 +12,32 @@ permissions:
   id-token: write
 
 concurrency:
-  group: pages
+  group: pages-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  build-and-deploy:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+      - run: npm ci
+      - run: npm test
+      - run: npm run typecheck
+
+  deploy:
+    # Deploy only on push to the deployment branches, after tests pass
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    needs: test
     runs-on: ubuntu-latest
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
@@ -32,11 +47,7 @@ jobs:
         id: pages
         uses: actions/configure-pages@v4
 
-      - name: Install dependencies
-        run: npm ci --legacy-peer-deps
-
-      - name: Generate PWA icons
-        run: npm run generate-icons
+      - run: npm ci
 
       - name: Build
         run: npm run build

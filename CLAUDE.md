@@ -1,103 +1,82 @@
-# Kurt's Workout Tracker — Project Context
+# Ironlog — Project Context
 
 ## What this is
-A personal gym workout tracker PWA (Progressive Web App) built for iPhone. It was originally a Claude chat artifact using `window.storage` — this repo converts it into a real deployable app that works in any iPhone browser and can be saved to the home screen.
+A local-first gym workout tracker PWA for iPhone (v2, complete rewrite of the
+original "Kurt's Workout Tracker"). React + TypeScript, no backend — all data
+lives on-device in IndexedDB. Deployed to GitHub Pages.
 
 ## Tech stack
-- **React 18** + **Vite 5** — build tooling
-- **vite-plugin-pwa** — service worker, offline support, Web App Manifest
-- **@vite-pwa/assets-generator** — generates PNG icons from `public/icon.svg` at build time
-- **localStorage** — persistence (replaces Claude's proprietary `window.storage`)
-- **Pure inline styles** — no CSS framework, matches original artifact style
-- **GitHub Actions** → **GitHub Pages** — deployment pipeline
+- **React 18 + Vite 5 + TypeScript** (strict, `noUncheckedIndexedAccess`)
+- **Vitest** — unit tests for every pure module (`npm test`)
+- **idb-keyval** — IndexedDB persistence
+- **vite-plugin-pwa** — service worker, manifest (icons are committed in `public/`, no generation step)
+- **CSS custom properties** (`src/ui/theme.css`) — light/dark/system theme, 4 accent colors
 
-## Repo
-- Owner: `miniqrti`
-- Repo: `workout-app`
-- Dev branch: `claude/review-fixes` (PR target: `claude/iphone-artifact-compat-bf42iz`)
-- Feature branch: `claude/iphone-artifact-compat-bf42iz`
-- Deploy target: `https://miniqrti.github.io/workout-app/`
-
-## Current status
-### Done
-- [x] Full PWA setup (manifest, service worker, iOS meta tags, apple-touch-icon)
-- [x] Day A (upper body), Day B (lower body), Day C (full body) workout plans
-- [x] Exercise cards with set/rep logging, weight inputs, "how did it feel" ratings, notes
-- [x] "Tap to fill" from last session weights
-- [x] localStorage persistence with migration from old format
-- [x] Clipboard copy ("Copy session for Claude") with iOS Safari fallback
-- [x] Rest timer — 60s/90s/2:00/3:00 presets, animated SVG ring, vibration on done
-- [x] Full session history — every "Save as last session" appends to per-exercise history array
-- [x] PR detection — auto-flags sessions that beat all-time best weight
-- [x] Progress charts — SVG line chart of best weight per session, PR dots in gold
-- [x] History page — separate page with Day A/B/C tabs, all-time best, session log
-- [x] PR badges — shown on ExCard and History page
-- [x] Bottom nav — Workout / Rest Timer / History with SVG icons
-- [x] GitHub Actions deploy workflow (`.github/workflows/deploy.yml`)
-
-### Still needed (GitHub setup — must be done manually by owner)
-- [ ] Make repo **public** in GitHub Settings → change visibility
-- [ ] Enable **GitHub Pages** in Settings → Pages → Source → GitHub Actions
-  → After these two steps, the app auto-deploys on every push
+## Canonical rules (do not break these)
+1. **Weights are stored in kg as numbers, always.** Display converts via
+   `lib/units.ts` (`displayWeight`, `parseWeightInput`). The `unit` setting is
+   a display preference, not a data property.
+2. **Logs are append-only.** Everything else (PRs, e1RM, volume, streaks) is
+   derived — via `buildExerciseIndex` (memoized in `appState.tsx`) and the
+   pure functions in `store/selectors|progression|analytics.ts`.
+3. **The active session is persisted** to IndexedDB on every change
+   (debounced 300 ms) and recovered on relaunch. Never keep workout progress
+   only in React state.
+4. **Backups are versioned JSON** (`store/backup.ts`, `SCHEMA_VERSION`).
+   CSV is a convenience export only. Schema changes need a migration in
+   `parseBackup`.
+5. **Translatable strings live in `src/i18n/{en,de}.ts`**; plurals use
+   `Intl.PluralRules` (`key.one` / `key.other`). Data-file content uses
+   `LocalizedText` (`{ en, de? }`) resolved by `localize()`.
+6. **Timers are timestamp-based** (`endsAt` epoch), never interval counters —
+   they must survive iOS backgrounding.
 
 ## Architecture
-
 ```
 src/
-  data.js        — All exercise data (DAYS, SEED, FEELS, FS), helpers (freshEx, prevLabel, allTimeBest)
-  App.jsx        — Main app: state, navigation, save/load, export modal, bottom nav
-  ExCard.jsx     — Single exercise card (accordion, set inputs, feel rating, notes)
-  RestTimer.jsx  — Rest timer overlay (presets, animated ring, vibration)
-  History.jsx    — History page (MiniChart SVG, ExerciseHistory, session log)
-  main.jsx       — React entry point
-  index.css      — Global resets + iOS input zoom fix (font-size: 16px)
-
-public/
-  icon.svg       — Source icon (dumbbell on green, used to generate PNG icons at build time)
-
-.github/workflows/
-  deploy.yml     — Install → generate icons → build → deploy to GitHub Pages
+  types.ts              — the whole data model (read this first)
+  lib/                  — units (kg↔lb), dates (local-time week math), id
+  i18n/                 — makeT with plural rules; en.ts / de.ts dictionaries
+  data/
+    exercises.ts        — 42-exercise catalogue (generated port from v1)
+    plans.ts            — 10 training plans (generated port from v1)
+    muscles.ts          — muscle → group mapping, localized labels
+    coach.ts            — progression jumps (per-unit!), overrides, substitutions,
+                          seeded machine notes
+  store/
+    db.ts               — idb-keyval keys: settings / logs / session
+    appState.tsx        — reducer + provider; hydration, legacy localStorage
+                          migration ("wt-v2"), autosave effects
+    selectors.ts        — exercise index, PRs, e1RM (Epley), detectNewPRs
+    progression.ts      — feel-based engine (deload/completion/rep/fatigue gates)
+    analytics.ts        — tonnage, weekly series, muscle-group sets, calendar,
+                          consistency stats
+    backup.ts           — versioned JSON backup + CSV export + share sheet
+    legacy.ts           — old-app CSV import + localStorage migration + dedupe merge
+  ui/                   — theme.css (all tokens/components), kit.tsx, icons.tsx
+  components/charts.tsx — LineChart, WeeklyBars, Heatmap
+  pages/                — Home, Workout, Progress, Programs, Settings
+  App.tsx               — routing, theme application, session start/finish
 ```
 
-## Key data shape
-History is stored per exercise as an array of sessions (newest last):
-```js
-store.history["a1"] = [
-  { date: "Wk5",    sets: [{w:"90",r:"12"}, ...], pr: false },
-  { date: "Jun 21", sets: [{w:"95",r:"12"}, ...], pr: true  },
-]
-```
-Old single-object format `{date, sets}` is auto-migrated to array on load.
-
-## How to run locally
+## Commands
 ```bash
-npm install
-npm run generate-icons   # generates PNG icons from public/icon.svg
-npm run dev              # http://localhost:5173/workout-app/
+npm install        # clean install, no native deps
+npm run dev        # http://localhost:5173/workout-app/
+npm test           # vitest (44 tests)
+npm run typecheck  # tsc --noEmit (also part of build)
+npm run build      # typecheck + vite build → dist/
 ```
 
-## How to build & deploy
-```bash
-npm run build   # output in dist/
-# push to claude/iphone-artifact-compat-bf42iz → GitHub Actions deploys automatically
-```
+## Repo / deploy
+- Owner `miniqrti`, repo `workout-app`
+- Branch: `claude/workout-app-professional-0p0q7e`
+- CI: `.github/workflows/deploy.yml` — test + typecheck job gates the Pages deploy
+- Deploy target: `https://miniqrti.github.io/workout-app/`
 
-## Workout program summary (Day A/B/C, 3x/week)
-- **Day A** — Upper body + core: chest press, row, shoulder press, cable curls, tricep pushdown, lat pulldown, plank, ab crunch
-- **Day B** — Lower body + core: leg press (4 sets), leg curl, leg extension, calf extension, lunges, rotary torso, hanging knee tuck
-- **Day C** — Full body + core: lighter versions of A+B exercises, plank, rotary torso, cable crunch
-- All days include warm-up, Zone 2 cardio (15–20 min), cool-down
-- Machine settings are stored per exercise (seat positions, pad settings, etc.)
-
-## What to work on next (suggestions)
-- Workout duration timer (stopwatch from session start)
-- Weekly schedule view / workout streak counter
-- 1RM calculator (estimate from weight × reps)
-- Push notification reminder ("Time to train")
-- Export history as CSV
-
-## iPhone "Add to Home Screen" instructions (for the README)
-1. Open `https://miniqrti.github.io/workout-app/` in Safari
-2. Tap the Share button (box with arrow)
-3. Tap "Add to Home Screen"
-4. App opens in standalone mode (no browser chrome)
+## Data import paths (one-time, for the owner's history)
+1. **Automatic**: on first launch, if IndexedDB is empty and the old app's
+   localStorage blob (`wt-v2`) exists, it is migrated in place (lbs→kg).
+2. **CSV**: Settings → "Import from old app (CSV)" accepts the previous
+   version's export format; duplicates (same day + day name) are skipped.
+3. **JSON restore**: Settings → "Restore from backup" for `ironlog-backup-*.json`.
