@@ -3,6 +3,7 @@ import { getLastSession, getProgressionSuggestion } from "../data/store.js";
 import { useTheme, FONT } from "../theme.js";
 import { useT } from "../i18n.js";
 import { MACHINE_SETTINGS } from "../data/historicalLogs.js";
+import { muscleLabel } from "../data/exercises.js";
 
 // ── Icons ──────────────────────────────────────────────────────────────────────
 
@@ -404,9 +405,9 @@ function ExerciseCard({
                 <span style={{
                   fontSize: 10, fontWeight: 600, padding: "2px 7px", borderRadius: 6,
                   background: C.greenLight, color: C.green,
-                  textTransform: "capitalize", letterSpacing: "0.03em",
+                  letterSpacing: "0.03em",
                 }}>
-                  {exercise.primaryMuscle}
+                  {muscleLabel(exercise.primaryMuscle)}
                 </span>
               )}
             </div>
@@ -1134,9 +1135,9 @@ export default function ActiveWorkout({
                     <span style={{
                       fontSize: 10, fontWeight: 600, padding: "2px 7px", borderRadius: 6,
                       background: C.greenLight, color: C.green,
-                      textTransform: "capitalize", flexShrink: 0,
+                      flexShrink: 0,
                     }}>
-                      {exercise.primaryMuscle}
+                      {muscleLabel(exercise.primaryMuscle)}
                     </span>
                   )}
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none"

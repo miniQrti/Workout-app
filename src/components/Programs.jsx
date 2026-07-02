@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from "react";
 import { useTheme, FONT } from "../theme.js";
 import { useT } from "../i18n.js";
+import { muscleLabel } from "../data/exercises.js";
 
 const DIFFICULTY_COLORS_STATIC = {
   Intermediate: { bg: "#FFF4ED", color: "#F97316" },
@@ -274,8 +275,7 @@ function ExerciseCard({ exercise }) {
   const C = useTheme();
   const t = useT();
   const [expanded, setExpanded] = useState(false);
-  const muscleLabel = exercise.primaryMuscle.charAt(0).toUpperCase() +
-    exercise.primaryMuscle.slice(1);
+  const primaryLabel = muscleLabel(exercise.primaryMuscle);
 
   return (
     <div style={{
@@ -300,7 +300,7 @@ function ExerciseCard({ exercise }) {
             {exercise.name}
           </div>
           <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-            <Badge label={muscleLabel} />
+            <Badge label={primaryLabel} />
             {exercise.equipment && (
               <Badge
                 label={exercise.equipment.charAt(0).toUpperCase() + exercise.equipment.slice(1)}
@@ -336,15 +336,18 @@ function ExerciseCard({ exercise }) {
                 {t("programs.muscles_worked")}
               </div>
               <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                {exercise.muscles.map(m => (
-                  <Badge
-                    key={m}
-                    label={m.charAt(0).toUpperCase() + m.slice(1)}
-                    small
-                    bg={C.greenLight}
-                    color={C.green}
-                  />
-                ))}
+                {exercise.muscles.map(m => {
+                  const isPrimary = m === exercise.primaryMuscle;
+                  return (
+                    <Badge
+                      key={m}
+                      label={muscleLabel(m)}
+                      small
+                      bg={isPrimary ? C.greenLight : C.surface2}
+                      color={isPrimary ? C.green : C.text2}
+                    />
+                  );
+                })}
               </div>
             </div>
           )}
