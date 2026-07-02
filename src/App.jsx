@@ -631,6 +631,15 @@ export default function App() {
       ? ((store.nextDayIdx || 0) + 1) % plan.days.length
       : 0;
 
+    // Advance rotation pointer to next workout slot in the cycle
+    const rotation  = plan?.schedule?.rotation || [];
+    const curRotIdx = store.rotationIdx || 0;
+    let nextRotationIdx = curRotIdx;
+    for (let i = 1; i <= rotation.length; i++) {
+      const idx = (curRotIdx + i) % rotation.length;
+      if (rotation[idx]?.type === "workout") { nextRotationIdx = idx; break; }
+    }
+
     const log = {
       id:          Date.now().toString(),
       startedAt:   new Date(session.startTime).toISOString(),
@@ -660,7 +669,7 @@ export default function App() {
       }
     }
 
-    setStore(prev => ({ ...prev, nextDayIdx, logs: newLogs, overrideDayIdx: undefined }));
+    setStore(prev => ({ ...prev, nextDayIdx, rotationIdx: nextRotationIdx, logs: newLogs, overrideDayIdx: undefined }));
     setSession(null);
     setView("home");
     setSummary({ durationSecs, log, newPRs });
@@ -716,7 +725,7 @@ export default function App() {
 
   // ── Plan switching ────────────────────────────────────────────────────────
   function selectPlan(planId) {
-    updateStore({ activePlanId: planId, nextDayIdx: 0, overrideDayIdx: undefined });
+    updateStore({ activePlanId: planId, nextDayIdx: 0, rotationIdx: 0, overrideDayIdx: undefined });
   }
 
   // ── Render ────────────────────────────────────────────────────────────────

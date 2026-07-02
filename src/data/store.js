@@ -11,6 +11,7 @@ export function freshStore() {
   return {
     activePlanId: "beginner-3day",
     nextDayIdx: 0,
+    rotationIdx: 0,
     unit: "lbs",
     theme: "light",
     accent: "green",

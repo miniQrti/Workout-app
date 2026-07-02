@@ -46,6 +46,10 @@ const TRANSLATIONS = {
     "home.exercise_count_n":    "{n} exercises",
     "home.exercises":           "exercises",
     "home.reps":                "reps",
+    "home.coming_up":           "Coming up",
+    "home.schedule_rest":       "Rest Day",
+    "home.schedule_cardio":     "Cardio Day",
+    "home.schedule_workout":    "Workout",
 
     // Menu / settings
     "menu.title":              "Menu",
@@ -255,6 +259,10 @@ const TRANSLATIONS = {
     "home.exercise_count_n":    "{n} Übungen",
     "home.exercises":           "Übungen",
     "home.reps":                "Wdh.",
+    "home.coming_up":           "Als nächstes",
+    "home.schedule_rest":       "Ruhetag",
+    "home.schedule_cardio":     "Cardio-Tag",
+    "home.schedule_workout":    "Training",
 
     // Menu / settings
     "menu.title":              "Menü",

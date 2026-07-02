@@ -135,6 +135,69 @@ function StatCard({ value, label }) {
   );
 }
 
+// ── Schedule strip ─────────────────────────────────────────────────────────────
+
+function ScheduleStrip({ plan, rotationIdx }) {
+  const C = useTheme();
+  const t = useT();
+
+  const rotation = plan?.schedule?.rotation;
+  if (!rotation?.length) return null;
+
+  // Gather next entries in the cycle (up to 5, stop before looping back to the same slot)
+  const len = rotation.length;
+  const upcoming = [];
+  for (let i = 1; i < len && upcoming.length < 5; i++) {
+    upcoming.push(rotation[(rotationIdx + i) % len]);
+  }
+
+  return (
+    <div style={{
+      background: C.surface, border: `1px solid ${C.border}`,
+      borderRadius: 14, padding: "12px 14px",
+      marginBottom: 16,
+    }}>
+      <div style={{
+        fontSize: 11, fontWeight: 700, color: C.text3,
+        textTransform: "uppercase", letterSpacing: "0.07em",
+        marginBottom: 10,
+      }}>
+        {t("home.coming_up")}
+      </div>
+      <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
+        {upcoming.map((entry, i) => {
+          const isWorkout = entry.type === "workout";
+          const isCardio  = entry.type === "cardio";
+          const dayName   = isWorkout
+            ? plan.days.find(d => d.id === entry.dayId)?.name || t("home.schedule_workout")
+            : null;
+
+          const bg    = isWorkout ? C.greenLight  : isCardio ? "#EFF6FF" : C.surface2;
+          const color = isWorkout ? C.green        : isCardio ? "#3B82F6" : C.text2;
+          const bdr   = isWorkout ? C.green        : isCardio ? "#BFDBFE" : C.border;
+          const label = isWorkout ? dayName        : isCardio ? t("home.schedule_cardio") : t("home.schedule_rest");
+
+          return (
+            <React.Fragment key={i}>
+              {i > 0 && (
+                <span style={{ color: C.text3, fontSize: 11, lineHeight: 1 }}>›</span>
+              )}
+              <div style={{
+                padding: "5px 10px", borderRadius: 14,
+                fontSize: 12, fontWeight: 600,
+                background: bg, color, border: `1px solid ${bdr}`,
+                whiteSpace: "nowrap",
+              }}>
+                {label}
+              </div>
+            </React.Fragment>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 // ── Main component ────────────────────────────────────────────────────────────
 
 export default function Home({ store, plans, exercises, unit, onStartWorkout, onContinueSession, onUpdateStore, onOpenMenu }) {
@@ -492,6 +555,9 @@ export default function Home({ store, plans, exercises, unit, onStartWorkout, on
             </div>
           )}
         </div>
+
+        {/* Schedule strip — shows upcoming rest / cardio / workout days */}
+        <ScheduleStrip plan={plan} rotationIdx={store.rotationIdx || 0} />
 
         {/* This Week */}
         <div style={{
