@@ -5,17 +5,72 @@ import { EXERCISES, exerciseName } from "../data/exercises";
 import { suggestProgression } from "../store/progression";
 import { getPR } from "../store/selectors";
 import { consistencyStats, thisWeekWorkouts } from "../store/analytics";
+import { slotForDate, trainedOn, weekOverview, type WeekDayOverview } from "../store/schedule";
 import { localize, localeOf, useLang } from "../i18n";
 import { displayWeight } from "../lib/units";
 import { parseDate } from "../lib/dates";
 import { Button, Card, Chip, Sheet, StatCard, StatRow, EmptyState } from "../ui/kit";
-import { IconFlame } from "../ui/icons";
+import { IconCheck, IconFlame } from "../ui/icons";
 
 function greetingKey(): string {
   const h = new Date().getHours();
   if (h < 12) return "home.greeting.morning";
   if (h < 18) return "home.greeting.afternoon";
   return "home.greeting.evening";
+}
+
+/** Mon–Sun strip: the plan's intended layout plus what actually happened. */
+function WeekStrip({ week, locale }: { week: WeekDayOverview[]; locale: string }) {
+  const { t } = useLang();
+  return (
+    <Card className="week-strip">
+      <div style={{ display: "flex", gap: 6 }}>
+        {week.map((d, i) => {
+          const type = d.slot?.type;
+          const bg = d.trained
+            ? "var(--accent)"
+            : type === "workout"
+              ? "var(--accent-soft)"
+              : type === "cardio"
+                ? "var(--gold-soft)"
+                : "var(--surface-2)";
+          const fg = d.trained
+            ? "#fff"
+            : type === "workout"
+              ? "var(--accent)"
+              : type === "cardio"
+                ? "var(--gold)"
+                : "var(--text-3)";
+          return (
+            <div key={i} style={{ flex: 1, textAlign: "center" }}>
+              <div style={{
+                fontSize: 10, fontWeight: d.isToday ? 800 : 600,
+                color: d.isToday ? "var(--accent)" : "var(--text-3)",
+                textTransform: "uppercase",
+              }}>
+                {d.date.toLocaleDateString(locale, { weekday: "short" }).slice(0, 2)}
+              </div>
+              <div style={{
+                margin: "5px auto 0", width: 27, height: 27, borderRadius: "50%",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                fontSize: 11, fontWeight: 700,
+                background: bg, color: fg,
+                boxShadow: d.isToday ? "0 0 0 2px var(--accent)" : "none",
+              }}>
+                {d.trained
+                  ? <IconCheck size={13} />
+                  : type === "workout"
+                    ? t("home.strip_workout")
+                    : type === "cardio"
+                      ? t("home.strip_cardio")
+                      : "–"}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </Card>
+  );
 }
 
 export default function Home({
@@ -56,6 +111,19 @@ export default function Home({
   const weekCount = useMemo(() => thisWeekWorkouts(logs), [logs]);
   const recent = logs.slice(-3).reverse();
 
+  const todaySlot = slotForDate(plan, new Date());
+  const trainedToday = useMemo(() => trainedOn(logs, new Date()), [logs]);
+  const week = useMemo(() => weekOverview(plan, logs), [plan, logs]);
+
+  // What the Today card should say: actual training beats the schedule.
+  const todayState: "done" | "rest" | "cardio" | "workout" = trainedToday
+    ? "done"
+    : todaySlot?.type === "rest"
+      ? "rest"
+      : todaySlot?.type === "cardio"
+        ? "cardio"
+        : "workout";
+
   const arrow = { increase: "↑", hold: "→", decrease: "↓", deload: "↓↓" } as const;
   const arrowColor = { increase: "var(--accent)", hold: "var(--text-2)", decrease: "var(--gold)", deload: "var(--red)" } as const;
 
@@ -95,8 +163,52 @@ export default function Home({
           </Card>
         )}
 
+        {/* This week's schedule */}
+        {plan && todaySlot !== null && <WeekStrip week={week} locale={locale} />}
+
+        {/* Today: workout, rest, cardio, or already trained */}
+        {plan && day && todayState !== "workout" && (
+          <Card>
+            <div style={{ textAlign: "center", padding: "6px 0 2px" }}>
+              {todayState === "done" ? (
+                <div style={{
+                  width: 46, height: 46, borderRadius: "50%", margin: "0 auto 10px",
+                  background: "var(--accent-soft)", border: "2px solid var(--accent)",
+                  display: "flex", alignItems: "center", justifyContent: "center", color: "var(--accent)",
+                }}>
+                  <IconCheck size={22} />
+                </div>
+              ) : (
+                <div style={{ fontSize: 34, marginBottom: 6 }}>
+                  {todayState === "rest" ? "🌙" : "🏃"}
+                </div>
+              )}
+              <div style={{ fontSize: 18, fontWeight: 800 }}>
+                {todayState === "done" ? t("home.done_today") : todayState === "rest" ? t("home.rest_day") : t("home.cardio_day")}
+              </div>
+              <div style={{ fontSize: 13, color: "var(--text-2)", marginTop: 4 }}>
+                {todayState === "done" ? t("home.done_hint") : todayState === "rest" ? t("home.rest_hint") : t("home.cardio_hint")}
+              </div>
+            </div>
+            <div className="row" style={{
+              marginTop: 14, padding: "10px 12px", background: "var(--surface-2)",
+              borderRadius: 10, fontSize: 13,
+            }}>
+              <span style={{ color: "var(--text-2)" }}>{t("home.next_up")}</span>
+              <span style={{ fontWeight: 600 }}>
+                {localize(day.name, lang)} · {t("common.exercises", { count: day.exercises.length })}
+              </span>
+            </div>
+            {!session && (
+              <Button block variant="ghost" small style={{ marginTop: 8, color: "var(--text-2)" }} onClick={() => onStart(dayIdx)}>
+                {t("home.train_anyway")}
+              </Button>
+            )}
+          </Card>
+        )}
+
         {/* Today's workout */}
-        {plan && day && (
+        {plan && day && todayState === "workout" && (
           <Card
             title={
               <div className="row">
