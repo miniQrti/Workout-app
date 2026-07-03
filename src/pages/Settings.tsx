@@ -198,6 +198,19 @@ export default function Settings() {
             onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ""; if (f) handleRestoreFile(f); }} />
         </div>
 
+        {/* App */}
+        <div>
+          <SectionLabel>{t("settings.app")}</SectionLabel>
+          <div style={{ marginTop: 8 }}>
+            <Button block onClick={() => window.location.reload()}>
+              {t("settings.reload")}
+            </Button>
+            <div style={{ fontSize: 11, color: "var(--text-3)", marginTop: 6 }}>
+              {t("settings.reload_sub")}
+            </div>
+          </div>
+        </div>
+
         {/* Danger zone */}
         <div>
           <SectionLabel>{t("settings.danger")}</SectionLabel>
