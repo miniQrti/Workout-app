@@ -47,6 +47,8 @@ export const de: Record<string, string> = {
   "home.done_today": "Training abgeschlossen!",
   "home.done_hint": "Stark — jetzt Erholung und Essen. Bis zur nächsten Einheit.",
   "home.train_anyway": "Trotzdem trainieren",
+  "home.recovery_hint.one": "Du hast gestern trainiert — dieser Plan sieht Pause zwischen den Einheiten vor.",
+  "home.recovery_hint.other": "Du hast {count} Tage am Stück trainiert — Wachstum passiert an Ruhetagen.",
   "home.strip_workout": "T",
   "home.strip_cardio": "C",
   "home.this_week": "Diese Woche",
