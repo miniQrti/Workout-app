@@ -47,6 +47,8 @@ export const en: Record<string, string> = {
   "home.done_today": "Workout complete!",
   "home.done_hint": "Nice work — rest and refuel. See you next session.",
   "home.train_anyway": "Train anyway",
+  "home.recovery_hint.one": "You trained yesterday — this plan schedules rest between sessions.",
+  "home.recovery_hint.other": "You've trained {count} days in a row — growth happens on rest days.",
   "home.strip_workout": "W",
   "home.strip_cardio": "C",
   "home.this_week": "This Week",

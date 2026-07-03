@@ -1,5 +1,5 @@
 import type { Plan, RotationSlot, WorkoutLog } from "../types";
-import { addDays, dayKey, parseDate, weekStart } from "../lib/dates";
+import { addDays, dayKey, parseDate, startOfDay, weekStart } from "../lib/dates";
 
 // ── Weekly schedule awareness ─────────────────────────────────────────────────
 //
@@ -22,6 +22,50 @@ export function trainedOn(logs: WorkoutLog[], date: Date): boolean {
     const d = parseDate(l.completedAt) ?? parseDate(l.startedAt);
     return d !== null && dayKey(d) === key;
   });
+}
+
+/**
+ * The most back-to-back training days the plan's rotation ever asks for
+ * (cyclic — a run may wrap around the week). 0 when the plan is unknown.
+ */
+export function maxConsecutiveWorkouts(plan: Plan | undefined): number {
+  if (!plan || plan.schedule.rotation.length === 0) return 0;
+  const rot = plan.schedule.rotation;
+  if (rot.every((s) => s.type === "workout")) return rot.length;
+  let best = 0;
+  let run = 0;
+  for (const slot of [...rot, ...rot]) {
+    if (slot.type === "workout") {
+      run++;
+      if (run > best) best = run;
+    } else {
+      run = 0;
+    }
+  }
+  return best;
+}
+
+/** Consecutive trained days counting backwards from `endingWith` (inclusive). */
+export function consecutiveTrainedDays(logs: WorkoutLog[], endingWith: Date): number {
+  let streak = 0;
+  let cursor = startOfDay(endingWith);
+  while (trainedOn(logs, cursor)) {
+    streak++;
+    cursor = addDays(cursor, -1);
+  }
+  return streak;
+}
+
+/**
+ * True when the user's actual training says today should be recovery even if
+ * the calendar slot is a workout: the streak of consecutive trained days
+ * ending yesterday has reached the plan's maximum back-to-back load.
+ */
+export function needsRecovery(plan: Plan | undefined, logs: WorkoutLog[], today: Date = new Date()): number {
+  const maxRun = maxConsecutiveWorkouts(plan);
+  if (maxRun === 0) return 0;
+  const streak = consecutiveTrainedDays(logs, addDays(today, -1));
+  return streak >= maxRun ? streak : 0;
 }
 
 export interface WeekDayOverview {

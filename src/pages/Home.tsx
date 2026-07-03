@@ -5,7 +5,7 @@ import { EXERCISES, exerciseName } from "../data/exercises";
 import { suggestProgression } from "../store/progression";
 import { getPR } from "../store/selectors";
 import { consistencyStats, thisWeekWorkouts } from "../store/analytics";
-import { slotForDate, trainedOn, weekOverview, type WeekDayOverview } from "../store/schedule";
+import { needsRecovery, slotForDate, trainedOn, weekOverview, type WeekDayOverview } from "../store/schedule";
 import { localize, localeOf, useLang } from "../i18n";
 import { displayWeight } from "../lib/units";
 import { parseDate } from "../lib/dates";
@@ -114,15 +114,21 @@ export default function Home({
   const todaySlot = slotForDate(plan, new Date());
   const trainedToday = useMemo(() => trainedOn(logs, new Date()), [logs]);
   const week = useMemo(() => weekOverview(plan, logs), [plan, logs]);
+  // Streak of consecutive trained days ending yesterday, when it has hit the
+  // plan's max back-to-back load; 0 otherwise.
+  const recoveryStreak = useMemo(() => needsRecovery(plan, logs), [plan, logs]);
 
-  // What the Today card should say: actual training beats the schedule.
-  const todayState: "done" | "rest" | "cardio" | "workout" = trainedToday
+  // What the Today card should say: actual training beats the calendar —
+  // both "already trained today" and "trained too many days in a row".
+  const todayState: "done" | "rest" | "recovery" | "cardio" | "workout" = trainedToday
     ? "done"
     : todaySlot?.type === "rest"
       ? "rest"
       : todaySlot?.type === "cardio"
         ? "cardio"
-        : "workout";
+        : recoveryStreak > 0
+          ? "recovery"
+          : "workout";
 
   const arrow = { increase: "↑", hold: "→", decrease: "↓", deload: "↓↓" } as const;
   const arrowColor = { increase: "var(--accent)", hold: "var(--text-2)", decrease: "var(--gold)", deload: "var(--red)" } as const;
@@ -180,14 +186,20 @@ export default function Home({
                 </div>
               ) : (
                 <div style={{ fontSize: 34, marginBottom: 6 }}>
-                  {todayState === "rest" ? "🌙" : "🏃"}
+                  {todayState === "cardio" ? "🏃" : "🌙"}
                 </div>
               )}
               <div style={{ fontSize: 18, fontWeight: 800 }}>
-                {todayState === "done" ? t("home.done_today") : todayState === "rest" ? t("home.rest_day") : t("home.cardio_day")}
+                {todayState === "done" ? t("home.done_today") : todayState === "cardio" ? t("home.cardio_day") : t("home.rest_day")}
               </div>
               <div style={{ fontSize: 13, color: "var(--text-2)", marginTop: 4 }}>
-                {todayState === "done" ? t("home.done_hint") : todayState === "rest" ? t("home.rest_hint") : t("home.cardio_hint")}
+                {todayState === "done"
+                  ? t("home.done_hint")
+                  : todayState === "cardio"
+                    ? t("home.cardio_hint")
+                    : todayState === "recovery"
+                      ? t("home.recovery_hint", { count: recoveryStreak })
+                      : t("home.rest_hint")}
               </div>
             </div>
             <div className="row" style={{
