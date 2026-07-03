@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useApp } from "../store/appState";
 import { PLANS } from "../data/plans";
-import { exerciseName } from "../data/exercises";
+import { demoUrl, exerciseName } from "../data/exercises";
 import type { Plan } from "../types";
 import { localize, useLang } from "../i18n";
 import { Button, Card, Chip, EmptyState, Modal, PageHeader } from "../ui/kit";
@@ -56,7 +56,16 @@ function PlanCard({ plan, active, onSwitch }: { plan: Plan; active: boolean; onS
               <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 4 }}>{localize(day.name, lang)}</div>
               {day.exercises.map((pe) => (
                 <div key={pe.exerciseId} className="row" style={{ fontSize: 12, color: "var(--text-2)", padding: "2px 0" }}>
-                  <span>{exerciseName(pe.exerciseId)}</span>
+                  <span>
+                    {exerciseName(pe.exerciseId)}{" "}
+                    <a
+                      href={demoUrl(exerciseName(pe.exerciseId))}
+                      target="_blank" rel="noopener noreferrer"
+                      style={{ textDecoration: "none", fontSize: 11 }}
+                    >
+                      ▶
+                    </a>
+                  </span>
                   <span>{pe.sets} × {pe.reps}</span>
                 </div>
               ))}

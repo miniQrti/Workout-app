@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useApp } from "../store/appState";
-import { EXERCISES, exerciseName } from "../data/exercises";
+import { demoUrl, EXERCISES, exerciseName } from "../data/exercises";
 import { PLANS } from "../data/plans";
 import { SUBSTITUTIONS, EXERCISE_OVERRIDES, COOLDOWN } from "../data/coach";
 import { muscleGroupOf } from "../data/muscles";
@@ -82,7 +82,13 @@ interface Rest {
   total: number;
 }
 
-function RestBanner({ rest, onSkip }: { rest: Rest; onSkip: () => void }) {
+function RestBanner({ rest, onSkip, onExtend, lifted }: {
+  rest: Rest;
+  onSkip: () => void;
+  onExtend: () => void;
+  /** Raised above the focus-mode footer. */
+  lifted: boolean;
+}) {
   const { t } = useLang();
   const [, force] = useState(0);
   const doneAtRef = useRef<number | null>(null);
@@ -110,7 +116,7 @@ function RestBanner({ rest, onSkip }: { rest: Rest; onSkip: () => void }) {
   return (
     <div style={{
       position: "fixed", left: 12, right: 12,
-      bottom: "calc(12px + env(safe-area-inset-bottom))",
+      bottom: lifted ? "calc(86px + env(safe-area-inset-bottom))" : "calc(12px + env(safe-area-inset-bottom))",
       zIndex: 200,
       background: done ? "var(--accent)" : "var(--surface)",
       border: "1px solid var(--border)",
@@ -134,6 +140,9 @@ function RestBanner({ rest, onSkip }: { rest: Rest; onSkip: () => void }) {
           {formatDuration(remaining)}
         </div>
       </div>
+      {!done && (
+        <Button small onClick={onExtend}>+30s</Button>
+      )}
       <Button small onClick={onSkip} style={done ? { background: "rgba(255,255,255,0.2)", color: "#fff", border: "none" } : undefined}>
         {t("workout.skip")}
       </Button>
@@ -144,12 +153,10 @@ function RestBanner({ rest, onSkip }: { rest: Rest; onSkip: () => void }) {
 // ── Exercise card ─────────────────────────────────────────────────────────────
 
 function ExerciseCard({
-  ex, exIdx, expanded, onToggle, onStartRest, onOpenSwap,
+  ex, exIdx, onStartRest, onOpenSwap,
 }: {
   ex: DraftExercise;
   exIdx: number;
-  expanded: boolean;
-  onToggle: () => void;
   onStartRest: (secs: number) => void;
   onOpenSwap: () => void;
 }) {
@@ -182,13 +189,10 @@ function ExerciseCard({
   return (
     <div className="card" style={{ padding: 0, overflow: "hidden" }}>
       {/* Header */}
-      <button
-        onClick={onToggle}
-        style={{
-          width: "100%", padding: "14px 16px", background: "none", border: "none",
-          cursor: "pointer", textAlign: "left", display: "flex", alignItems: "center", gap: 10,
-        }}
-      >
+      <div style={{
+        width: "100%", padding: "14px 16px",
+        display: "flex", alignItems: "center", gap: 10,
+      }}>
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: 15, fontWeight: 700, color: "var(--text-1)" }}>
             {exerciseName(ex.exerciseId)}
@@ -200,12 +204,9 @@ function ExerciseCard({
         {doneCount === ex.sets.length && ex.sets.length > 0
           ? <Chip tone="accent"><IconCheck size={12} /> {doneCount}/{ex.sets.length}</Chip>
           : <Chip>{doneCount}/{ex.sets.length}</Chip>}
-        <span style={{ color: "var(--text-3)" }}>
-          {expanded ? <IconChevronUp size={16} /> : <IconChevronDown size={16} />}
-        </span>
-      </button>
+      </div>
 
-      {expanded && (
+      {(
         <div style={{ padding: "0 16px 16px", display: "flex", flexDirection: "column", gap: 12 }}>
 
           {/* Coach suggestion */}
@@ -301,19 +302,65 @@ function ExerciseCard({
             />
           </div>
 
-          {/* Tip + swap */}
+          {/* Tip + demo + swap */}
           {info?.tip && (
             <div style={{ fontSize: 12, color: "var(--text-2)", lineHeight: 1.5 }}>
               <span style={{ fontWeight: 700 }}>{t("workout.tip")}: </span>
               {localize(info.tip, lang)}
             </div>
           )}
-          <Button small variant="ghost" onClick={onOpenSwap} style={{ color: "var(--text-2)", alignSelf: "flex-start" }}>
-            <IconSwap size={14} /> {t("workout.swap")}
-          </Button>
+          <div style={{ display: "flex", gap: 4 }}>
+            <a
+              href={demoUrl(exerciseName(ex.exerciseId))}
+              target="_blank" rel="noopener noreferrer"
+              className="btn btn-ghost btn-sm"
+              style={{ color: "var(--text-2)", textDecoration: "none" }}
+            >
+              ▶ {t("workout.watch_demo")}
+            </a>
+            <Button small variant="ghost" onClick={onOpenSwap} style={{ color: "var(--text-2)" }}>
+              <IconSwap size={14} /> {t("workout.swap")}
+            </Button>
+          </div>
         </div>
       )}
     </div>
+  );
+}
+
+// ── Compact list row (tap to focus) ───────────────────────────────────────────
+
+function ExerciseRow({ ex, onFocus }: { ex: DraftExercise; onFocus: () => void }) {
+  const { t } = useLang();
+  const done = ex.sets.length > 0 && ex.sets.every((s) => s.completed);
+  const needsFeel = done && !ex.feel;
+  const doneCount = ex.sets.filter((s) => s.completed).length;
+
+  return (
+    <button
+      onClick={onFocus}
+      className="card"
+      style={{
+        width: "100%", cursor: "pointer", textAlign: "left",
+        display: "flex", alignItems: "center", gap: 12,
+        padding: "14px 16px",
+        background: done ? (needsFeel ? "var(--gold-soft)" : "var(--accent-soft)") : "var(--surface)",
+        borderColor: done ? (needsFeel ? "var(--gold)" : "var(--accent)") : "var(--border)",
+      }}
+    >
+      <div style={{ flex: 1 }}>
+        <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text-1)" }}>
+          {exerciseName(ex.exerciseId)}
+        </div>
+        <div style={{ fontSize: 12, color: "var(--text-2)", marginTop: 2 }}>
+          {needsFeel
+            ? t("workout.feel")
+            : `${doneCount}/${ex.sets.length} · ${ex.targetSets} × ${ex.targetReps}`}
+        </div>
+      </div>
+      {done && !needsFeel && <span style={{ color: "var(--accent)" }}><IconCheck size={18} /></span>}
+      <span style={{ color: "var(--text-3)", fontSize: 18 }}>›</span>
+    </button>
   );
 }
 
@@ -329,7 +376,13 @@ export default function Workout({
   const { t, lang } = useLang();
   const session = state.session;
 
-  const [expanded, setExpanded] = useState<number | null>(0);
+  // Focus mode: one exercise fills the screen, no scrolling mid-workout.
+  // Starts focused on the first incomplete exercise; null = list overview.
+  const [focusIdx, setFocusIdx] = useState<number | null>(() => {
+    const exs = state.session?.exercises ?? [];
+    const idx = exs.findIndex((e) => e.sets.some((s) => !s.completed));
+    return idx >= 0 ? idx : null;
+  });
   const [rest, setRest] = useState<Rest | null>(null);
   const [swapFor, setSwapFor] = useState<number | null>(null);
   const [confirm, setConfirm] = useState<"discard" | "incomplete" | null>(null);
@@ -410,7 +463,7 @@ export default function Workout({
   }, [swapEx, lang]);
 
   return (
-    <div className="page" style={{ paddingBottom: rest ? 170 : 90 }}>
+    <div className="page" style={{ paddingBottom: (focusIdx !== null ? 90 : 20) + (rest ? 90 : 0) + 70 }}>
       {/* Header */}
       <div className="page-header">
         <button onClick={tryExit} className="btn btn-ghost btn-sm" style={{ color: "var(--text-2)", padding: 6 }}>
@@ -434,25 +487,103 @@ export default function Workout({
         </Button>
       </div>
 
-      <div className="page-body">
-        <WarmupCard />
+      {/* List mode — compact overview, tap a row to focus */}
+      {focusIdx === null && (
+        <div className="page-body">
+          <WarmupCard />
 
-        {session.exercises.map((ex, i) => (
+          {session.exercises.map((ex, i) => (
+            <ExerciseRow key={`${i}-${ex.exerciseId}`} ex={ex} onFocus={() => setFocusIdx(i)} />
+          ))}
+
+          <CooldownCard autoExpand={allSetsDone && !cooldownComplete} />
+        </div>
+      )}
+
+      {/* Focus mode — single exercise, navigator + progress dots */}
+      {focusIdx !== null && session.exercises[focusIdx] && (
+        <div className="page-body" style={{ paddingBottom: 8 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <button
+              onClick={() => setFocusIdx(null)}
+              className="btn btn-ghost btn-sm"
+              style={{ color: "var(--text-2)", padding: "4px 0" }}
+            >
+              ‹ {t("workout.all")}
+            </button>
+            <div style={{ flex: 1 }} />
+            <Button small disabled={focusIdx === 0} onClick={() => setFocusIdx(focusIdx - 1)}>‹</Button>
+            <span style={{ fontSize: 12, color: "var(--text-2)", minWidth: 40, textAlign: "center" }}>
+              {focusIdx + 1} / {session.exercises.length}
+            </span>
+            <Button small disabled={focusIdx === session.exercises.length - 1} onClick={() => setFocusIdx(focusIdx + 1)}>›</Button>
+          </div>
+
+          {/* Progress dots */}
+          <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
+            {session.exercises.map((e, i) => {
+              const done = e.sets.length > 0 && e.sets.every((s) => s.completed);
+              const noFeel = done && !e.feel;
+              const active = i === focusIdx;
+              return (
+                <div
+                  key={i}
+                  onClick={() => setFocusIdx(i)}
+                  style={{
+                    width: active ? 22 : 8, height: 8, borderRadius: 4,
+                    background: done ? (noFeel ? "var(--gold)" : "var(--accent)") : active ? "var(--accent)" : "var(--border)",
+                    cursor: "pointer", transition: "all 0.2s", flexShrink: 0,
+                  }}
+                />
+              );
+            })}
+          </div>
+
           <ExerciseCard
-            key={`${i}-${ex.exerciseId}`}
-            ex={ex}
-            exIdx={i}
-            expanded={expanded === i}
-            onToggle={() => setExpanded(expanded === i ? null : i)}
+            key={`${focusIdx}-${session.exercises[focusIdx].exerciseId}`}
+            ex={session.exercises[focusIdx]}
+            exIdx={focusIdx}
             onStartRest={(secs) => setRest({ endsAt: Date.now() + secs * 1000, total: secs })}
-            onOpenSwap={() => setSwapFor(i)}
+            onOpenSwap={() => setSwapFor(focusIdx)}
           />
-        ))}
+        </div>
+      )}
 
-        <CooldownCard autoExpand={allSetsDone && !cooldownComplete} />
-      </div>
+      {/* Focus-mode sticky footer: next exercise, or back to the list */}
+      {focusIdx !== null && (
+        <div style={{
+          position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 100,
+          background: "var(--surface)", borderTop: "1px solid var(--border)",
+          padding: "12px 16px calc(12px + env(safe-area-inset-bottom))",
+        }}>
+          {focusIdx < session.exercises.length - 1 ? (
+            <Button block variant="primary" onClick={() => setFocusIdx(focusIdx + 1)}>
+              {t("workout.next_exercise")}
+            </Button>
+          ) : (
+            <Button block variant={allSetsDone && !cooldownComplete ? "default" : "primary"}
+              style={allSetsDone && !cooldownComplete
+                ? { background: "var(--gold-soft)", color: "var(--gold)", borderColor: "var(--gold)" }
+                : undefined}
+              onClick={() => {
+                if (allSetsDone && !cooldownComplete) setFocusIdx(null); // list auto-opens the cooldown
+                else tryFinish();
+              }}
+            >
+              {allSetsDone && !cooldownComplete ? t("workout.cooldown_first") : t("workout.finish")}
+            </Button>
+          )}
+        </div>
+      )}
 
-      {rest && <RestBanner rest={rest} onSkip={() => setRest(null)} />}
+      {rest && (
+        <RestBanner
+          rest={rest}
+          lifted={focusIdx !== null}
+          onSkip={() => setRest(null)}
+          onExtend={() => setRest((r) => (r ? { endsAt: r.endsAt + 30_000, total: r.total + 30 } : r))}
+        />
+      )}
 
       {/* Swap sheet */}
       {swapFor !== null && swapEx && (

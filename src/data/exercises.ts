@@ -743,3 +743,9 @@ export const EXERCISES: Record<string, Exercise> = {
 export function exerciseName(id: string, snapshot?: string): string {
   return EXERCISES[id]?.name ?? snapshot ?? id.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 }
+
+/** YouTube search for a how-to demo of the exercise. */
+export function demoUrl(name: string): string {
+  return "https://www.youtube.com/results?search_query=" +
+    encodeURIComponent(`${name} exercise planet fitness how to`);
+}
