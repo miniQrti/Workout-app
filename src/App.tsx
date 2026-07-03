@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useRegisterSW } from "virtual:pwa-register/react";
 import { useApp } from "./store/appState";
 import { PLANS } from "./data/plans";
 import { EXERCISES, exerciseName } from "./data/exercises";
@@ -81,6 +82,47 @@ function SummaryModal({ summary, onClose }: { summary: Summary; onClose: () => v
 
       <Button block variant="primary" onClick={onClose}>{t("common.done")}</Button>
     </Modal>
+  );
+}
+
+// ── Service-worker update banner ──────────────────────────────────────────────
+//
+// Installed iPhone PWAs have no reload UI, so the app has to surface updates
+// itself: check whenever it returns to the foreground (plus hourly), and show
+// a one-tap banner when a new version is waiting.
+
+function UpdateBanner() {
+  const { t } = useLang();
+  const {
+    needRefresh: [needRefresh],
+    updateServiceWorker,
+  } = useRegisterSW({
+    onRegisteredSW(_url, registration) {
+      if (!registration) return;
+      const check = () => registration.update().catch(() => {});
+      setInterval(check, 60 * 60 * 1000);
+      document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "visible") check();
+      });
+    },
+  });
+
+  if (!needRefresh) return null;
+  return (
+    <div style={{
+      position: "fixed", left: 12, right: 12,
+      top: "calc(10px + env(safe-area-inset-top))",
+      zIndex: 400,
+      background: "var(--surface)", border: "1px solid var(--border)",
+      borderRadius: 14, boxShadow: "var(--shadow)",
+      padding: "12px 14px",
+      display: "flex", alignItems: "center", gap: 12,
+    }}>
+      <span style={{ flex: 1, fontSize: 14, fontWeight: 600 }}>{t("update.title")}</span>
+      <Button small variant="primary" onClick={() => void updateServiceWorker(true)}>
+        {t("update.action")}
+      </Button>
+    </div>
   );
 }
 
@@ -218,6 +260,7 @@ export default function App() {
       )}
 
       {summary && <SummaryModal summary={summary} onClose={() => setSummary(null)} />}
+      <UpdateBanner />
     </LangContext.Provider>
   );
 }

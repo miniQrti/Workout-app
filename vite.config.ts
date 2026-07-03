@@ -9,7 +9,9 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
-      registerType: "autoUpdate",
+      // "prompt": new versions surface an in-app "Update" banner instead of
+      // silently waiting — installed iPhone PWAs have no other refresh UI.
+      registerType: "prompt",
       includeAssets: ["icon.svg", "apple-touch-icon-180x180.png"],
       manifest: {
         name: "Ironlog — Workout Tracker",
