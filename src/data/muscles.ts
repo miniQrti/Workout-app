@@ -175,3 +175,10 @@ export const MUSCLE_GROUPS: MuscleGroupId[] = ["chest", "back", "shoulders", "ar
 export function muscleGroupOf(muscleId: string): MuscleGroupId {
   return MUSCLES[muscleId]?.group ?? (muscleId as MuscleGroupId);
 }
+
+/** Localized display label for a specific muscle id. */
+export function muscleLabel(muscleId: string, lang: "en" | "de"): string {
+  const info = MUSCLES[muscleId];
+  if (!info) return muscleId.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+  return (lang === "de" && info.label.de) || info.label.en;
+}
