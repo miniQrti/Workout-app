@@ -93,6 +93,7 @@ export const de: Record<string, string> = {
   "workout.all": "Alle",
   "workout.next_exercise": "Nächste Übung →",
   "workout.watch_demo": "Demo ansehen",
+  "workout.muscles": "Beanspruchte Muskeln",
   "workout.swap": "Übung tauschen",
   "workout.swap_for": "Alternativen zu {name}",
   "workout.swap_none": "Keine Alternativen für diese Muskelgruppe.",

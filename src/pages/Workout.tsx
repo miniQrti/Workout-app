@@ -3,7 +3,7 @@ import { useApp } from "../store/appState";
 import { demoUrl, EXERCISES, exerciseName } from "../data/exercises";
 import { PLANS } from "../data/plans";
 import { SUBSTITUTIONS, EXERCISE_OVERRIDES, COOLDOWN } from "../data/coach";
-import { muscleGroupOf } from "../data/muscles";
+import { muscleGroupOf, muscleLabel } from "../data/muscles";
 import { suggestProgression } from "../store/progression";
 import { lastEntry } from "../store/selectors";
 import type { DraftExercise, Feel, SetLog, WorkoutLog } from "../types";
@@ -301,6 +301,22 @@ function ExerciseCard({
               onChange={(e) => dispatch({ type: "machineNote", exerciseId: ex.exerciseId, note: e.target.value })}
             />
           </div>
+
+          {/* Muscles worked — primary highlighted */}
+          {info && info.muscles.length > 0 && (
+            <div>
+              <div style={{ fontSize: 12, color: "var(--text-2)", fontWeight: 600, marginBottom: 6 }}>
+                {t("workout.muscles")}
+              </div>
+              <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                {info.muscles.map((m) => (
+                  <Chip key={m} tone={m === info.primaryMuscle ? "accent" : "default"}>
+                    {muscleLabel(m, lang)}
+                  </Chip>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Tip + demo + swap */}
           {info?.tip && (
