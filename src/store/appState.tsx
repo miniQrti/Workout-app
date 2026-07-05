@@ -14,6 +14,8 @@ import {
 } from "./db";
 import { migrateLegacyLocalStorage } from "./legacy";
 import { buildExerciseIndex, type ExerciseIndex } from "./selectors";
+import { defaultCycleSettings, normalizeCycleSettings, withPeriodStart } from "./cycle";
+import { parseDayKey } from "../lib/dates";
 
 // ── State ─────────────────────────────────────────────────────────────────────
 
@@ -36,6 +38,7 @@ export function defaultSettings(): Settings {
     activePlanId: DEFAULT_PLAN_ID,
     nextDayIdx: 0,
     machineNotes: { ...DEFAULT_MACHINE_NOTES },
+    cycle: defaultCycleSettings(),
   };
 }
 
@@ -53,6 +56,7 @@ export type Action =
   | { type: "hydrate"; settings: Settings; logs: WorkoutLog[]; session: ActiveSession | null }
   | { type: "settings"; patch: Partial<Settings> }
   | { type: "machineNote"; exerciseId: string; note: string }
+  | { type: "logPeriodStart"; dateKey: string }
   | { type: "startSession"; session: ActiveSession }
   | { type: "updateSet"; exIdx: number; setIdx: number; patch: Partial<DraftSet> }
   | { type: "toggleSet"; exIdx: number; setIdx: number }
@@ -103,6 +107,16 @@ function reducer(state: AppState, action: Action): AppState {
           machineNotes: { ...state.settings.machineNotes, [action.exerciseId]: action.note },
         },
       };
+
+    case "logPeriodStart": {
+      const parsed = parseDayKey(action.dateKey);
+      if (!parsed) return state;
+      const cycle = state.settings.cycle ?? defaultCycleSettings();
+      return {
+        ...state,
+        settings: { ...state.settings, cycle: withPeriodStart(cycle, parsed) },
+      };
+    }
 
     case "startSession":
       return { ...state, session: action.session, sessionRecovered: false };
@@ -216,7 +230,11 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     let cancelled = false;
     (async () => {
       const data = await loadAll();
-      let settings = data.settings ?? defaultSettings();
+      // Merge over defaults so installs from before a field existed gain it
+      // (e.g. `cycle`); then normalize the cycle object defensively.
+      let settings: Settings = data.settings
+        ? { ...defaultSettings(), ...data.settings, cycle: normalizeCycleSettings(data.settings.cycle) }
+        : defaultSettings();
       let logs = data.logs ?? [];
 
       if (!data.settings && !data.logs) {

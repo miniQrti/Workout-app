@@ -29,6 +29,30 @@ describe("JSON backup", () => {
     const restored = parseBackup(JSON.stringify(mangled), defaultSettings());
     expect(restored.logs[0]!.exercises[0]!.sets).toHaveLength(1);
   });
+
+  it("round-trips cycle settings", () => {
+    const settings = {
+      ...defaultSettings(),
+      cycle: {
+        enabled: true, adaptiveCoaching: false, forecast: true,
+        cycleLength: 30, periodLength: 4, periodStarts: ["2026-01-01", "2026-01-31"],
+      },
+    };
+    const restored = parseBackup(JSON.stringify(makeBackup(settings, [])), defaultSettings());
+    expect(restored.settings.cycle).toEqual(settings.cycle);
+  });
+
+  it("sanitizes a garbage cycle object on restore", () => {
+    const backup = makeBackup(defaultSettings(), []) as unknown as Record<string, unknown>;
+    (backup.settings as Record<string, unknown>).cycle = {
+      enabled: true, cycleLength: "999", periodLength: -3,
+      periodStarts: ["bad", "2026-01-01", "2026-01-01"],
+    };
+    const restored = parseBackup(JSON.stringify(backup), defaultSettings());
+    expect(restored.settings.cycle!.cycleLength).toBe(40);
+    expect(restored.settings.cycle!.periodLength).toBe(1);
+    expect(restored.settings.cycle!.periodStarts).toEqual(["2026-01-01"]);
+  });
 });
 
 describe("CSV export", () => {

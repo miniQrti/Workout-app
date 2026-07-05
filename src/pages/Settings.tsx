@@ -6,6 +6,7 @@ import type { AccentKey, Lang, ThemeSetting, Unit } from "../types";
 import { useLang } from "../i18n";
 import { Button, Card, Modal, PageHeader, SectionLabel, Segmented } from "../ui/kit";
 import { IconCheck, IconDownload, IconUpload } from "../ui/icons";
+import CycleSettingsSection from "../components/CycleSettingsSection";
 
 const APP_VERSION = "2.0.0";
 
@@ -153,6 +154,9 @@ export default function Settings() {
             />
           </div>
         </div>
+
+        {/* Cycle (opt-in; controls appear only when enabled) */}
+        <CycleSettingsSection />
 
         {/* Data */}
         <div>

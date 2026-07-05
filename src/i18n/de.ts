@@ -70,6 +70,43 @@ export const de: Record<string, string> = {
   "coach.decrease_tough": "sehr hart — etwas zurückgehen",
   "coach.deload": "2 harte Einheiten in Folge — Deload auf 85 %",
   "coach.pr_attempt": "PR-Versuch",
+  "coach.cycle_hold": "energiearme Phase — halten und saubere Wiederholungen sammeln",
+
+  // Zyklus — Einstellungen
+  "settings.cycle": "Zyklus",
+  "settings.cycle.enable": "Menstruationszyklus verfolgen",
+  "settings.cycle.enable_sub": "Optional. Deine Zyklusdaten bleiben auf diesem Gerät und werden nie gesendet.",
+  "settings.cycle.period_started": "Periode heute begonnen",
+  "settings.cycle.last_logged": "Zuletzt erfasst: {date}",
+  "settings.cycle.last_period": "Letzte Periode begann am",
+  "settings.cycle.cycle_length": "Zykluslänge (Tage)",
+  "settings.cycle.period_length": "Periodenlänge (Tage)",
+  "settings.cycle.learned": "Aus deinen Einträgen gelernt: {days} Tage",
+  "settings.cycle.adaptive": "Adaptives Coaching",
+  "settings.cycle.adaptive_sub": "Senkt die Steigerungsziele an energiearmen Tagen.",
+  "settings.cycle.forecast": "Vorhersage",
+  "settings.cycle.forecast_sub": "Zeigt voraussichtliche Periodentage und Hinweise.",
+  "settings.cycle.disclaimer": "Nur allgemeine Hinweise, kein medizinischer Rat — jeder Körper ist anders.",
+
+  // Zyklus — Phasen & Hinweise
+  "cycle.phase.menstrual": "Periode",
+  "cycle.phase.follicular": "Follikelphase",
+  "cycle.phase.ovulation": "Eisprung",
+  "cycle.phase.luteal": "Lutealphase",
+  "cycle.hint.menstrual": "Geh heute nach Gefühl — auch eine leichtere Einheit zählt.",
+  "cycle.hint.follicular": "Die Energie steigt — eine gute Phase zum Aufbauen.",
+  "cycle.hint.ovulation": "Jetzt fühlst du dich vielleicht am stärksten — ideal für PRs.",
+  "cycle.hint.luteal": "Hier kann die Energie sinken — gleichmäßig arbeiten statt pushen.",
+
+  // Zyklus — Home-Karte
+  "home.cycle_day": "Zyklustag {day} · {phase}",
+  "home.cycle_expected.one": "Periode morgen erwartet",
+  "home.cycle_expected.other": "Periode in {count} Tagen erwartet",
+  "home.cycle_expected_today": "Periode etwa heute erwartet",
+  "home.cycle_overdue": "Etwas verspätet? Trag sie ein, wenn sie beginnt.",
+  "home.cycle_log_period": "Periode begonnen",
+  "home.cycle_logged": "Erfasst — heute ist Zyklustag 1",
+  "home.cycle_no_data": "Erfasse deinen ersten Periodenbeginn, um deinen Zyklus zu sehen.",
 
   // Workout
   "workout.title": "Aktives Training",

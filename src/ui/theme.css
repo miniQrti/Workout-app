@@ -214,6 +214,46 @@ input[type="number"] { -moz-appearance: textfield; }
 }
 .input:focus { border-color: var(--accent); }
 
+/* On/off toggle switch */
+.toggle-row {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  color: var(--text-1);
+}
+.toggle-text { flex: 1; display: flex; flex-direction: column; gap: 2px; }
+.toggle-label { font-size: 14px; font-weight: 600; }
+.toggle-sub { font-size: 12px; color: var(--text-2); line-height: 1.4; }
+.toggle-switch {
+  flex-shrink: 0;
+  width: 46px;
+  height: 28px;
+  border-radius: 14px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  position: relative;
+  transition: background 0.18s;
+}
+.toggle-switch.on { background: var(--accent); border-color: var(--accent); }
+.toggle-knob {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+  transition: transform 0.18s;
+}
+.toggle-switch.on .toggle-knob { transform: translateX(18px); }
+
 .select {
   width: 100%;
   padding: 10px 12px;

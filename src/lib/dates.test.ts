@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { dayKey, formatDuration, parseDate, weekStart } from "./dates";
+import { dayKey, daysBetween, formatDuration, parseDate, parseDayKey, weekStart } from "./dates";
 
 describe("dates", () => {
   it("weekStart is the Monday of the week", () => {
@@ -36,5 +36,29 @@ describe("dates", () => {
     expect(formatDuration(90)).toBe("1:30");
     expect(formatDuration(3600)).toBe("60:00");
     expect(formatDuration(5)).toBe("0:05");
+  });
+
+  it("parseDayKey builds a LOCAL midnight date (not UTC)", () => {
+    const d = parseDayKey("2026-07-04")!;
+    expect(d.getFullYear()).toBe(2026);
+    expect(d.getMonth()).toBe(6);
+    expect(d.getDate()).toBe(4); // would shift to the 3rd if parsed as UTC in the west
+    expect(d.getHours()).toBe(0);
+    expect(dayKey(d)).toBe("2026-07-04");
+  });
+
+  it("parseDayKey rejects malformed input", () => {
+    expect(parseDayKey("2026-7-4")).toBeNull();
+    expect(parseDayKey("nope")).toBeNull();
+    expect(parseDayKey(null)).toBeNull();
+  });
+
+  it("daysBetween counts whole calendar days, DST-safe", () => {
+    expect(daysBetween(new Date(2026, 6, 1), new Date(2026, 6, 4))).toBe(3);
+    expect(daysBetween(new Date(2026, 6, 4), new Date(2026, 6, 1))).toBe(-3);
+    // spans the US spring-forward DST boundary (Mar 8 2026); still exactly 3 days
+    expect(daysBetween(new Date(2026, 2, 7), new Date(2026, 2, 10))).toBe(3);
+    // ignores time-of-day
+    expect(daysBetween(new Date(2026, 6, 1, 23, 59), new Date(2026, 6, 2, 0, 1))).toBe(1);
   });
 });

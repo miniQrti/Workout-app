@@ -36,6 +36,25 @@ export function parseDate(iso: string | undefined | null): Date | null {
   return isNaN(d.getTime()) ? null : d;
 }
 
+/**
+ * Parse a dayKey ("YYYY-MM-DD") into a LOCAL-midnight Date. `new Date("YYYY-MM-DD")`
+ * parses as UTC midnight, which lands on the previous calendar day in
+ * negative-offset timezones — so build the date from parts instead.
+ * Returns null for malformed input.
+ */
+export function parseDayKey(key: string | undefined | null): Date | null {
+  if (!key) return null;
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(key);
+  if (!m) return null;
+  const d = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+  return isNaN(d.getTime()) ? null : d;
+}
+
+/** Whole calendar days from a to b (b − a), DST-safe. Negative if b precedes a. */
+export function daysBetween(a: Date, b: Date): number {
+  return Math.round((startOfDay(b).getTime() - startOfDay(a).getTime()) / 86_400_000);
+}
+
 export function formatDuration(secs: number): string {
   const m = Math.floor(secs / 60);
   const s = Math.round(secs % 60);

@@ -139,6 +139,21 @@ export interface ActiveSession {
 
 // ── Settings ──────────────────────────────────────────────────────────────────
 
+/**
+ * Opt-in menstrual-cycle tracking. Entirely on-device; absent on settings
+ * persisted by builds before the feature shipped. Weights/dates never leave
+ * the device (part of the local JSON backup only).
+ */
+export interface CycleSettings {
+  enabled: boolean;          // master switch — default false
+  adaptiveCoaching: boolean; // let phase soften coach suggestions — default true
+  forecast: boolean;         // show predicted period days / countdown — default true
+  cycleLength: number;       // configured length, clamped 21–40 (default 28)
+  periodLength: number;      // clamped 1–10 (default 5)
+  /** Logged period-start days as local dayKeys, sorted asc, deduped, capped. */
+  periodStarts: string[];
+}
+
 export interface Settings {
   unit: Unit;
   theme: ThemeSetting;
@@ -148,6 +163,8 @@ export interface Settings {
   nextDayIdx: number;
   /** exerciseId → user's machine setup note ("Seat 3", …) */
   machineNotes: Record<string, string>;
+  /** Optional: absent on settings saved by older builds. */
+  cycle?: CycleSettings;
 }
 
 // ── Versioned backup file ─────────────────────────────────────────────────────
