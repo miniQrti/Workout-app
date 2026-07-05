@@ -3,6 +3,7 @@ import { SCHEMA_VERSION } from "../types";
 import { displayWeight } from "../lib/units";
 import { parseDate } from "../lib/dates";
 import { exerciseName } from "../data/exercises";
+import { normalizeCycleSettings } from "./cycle";
 
 // ── Canonical JSON backup (lossless) ─────────────────────────────────────────
 
@@ -93,6 +94,8 @@ export function parseBackup(
     ...defaults,
     ...(typeof raw.settings === "object" && raw.settings !== null ? raw.settings : {}),
   };
+  // Sanitize the nested cycle object — a hand-edited backup could carry garbage.
+  settings.cycle = normalizeCycleSettings(settings.cycle);
   return { settings, logs };
 }
 

@@ -70,6 +70,43 @@ export const en: Record<string, string> = {
   "coach.decrease_tough": "very tough — back off slightly",
   "coach.deload": "2 tough sessions in a row — deload to 85%",
   "coach.pr_attempt": "PR attempt",
+  "coach.cycle_hold": "low-energy phase — hold and bank quality reps",
+
+  // Cycle — Settings
+  "settings.cycle": "Cycle",
+  "settings.cycle.enable": "Track menstrual cycle",
+  "settings.cycle.enable_sub": "Optional. Your cycle data stays on this device and is never sent anywhere.",
+  "settings.cycle.period_started": "Period started today",
+  "settings.cycle.last_logged": "Last logged: {date}",
+  "settings.cycle.last_period": "Last period started",
+  "settings.cycle.cycle_length": "Cycle length (days)",
+  "settings.cycle.period_length": "Period length (days)",
+  "settings.cycle.learned": "Learned from your logs: {days} days",
+  "settings.cycle.adaptive": "Adaptive coaching",
+  "settings.cycle.adaptive_sub": "Eases progression targets on low-energy days.",
+  "settings.cycle.forecast": "Forecast",
+  "settings.cycle.forecast_sub": "Shows predicted period days and reminders.",
+  "settings.cycle.disclaimer": "General guidance only, not medical advice — every body is different.",
+
+  // Cycle — phases & hints
+  "cycle.phase.menstrual": "Period",
+  "cycle.phase.follicular": "Follicular",
+  "cycle.phase.ovulation": "Ovulation",
+  "cycle.phase.luteal": "Luteal",
+  "cycle.hint.menstrual": "Go by feel today — a lighter session still counts.",
+  "cycle.hint.follicular": "Energy is climbing — a good stretch for building.",
+  "cycle.hint.ovulation": "You may feel strongest now — a great window for PRs.",
+  "cycle.hint.luteal": "Energy can dip here — steady work beats pushing.",
+
+  // Cycle — Home card
+  "home.cycle_day": "Cycle day {day} · {phase}",
+  "home.cycle_expected.one": "Period expected tomorrow",
+  "home.cycle_expected.other": "Period expected in {count} days",
+  "home.cycle_expected_today": "Period expected around today",
+  "home.cycle_overdue": "Running a little late? Log it when it starts.",
+  "home.cycle_log_period": "Period started",
+  "home.cycle_logged": "Logged — today is cycle day 1",
+  "home.cycle_no_data": "Log your first period start to see where you are in your cycle.",
 
   // Workout
   "workout.title": "Active Workout",

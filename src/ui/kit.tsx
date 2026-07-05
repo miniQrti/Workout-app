@@ -80,6 +80,36 @@ export function Input(props: InputHTMLAttributes<HTMLInputElement>) {
   return <input className="input" {...props} />;
 }
 
+/** iOS-style on/off switch with an optional label + sub-line. */
+export function Toggle({
+  checked, onChange, label, sub,
+}: {
+  checked: boolean;
+  onChange: (next: boolean) => void;
+  label?: ReactNode;
+  sub?: ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      className="toggle-row"
+      onClick={() => onChange(!checked)}
+    >
+      {(label || sub) && (
+        <span className="toggle-text">
+          {label && <span className="toggle-label">{label}</span>}
+          {sub && <span className="toggle-sub">{sub}</span>}
+        </span>
+      )}
+      <span className={`toggle-switch${checked ? " on" : ""}`}>
+        <span className="toggle-knob" />
+      </span>
+    </button>
+  );
+}
+
 export function Modal({ children, onClose }: { children: ReactNode; onClose?: () => void }) {
   return (
     <div className="overlay" onClick={onClose}>

@@ -5,6 +5,7 @@ import { PLANS } from "../data/plans";
 import { SUBSTITUTIONS, EXERCISE_OVERRIDES, COOLDOWN } from "../data/coach";
 import { muscleGroupOf, muscleLabel } from "../data/muscles";
 import { suggestProgression } from "../store/progression";
+import { applyCycleTone, currentTone } from "../store/cycle";
 import { lastEntry } from "../store/selectors";
 import type { DraftExercise, Feel, SetLog, WorkoutLog } from "../types";
 import { displayWeight, parseWeightInput } from "../lib/units";
@@ -168,8 +169,11 @@ function ExerciseCard({
 
   const prev = useMemo(() => lastEntry(index, ex.exerciseId), [index, ex.exerciseId]);
   const suggestion = useMemo(
-    () => (info ? suggestProgression(index, info, ex.targetReps, unit) : null),
-    [index, info, ex.targetReps, unit]
+    () => applyCycleTone(
+      info ? suggestProgression(index, info, ex.targetReps, unit) : null,
+      currentTone(state.settings.cycle)
+    ),
+    [index, info, ex.targetReps, unit, state.settings.cycle]
   );
   const override = EXERCISE_OVERRIDES[ex.exerciseId];
   const note = state.settings.machineNotes[ex.exerciseId] ?? "";

@@ -6,6 +6,8 @@ import { suggestProgression } from "../store/progression";
 import { getPR } from "../store/selectors";
 import { consistencyStats, thisWeekWorkouts } from "../store/analytics";
 import { needsRecovery, slotForDate, trainedOn, weekOverview, type WeekDayOverview } from "../store/schedule";
+import { applyCycleTone, currentTone, isPeriodDay } from "../store/cycle";
+import CycleCard from "../components/CycleCard";
 import { localize, localeOf, useLang } from "../i18n";
 import { displayWeight } from "../lib/units";
 import { parseDate } from "../lib/dates";
@@ -20,7 +22,12 @@ function greetingKey(): string {
 }
 
 /** Mon–Sun strip: the plan's intended layout plus what actually happened. */
-function WeekStrip({ week, locale }: { week: WeekDayOverview[]; locale: string }) {
+function WeekStrip({ week, locale, periodDots }: {
+  week: WeekDayOverview[];
+  locale: string;
+  /** Predicted/actual period days, aligned to `week`; drawn as a small dot. */
+  periodDots?: boolean[];
+}) {
   const { t } = useLang();
   return (
     <Card className="week-strip">
@@ -65,6 +72,11 @@ function WeekStrip({ week, locale }: { week: WeekDayOverview[]; locale: string }
                       ? t("home.strip_cardio")
                       : "–"}
               </div>
+              <div style={{
+                width: 4, height: 4, borderRadius: "50%", margin: "3px auto 0",
+                background: "var(--red)", opacity: 0.7,
+                visibility: periodDots?.[i] ? "visible" : "hidden",
+              }} />
             </div>
           );
         })}
@@ -92,9 +104,12 @@ export default function Home({
 
   const coach = useMemo(() => {
     if (!day) return [];
+    const tone = currentTone(settings.cycle);
     return day.exercises.map((pe) => {
       const ex = EXERCISES[pe.exerciseId];
-      const suggestion = ex ? suggestProgression(index, ex, pe.reps, unit) : null;
+      // Soften the suggestion for the cycle phase before deriving PR-attempt,
+      // so a downgraded "increase" no longer shows the PR chip.
+      const suggestion = ex ? applyCycleTone(suggestProgression(index, ex, pe.reps, unit), tone) : null;
       const pr = getPR(index, pe.exerciseId);
       return {
         exerciseId: pe.exerciseId,
@@ -105,7 +120,7 @@ export default function Home({
         isPRAttempt: !!(suggestion && pr && suggestion.weightKg > pr.weightKg && suggestion.action === "increase"),
       };
     });
-  }, [day, index, unit]);
+  }, [day, index, unit, settings.cycle]);
 
   const stats = useMemo(() => consistencyStats(logs), [logs]);
   const weekCount = useMemo(() => thisWeekWorkouts(logs), [logs]);
@@ -117,6 +132,13 @@ export default function Home({
   // Streak of consecutive trained days ending yesterday, when it has hit the
   // plan's max back-to-back load; 0 otherwise.
   const recoveryStreak = useMemo(() => needsRecovery(plan, logs), [plan, logs]);
+
+  // Cycle: period-day dots for the week strip (only when tracking + forecast on).
+  const cycle = settings.cycle;
+  const periodDots = useMemo(() => {
+    if (!cycle?.enabled || !cycle.forecast) return undefined;
+    return week.map((d) => isPeriodDay(cycle, d.date));
+  }, [cycle, week]);
 
   // What the Today card should say: actual training beats the calendar —
   // both "already trained today" and "trained too many days in a row".
@@ -170,7 +192,10 @@ export default function Home({
         )}
 
         {/* This week's schedule */}
-        {plan && todaySlot !== null && <WeekStrip week={week} locale={locale} />}
+        {plan && todaySlot !== null && <WeekStrip week={week} locale={locale} periodDots={periodDots} />}
+
+        {/* Cycle status (opt-in) */}
+        {cycle?.enabled && <CycleCard />}
 
         {/* Today: workout, rest, cardio, or already trained */}
         {plan && day && todayState !== "workout" && (
