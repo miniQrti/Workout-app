@@ -6,25 +6,7 @@ import {
   effectiveCycleLength, withLastPeriodStart,
 } from "../store/cycle";
 import type { CycleSettings } from "../types";
-import { Button, Card, Input, SectionLabel, Toggle } from "../ui/kit";
-
-// Stepper row: label + − value + controls.
-function Stepper({
-  label, value, min, max, onChange,
-}: { label: string; value: number; min: number; max: number; onChange: (v: number) => void }) {
-  return (
-    <div className="row" style={{ padding: "6px 0" }}>
-      <span style={{ fontSize: 14, fontWeight: 600 }}>{label}</span>
-      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-        <Button small disabled={value <= min} onClick={() => onChange(value - 1)}>−</Button>
-        <span style={{ minWidth: 28, textAlign: "center", fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>
-          {value}
-        </span>
-        <Button small disabled={value >= max} onClick={() => onChange(value + 1)}>+</Button>
-      </div>
-    </div>
-  );
-}
+import { Button, Card, Input, SectionLabel, Stepper, Toggle } from "../ui/kit";
 
 export default function CycleSettingsSection() {
   const { state, dispatch } = useApp();

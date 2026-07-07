@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRegisterSW } from "virtual:pwa-register/react";
 import { useApp } from "./store/appState";
-import { PLANS } from "./data/plans";
+import { getPlan } from "./data/planResolver";
 import { EXERCISES, exerciseName } from "./data/exercises";
 import { detectNewPRs } from "./store/selectors";
 import { sessionTonnageKg } from "./store/analytics";
@@ -16,6 +16,7 @@ import Home from "./pages/Home";
 import Workout from "./pages/Workout";
 import Progress from "./pages/Progress";
 import Programs from "./pages/Programs";
+import PlanBuilder from "./pages/PlanBuilder";
 import Settings from "./pages/Settings";
 
 type View = "home" | "progress" | "programs" | "settings";
@@ -178,6 +179,9 @@ export default function App() {
   const [view, setView] = useState<View>("home");
   const [inWorkout, setInWorkout] = useState(false);
   const [summary, setSummary] = useState<Summary | null>(null);
+  // Plan builder as a transient full-screen editor (like the workout runner):
+  // "new" to create, a plan id to edit.
+  const [building, setBuilding] = useState<{ mode: "new" } | { mode: "edit"; planId: string } | null>(null);
 
   useApplyTheme();
 
@@ -185,7 +189,7 @@ export default function App() {
   const langValue = useMemo(() => ({ lang, t: makeT(lang) }), [lang]);
 
   const startWorkout = useCallback((dayIdx: number) => {
-    const plan = PLANS[state.settings.activePlanId];
+    const plan = getPlan(state.settings.activePlanId, state.settings);
     const day = plan?.days[dayIdx % (plan?.days.length || 1)];
     if (!plan || !day) return;
 
@@ -212,10 +216,10 @@ export default function App() {
     dispatch({ type: "startSession", session });
     dispatch({ type: "settings", patch: { nextDayIdx: dayIdx } });
     setInWorkout(true);
-  }, [state.settings.activePlanId, lang, dispatch]);
+  }, [state.settings, lang, dispatch]);
 
   const finishWorkout = useCallback((log: WorkoutLog) => {
-    const plan = PLANS[state.settings.activePlanId];
+    const plan = getPlan(state.settings.activePlanId, state.settings);
     const dayCount = plan?.days.length ?? 1;
     const currentIdx = plan?.days.findIndex((d) => d.id === log.dayId) ?? 0;
     const nextDayIdx = ((currentIdx >= 0 ? currentIdx : 0) + 1) % dayCount;
@@ -225,7 +229,7 @@ export default function App() {
     setInWorkout(false);
     setView("home");
     setSummary({ log, newPRs });
-  }, [state.settings.activePlanId, index, dispatch]);
+  }, [state.settings, index, dispatch]);
 
   if (!state.loaded) {
     return (
@@ -239,6 +243,9 @@ export default function App() {
   }
 
   const showWorkout = inWorkout && state.session !== null;
+  const editingPlan = building?.mode === "edit"
+    ? getPlan(building.planId, state.settings) ?? null
+    : null;
 
   return (
     <LangContext.Provider value={langValue}>
@@ -247,13 +254,20 @@ export default function App() {
           onFinished={finishWorkout}
           onExit={() => { setInWorkout(false); setView("home"); }}
         />
+      ) : building ? (
+        <PlanBuilder initial={editingPlan} onClose={() => setBuilding(null)} />
       ) : (
         <>
           {view === "home" && (
             <Home onStart={startWorkout} onResume={() => setInWorkout(true)} />
           )}
           {view === "progress" && <Progress />}
-          {view === "programs" && <Programs />}
+          {view === "programs" && (
+            <Programs
+              onCreate={() => setBuilding({ mode: "new" })}
+              onEdit={(planId) => setBuilding({ mode: "edit", planId })}
+            />
+          )}
           {view === "settings" && <Settings />}
           <BottomNav view={view} onNavigate={setView} />
         </>

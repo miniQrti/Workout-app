@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useApp } from "../store/appState";
-import { PLANS } from "../data/plans";
+import { getPlan } from "../data/planResolver";
 import { EXERCISES, exerciseName } from "../data/exercises";
 import { suggestProgression } from "../store/progression";
 import { getPR } from "../store/selectors";
@@ -98,7 +98,7 @@ export default function Home({
 
   const { settings, logs, session, sessionRecovered } = state;
   const unit = settings.unit;
-  const plan = PLANS[settings.activePlanId];
+  const plan = getPlan(settings.activePlanId, settings);
   const dayIdx = plan ? settings.nextDayIdx % plan.days.length : 0;
   const day = plan?.days[dayIdx];
 

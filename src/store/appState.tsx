@@ -3,7 +3,7 @@ import {
   type Dispatch, type ReactNode,
 } from "react";
 import type {
-  ActiveSession, DraftSet, Feel, Settings, Unit, WorkoutLog, Lang, AccentKey, ThemeSetting,
+  ActiveSession, DraftSet, Feel, Plan, Settings, Unit, WorkoutLog, Lang, AccentKey, ThemeSetting,
 } from "../types";
 import { DEFAULT_PLAN_ID } from "../data/plans";
 import { DEFAULT_MACHINE_NOTES } from "../data/coach";
@@ -64,6 +64,8 @@ export type Action =
   | { type: "toggleWarmup"; idx: number }
   | { type: "toggleCooldown"; idx: number }
   | { type: "swapExercise"; exIdx: number; exerciseId: string }
+  | { type: "upsertPlan"; plan: Plan }
+  | { type: "deletePlan"; planId: string }
   | { type: "discardSession" }
   | { type: "finishSession"; log: WorkoutLog; nextDayIdx: number }
   | { type: "setLogs"; logs: WorkoutLog[] }
@@ -180,6 +182,30 @@ function reducer(state: AppState, action: Action): AppState {
               }
         ),
       }));
+    }
+
+    case "upsertPlan": {
+      const existing = state.settings.customPlans ?? [];
+      const has = existing.some((p) => p.id === action.plan.id);
+      const customPlans = has
+        ? existing.map((p) => (p.id === action.plan.id ? action.plan : p))
+        : [...existing, action.plan];
+      return { ...state, settings: { ...state.settings, customPlans } };
+    }
+
+    case "deletePlan": {
+      const customPlans = (state.settings.customPlans ?? []).filter((p) => p.id !== action.planId);
+      // If the deleted plan was active, fall back to the default so nothing
+      // resolves the active id to an undefined plan.
+      const wasActive = state.settings.activePlanId === action.planId;
+      return {
+        ...state,
+        settings: {
+          ...state.settings,
+          customPlans,
+          ...(wasActive ? { activePlanId: DEFAULT_PLAN_ID, nextDayIdx: 0 } : {}),
+        },
+      };
     }
 
     case "discardSession":

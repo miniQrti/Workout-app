@@ -165,6 +165,13 @@ export interface Settings {
   machineNotes: Record<string, string>;
   /** Optional: absent on settings saved by older builds. */
   cycle?: CycleSettings;
+  /**
+   * User-authored plans. Absent on settings saved by older builds. Structurally
+   * identical to built-ins; presence here is the sole marker of "custom" (i.e.
+   * editable/deletable). Rides inside Settings so it persists and round-trips
+   * through the JSON backup for free.
+   */
+  customPlans?: Plan[];
 }
 
 // ── Versioned backup file ─────────────────────────────────────────────────────
