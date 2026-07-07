@@ -133,6 +133,27 @@ export function SectionLabel({ children }: { children: ReactNode }) {
   return <div className="section-label">{children}</div>;
 }
 
+/** Label + −/value/+ row for bounded numeric input. `step` defaults to 1. */
+export function Stepper({
+  label, value, min, max, step = 1, onChange,
+}: {
+  label: ReactNode; value: number; min: number; max: number; step?: number;
+  onChange: (v: number) => void;
+}) {
+  return (
+    <div className="row" style={{ padding: "6px 0" }}>
+      <span style={{ fontSize: 14, fontWeight: 600 }}>{label}</span>
+      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        <Button small disabled={value <= min} onClick={() => onChange(Math.max(min, value - step))}>−</Button>
+        <span style={{ minWidth: 28, textAlign: "center", fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>
+          {value}
+        </span>
+        <Button small disabled={value >= max} onClick={() => onChange(Math.min(max, value + step))}>+</Button>
+      </div>
+    </div>
+  );
+}
+
 export function PageHeader({ title, right }: { title: ReactNode; right?: ReactNode }) {
   return (
     <div className="page-header">

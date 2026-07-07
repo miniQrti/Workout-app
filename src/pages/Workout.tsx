@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useApp } from "../store/appState";
 import { demoUrl, EXERCISES, exerciseName } from "../data/exercises";
-import { PLANS } from "../data/plans";
+import { getPlan } from "../data/planResolver";
 import { SUBSTITUTIONS, EXERCISE_OVERRIDES, COOLDOWN } from "../data/coach";
 import { muscleGroupOf, muscleLabel } from "../data/muscles";
 import { suggestProgression } from "../store/progression";
@@ -734,7 +734,7 @@ function WarmupCard() {
   const session = state.session;
   if (!session) return null;
 
-  const warmup = PLANS[session.planId]?.days.find((d) => d.id === session.dayId)?.warmup ?? [];
+  const warmup = getPlan(session.planId, state.settings)?.days.find((d) => d.id === session.dayId)?.warmup ?? [];
   if (warmup.length === 0) return null;
 
   const done = session.warmupDone.length;
