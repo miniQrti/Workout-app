@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useApp } from "../store/appState";
-import { demoUrl, EXERCISES, exerciseName } from "../data/exercises";
+import { demoUrl } from "../data/exercises";
 import { getPlan } from "../data/planResolver";
+import { allExercises, getExercise, isCustomExercise, resolveExerciseName } from "../data/exerciseResolver";
 import { SUBSTITUTIONS, EXERCISE_OVERRIDES } from "../data/coach";
 import { dayMuscleGroups, generateCooldown, generateWarmup } from "../data/mobility";
 import { muscleGroupOf, muscleLabel } from "../data/muscles";
@@ -165,7 +166,7 @@ function ExerciseCard({
   const { state, dispatch, index } = useApp();
   const { t, lang } = useLang();
   const unit = state.settings.unit;
-  const info = EXERCISES[ex.exerciseId];
+  const info = getExercise(ex.exerciseId, state.settings);
   const timed = info?.repType === "seconds";
 
   const prev = useMemo(() => lastEntry(index, ex.exerciseId), [index, ex.exerciseId]);
@@ -200,7 +201,7 @@ function ExerciseCard({
       }}>
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: 15, fontWeight: 700, color: "var(--text-1)" }}>
-            {exerciseName(ex.exerciseId)}
+            {resolveExerciseName(ex.exerciseId, state.settings)}
           </div>
           <div style={{ fontSize: 12, color: "var(--text-2)", marginTop: 2 }}>
             {ex.targetSets} × {ex.targetReps}{timed ? ` ${t("common.secs")}` : ""} · {t("workout.rest")} {formatDuration(ex.restSecs)}
@@ -332,7 +333,7 @@ function ExerciseCard({
           )}
           <div style={{ display: "flex", gap: 4 }}>
             <a
-              href={demoUrl(exerciseName(ex.exerciseId))}
+              href={demoUrl(resolveExerciseName(ex.exerciseId, state.settings))}
               target="_blank" rel="noopener noreferrer"
               className="btn btn-ghost btn-sm"
               style={{ color: "var(--text-2)", textDecoration: "none" }}
@@ -352,6 +353,7 @@ function ExerciseCard({
 // ── Compact list row (tap to focus) ───────────────────────────────────────────
 
 function ExerciseRow({ ex, onFocus }: { ex: DraftExercise; onFocus: () => void }) {
+  const { state } = useApp();
   const { t } = useLang();
   const done = ex.sets.length > 0 && ex.sets.every((s) => s.completed);
   const needsFeel = done && !ex.feel;
@@ -371,7 +373,7 @@ function ExerciseRow({ ex, onFocus }: { ex: DraftExercise; onFocus: () => void }
     >
       <div style={{ flex: 1 }}>
         <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text-1)" }}>
-          {exerciseName(ex.exerciseId)}
+          {resolveExerciseName(ex.exerciseId, state.settings)}
         </div>
         <div style={{ fontSize: 12, color: "var(--text-2)", marginTop: 2 }}>
           {needsFeel
@@ -429,7 +431,7 @@ export default function Workout({
     if (!session) return { warmupSteps: [] as WarmupStep[], cooldownSteps: [] as WarmupStep[] };
     const day = getPlan(session.planId, state.settings)?.days.find((d) => d.id === session.dayId);
     const ids = day?.exercises.map((pe) => pe.exerciseId) ?? session.exercises.map((e) => e.exerciseId);
-    const groups = dayMuscleGroups(ids);
+    const groups = dayMuscleGroups(ids, state.settings);
     return { warmupSteps: generateWarmup(groups), cooldownSteps: generateCooldown(groups) };
   }, [session, state.settings]);
 
@@ -441,13 +443,21 @@ export default function Workout({
   function buildLog(): WorkoutLog | null {
     if (!session) return null;
     const exercises = session.exercises
-      .map((ex) => ({
-        exerciseId: ex.exerciseId,
-        feel: ex.feel,
-        sets: ex.sets
-          .filter((s): s is typeof s & { reps: number } => s.reps !== null && s.reps >= 1)
-          .map((s): SetLog => ({ weightKg: s.weightKg, reps: s.reps, completed: s.completed })),
-      }))
+      .map((ex) => {
+        // Snapshot the name for custom exercises so history reads correctly even
+        // if the exercise is later deleted.
+        const snapshot = isCustomExercise(ex.exerciseId, state.settings)
+          ? getExercise(ex.exerciseId, state.settings)?.name
+          : undefined;
+        return {
+          exerciseId: ex.exerciseId,
+          ...(snapshot ? { nameSnapshot: snapshot } : {}),
+          feel: ex.feel,
+          sets: ex.sets
+            .filter((s): s is typeof s & { reps: number } => s.reps !== null && s.reps >= 1)
+            .map((s): SetLog => ({ weightKg: s.weightKg, reps: s.reps, completed: s.completed })),
+        };
+      })
       .filter((ex) => ex.sets.length > 0);
     if (exercises.length === 0) return null;
     const now = new Date();
@@ -478,11 +488,11 @@ export default function Workout({
   const swapEx = swapFor !== null ? session.exercises[swapFor] : undefined;
   const swapOptions = useMemo(() => {
     if (!swapEx) return [];
-    const current = EXERCISES[swapEx.exerciseId];
+    const current = getExercise(swapEx.exerciseId, state.settings);
     const ranked = SUBSTITUTIONS[swapEx.exerciseId] ?? [];
     const rankedIds = new Set(ranked.map((r) => r.exerciseId));
     const sameGroup = current
-      ? Object.values(EXERCISES).filter(
+      ? allExercises(state.settings).filter(
           (e) =>
             e.id !== swapEx.exerciseId &&
             !rankedIds.has(e.id) &&
@@ -493,7 +503,7 @@ export default function Workout({
       ...ranked.map((r) => ({ id: r.exerciseId, reason: localize(r.reason, lang) })),
       ...sameGroup.map((e) => ({ id: e.id, reason: "" })),
     ];
-  }, [swapEx, lang]);
+  }, [swapEx, lang, state.settings]);
 
   return (
     <div className="page" style={{ paddingBottom: (focusIdx !== null ? 90 : 20) + (rest ? 90 : 0) + 70 }}>
@@ -621,7 +631,7 @@ export default function Workout({
       {/* Swap sheet */}
       {swapFor !== null && swapEx && (
         <Sheet onClose={() => setSwapFor(null)}>
-          <div className="card-title">{t("workout.swap_for", { name: exerciseName(swapEx.exerciseId) })}</div>
+          <div className="card-title">{t("workout.swap_for", { name: resolveExerciseName(swapEx.exerciseId, state.settings) })}</div>
           <div className="fade-list" style={{ marginTop: 12 }}>
             {swapOptions.length === 0 && <div style={{ color: "var(--text-2)", fontSize: 13 }}>{t("workout.swap_none")}</div>}
             {swapOptions.map((opt) => (
@@ -631,7 +641,7 @@ export default function Workout({
                   setSwapFor(null);
                 }}
               >
-                <span>{exerciseName(opt.id)}</span>
+                <span>{resolveExerciseName(opt.id, state.settings)}</span>
                 {opt.reason && <span style={{ fontSize: 12, fontWeight: 400, color: "var(--text-2)" }}>{opt.reason}</span>}
               </button>
             ))}

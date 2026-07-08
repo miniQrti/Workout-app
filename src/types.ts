@@ -172,6 +172,13 @@ export interface Settings {
    * through the JSON backup for free.
    */
   customPlans?: Plan[];
+  /**
+   * User-authored exercises. Absent on settings saved by older builds.
+   * Structurally identical to built-ins; presence here is the sole marker of
+   * "custom" (editable/deletable). Rides inside Settings so it persists and
+   * round-trips through the JSON backup for free.
+   */
+  customExercises?: Exercise[];
 }
 
 // ── Versioned backup file ─────────────────────────────────────────────────────

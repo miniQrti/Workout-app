@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useApp } from "../store/appState";
-import { exerciseName } from "../data/exercises";
+import { resolveExerciseName } from "../data/exerciseResolver";
 import { MUSCLE_GROUPS } from "../data/muscles";
 import { allPRs } from "../store/selectors";
 import {
@@ -60,7 +60,7 @@ function StrengthTab() {
           <>
             {shown.map(([exId, pr]) => (
               <div key={exId} className="row" style={{ padding: "8px 0", borderBottom: "1px solid var(--border)" }}>
-                <span style={{ fontSize: 14, fontWeight: 500 }}>{exerciseName(exId)}</span>
+                <span style={{ fontSize: 14, fontWeight: 500 }}>{resolveExerciseName(exId, state.settings)}</span>
                 <Chip tone="gold">{displayWeight(pr.weightKg, unit)} × {pr.reps}</Chip>
               </div>
             ))}
@@ -80,7 +80,7 @@ function StrengthTab() {
           <>
             <select className="select" value={chartId} onChange={(e) => setSelectedId(e.target.value)} style={{ marginBottom: 10 }}>
               {prs.map(([exId]) => (
-                <option key={exId} value={exId}>{exerciseName(exId)}</option>
+                <option key={exId} value={exId}>{resolveExerciseName(exId, state.settings)}</option>
               ))}
             </select>
 
@@ -140,7 +140,7 @@ function VolumeTab() {
   const logs = state.logs;
 
   const weeks = useMemo(() => weeklySeries(logs, 8), [logs]);
-  const setsByGroup = useMemo(() => muscleGroupSets(logs), [logs]);
+  const setsByGroup = useMemo(() => muscleGroupSets(logs, undefined, state.settings), [logs, state.settings]);
   const hasVolume = weeks.some((w) => w.tonnageKg > 0);
   const hasSets = Object.values(setsByGroup).some((v) => (v ?? 0) > 0);
 
@@ -229,7 +229,7 @@ function LogItem({ log }: { log: WorkoutLog }) {
         <div style={{ borderTop: "1px solid var(--border)", padding: "10px 16px 14px" }}>
           {log.exercises.map((ex, i) => (
             <div key={i} style={{ marginBottom: i < log.exercises.length - 1 ? 10 : 0 }}>
-              <div style={{ fontSize: 13, fontWeight: 600 }}>{exerciseName(ex.exerciseId, ex.nameSnapshot)}</div>
+              <div style={{ fontSize: 13, fontWeight: 600 }}>{resolveExerciseName(ex.exerciseId, state.settings, ex.nameSnapshot)}</div>
               {ex.sets.map((s, si) => (
                 <div key={si} style={{ fontSize: 12, color: "var(--text-2)", marginTop: 2, display: "flex", gap: 8 }}>
                   <span style={{ color: "var(--text-3)" }}>{t("workout.set")} {si + 1}</span>

@@ -10,8 +10,9 @@
 // The cardio group carries no targeted moves — the universal light-cardio opener
 // and closer cover it.
 
-import type { MuscleGroupId, WarmupStep } from "../types";
+import type { MuscleGroupId, Settings, WarmupStep } from "../types";
 import { EXERCISES } from "./exercises";
+import { getExercise } from "./exerciseResolver";
 import { MUSCLE_GROUPS, muscleGroupOf } from "./muscles";
 
 // Universal steps that bracket every session regardless of the muscles worked.
@@ -90,10 +91,10 @@ export const COOLDOWN_BY_GROUP: Record<MuscleGroupId, WarmupStep[]> = {
  * canonical order. The cardio group is dropped (covered by the universal steps),
  * and unknown/custom exercise ids are tolerated.
  */
-export function dayMuscleGroups(exerciseIds: string[]): MuscleGroupId[] {
+export function dayMuscleGroups(exerciseIds: string[], settings?: Settings): MuscleGroupId[] {
   const found = new Set<MuscleGroupId>();
   for (const id of exerciseIds) {
-    const ex = EXERCISES[id];
+    const ex = settings ? getExercise(id, settings) : EXERCISES[id];
     if (!ex) continue;
     const group = muscleGroupOf(ex.primaryMuscle);
     if (group !== "cardio") found.add(group);

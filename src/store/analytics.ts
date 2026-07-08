@@ -1,6 +1,7 @@
-import type { WorkoutLog } from "../types";
+import type { Settings, WorkoutLog } from "../types";
 import { addDays, dayKey, parseDate, startOfDay, weekStart } from "../lib/dates";
 import { EXERCISES } from "../data/exercises";
+import { getExercise } from "../data/exerciseResolver";
 import { muscleGroupOf } from "../data/muscles";
 import type { MuscleGroupId } from "../types";
 
@@ -66,7 +67,8 @@ export function weeklySeries(logs: WorkoutLog[], numWeeks = 8): WeekAgg[] {
  */
 export function muscleGroupSets(
   logs: WorkoutLog[],
-  start: Date = weekStart(new Date())
+  start: Date = weekStart(new Date()),
+  settings?: Settings
 ): Partial<Record<MuscleGroupId, number>> {
   const end = addDays(start, 7);
   const totals: Partial<Record<MuscleGroupId, number>> = {};
@@ -75,7 +77,7 @@ export function muscleGroupSets(
     const d = logDate(log);
     if (!d || d < start || d >= end) continue;
     for (const entry of log.exercises) {
-      const ex = EXERCISES[entry.exerciseId];
+      const ex = settings ? getExercise(entry.exerciseId, settings) : EXERCISES[entry.exerciseId];
       if (!ex) continue;
       const n = entry.sets.filter((s) => s.completed && s.reps >= 1).length;
       if (n === 0) continue;
