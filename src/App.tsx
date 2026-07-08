@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRegisterSW } from "virtual:pwa-register/react";
 import { useApp } from "./store/appState";
 import { getPlan } from "./data/planResolver";
-import { EXERCISES, exerciseName } from "./data/exercises";
+import { getExercise, resolveExerciseName } from "./data/exerciseResolver";
 import { detectNewPRs } from "./store/selectors";
 import { sessionTonnageKg } from "./store/analytics";
 import type { ActiveSession, WorkoutLog } from "./types";
@@ -75,7 +75,7 @@ function SummaryModal({ summary, onClose }: { summary: Summary; onClose: () => v
           </div>
           {newPRs.map((pr) => (
             <div key={pr.exerciseId} style={{ fontSize: 13, color: "var(--gold)", marginBottom: 2 }}>
-              {exerciseName(pr.exerciseId)} — {displayWeight(pr.weightKg, state.settings.unit)} {state.settings.unit} × {pr.reps}
+              {resolveExerciseName(pr.exerciseId, state.settings)} — {displayWeight(pr.weightKg, state.settings.unit)} {state.settings.unit} × {pr.reps}
             </div>
           ))}
         </div>
@@ -202,7 +202,7 @@ export default function App() {
       warmupDone: [],
       cooldownDone: [],
       exercises: day.exercises.map((pe) => {
-        const ex = EXERCISES[pe.exerciseId];
+        const ex = getExercise(pe.exerciseId, state.settings);
         return {
           exerciseId: pe.exerciseId,
           targetSets: pe.sets,

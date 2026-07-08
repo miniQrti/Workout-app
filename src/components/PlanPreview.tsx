@@ -1,6 +1,8 @@
 import type { Plan } from "../types";
-import { demoUrl, exerciseName } from "../data/exercises";
+import { demoUrl } from "../data/exercises";
+import { resolveExerciseName } from "../data/exerciseResolver";
 import { dayMuscleGroups } from "../data/mobility";
+import { useApp } from "../store/appState";
 import { localize, useLang } from "../i18n";
 
 /**
@@ -8,6 +10,7 @@ import { localize, useLang } from "../i18n";
  * plan cards and the plan builder's live preview so both stay visually identical.
  */
 export default function PlanPreview({ plan, showDemoLinks = true }: { plan: Plan; showDemoLinks?: boolean }) {
+  const { state } = useApp();
   const { t, lang } = useLang();
 
   return (
@@ -33,7 +36,7 @@ export default function PlanPreview({ plan, showDemoLinks = true }: { plan: Plan
         <div key={day.id} style={{ marginBottom: 12 }}>
           <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 4 }}>{localize(day.name, lang)}</div>
           {(() => {
-            const groups = dayMuscleGroups(day.exercises.map((pe) => pe.exerciseId));
+            const groups = dayMuscleGroups(day.exercises.map((pe) => pe.exerciseId), state.settings);
             if (groups.length === 0) return null;
             return (
               <div style={{ fontSize: 11, color: "var(--text-3)", marginBottom: 4 }}>
@@ -44,10 +47,10 @@ export default function PlanPreview({ plan, showDemoLinks = true }: { plan: Plan
           {day.exercises.map((pe, i) => (
             <div key={`${pe.exerciseId}-${i}`} className="row" style={{ fontSize: 12, color: "var(--text-2)", padding: "2px 0" }}>
               <span>
-                {exerciseName(pe.exerciseId)}{" "}
+                {resolveExerciseName(pe.exerciseId, state.settings)}{" "}
                 {showDemoLinks && (
                   <a
-                    href={demoUrl(exerciseName(pe.exerciseId))}
+                    href={demoUrl(resolveExerciseName(pe.exerciseId, state.settings))}
                     target="_blank" rel="noopener noreferrer"
                     style={{ textDecoration: "none", fontSize: 11 }}
                   >

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { exportCSV, makeBackup, parseBackup } from "./backup";
+import { exportCSV, makeBackup, normalizeCustomExercises, parseBackup } from "./backup";
 import { makeLog } from "./testUtils";
 import { defaultSettings } from "./appState";
 
@@ -58,12 +58,54 @@ describe("JSON backup", () => {
 describe("CSV export", () => {
   it("writes one row per set in the display unit", () => {
     const logs = [makeLog(1, [{ exId: "leg-press", feel: "good", sets: [[toKgLb(200), 12]] }])];
-    const csv = exportCSV(logs, "lb");
+    const csv = exportCSV(logs, "lb", defaultSettings());
     const lines = csv.split("\n");
     expect(lines[0]).toContain("Weight (lb)");
     expect(lines[1]).toContain("Leg Press");
     expect(lines[1]).toContain("200");
     expect(lines[1]).toContain("good");
+  });
+
+  it("uses a custom exercise's name", () => {
+    const settings = {
+      ...defaultSettings(),
+      customExercises: [{
+        id: "custom-1", name: "Sled Push", primaryMuscle: "quads", muscles: ["quads"],
+        equipment: "machine" as const, repType: "reps" as const,
+        defaultSets: 3, defaultReps: 10, restSecs: 60,
+      }],
+    };
+    const logs = [makeLog(1, [{ exId: "custom-1", sets: [[100, 10]] }])];
+    expect(exportCSV(logs, "kg", settings)).toContain("Sled Push");
+  });
+});
+
+describe("normalizeCustomExercises", () => {
+  it("round-trips a valid custom exercise through a backup", () => {
+    const settings = {
+      ...defaultSettings(),
+      customExercises: [{
+        id: "custom-1", name: "Sled Push", primaryMuscle: "quads", muscles: ["quads", "glutes"],
+        equipment: "machine" as const, repType: "reps" as const,
+        defaultSets: 3, defaultReps: 10, restSecs: 60, tip: { en: "Drive through the legs." },
+      }],
+    };
+    const restored = parseBackup(JSON.stringify(makeBackup(settings, [])), defaultSettings());
+    expect(restored.settings.customExercises).toEqual(settings.customExercises);
+  });
+
+  it("drops malformed entries and repairs fields", () => {
+    const cleaned = normalizeCustomExercises([
+      { id: "ok", name: "Good", primaryMuscle: "abs", equipment: "junk", repType: "weird", defaultSets: -5 },
+      { name: "no id" },
+      "not an object",
+      { id: "blank", name: "  ", primaryMuscle: "abs" },
+    ]);
+    expect(cleaned).toHaveLength(1);
+    expect(cleaned[0]!.equipment).toBe("machine");
+    expect(cleaned[0]!.repType).toBe("reps");
+    expect(cleaned[0]!.defaultSets).toBe(1);
+    expect(cleaned[0]!.muscles).toEqual(["abs"]);
   });
 });
 

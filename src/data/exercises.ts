@@ -736,6 +736,482 @@ export const EXERCISES: Record<string, Exercise> = {
     "tip": {
       "en": "Adjust the seat so your knee has a slight bend at the bottom of the pedal stroke (not fully locked). Aim for 80–100 RPM at a resistance where you can maintain a conversation. Great for low-impact cardio."
     }
+  },
+
+  // ── Chest ─────────────────────────────────────────────────────────────────
+  "barbell-bench-press": {
+    "id": "barbell-bench-press",
+    "name": "Barbell Bench Press",
+    "primaryMuscle": "mid-chest",
+    "muscles": ["mid-chest", "triceps", "front-delts"],
+    "equipment": "barbell",
+    "repType": "reps",
+    "defaultSets": 4,
+    "defaultReps": 8,
+    "restSecs": 120,
+    "tip": {
+      "en": "Grip slightly wider than shoulder width. Lower the bar to your mid-chest with elbows at ~75°, then drive up powerfully. Keep your shoulder blades pinched back and feet planted. Use a spotter for heavy sets."
+    }
+  },
+  "incline-barbell-press": {
+    "id": "incline-barbell-press",
+    "name": "Incline Barbell Bench Press",
+    "primaryMuscle": "upper-chest",
+    "muscles": ["upper-chest", "front-delts", "triceps"],
+    "equipment": "barbell",
+    "repType": "reps",
+    "defaultSets": 3,
+    "defaultReps": 8,
+    "restSecs": 120,
+    "tip": {
+      "en": "Set the bench to about 30°. Lower the bar to your upper chest just below the collarbone. The incline shifts the load to the upper pecs. Don't bounce the bar off your chest — control the descent."
+    }
+  },
+  "push-up": {
+    "id": "push-up",
+    "name": "Push-Up",
+    "primaryMuscle": "mid-chest",
+    "muscles": ["mid-chest", "triceps", "front-delts", "abs"],
+    "equipment": "bodyweight",
+    "repType": "reps",
+    "defaultSets": 3,
+    "defaultReps": 12,
+    "restSecs": 60,
+    "tip": {
+      "en": "Hands slightly wider than your shoulders, body in a straight line. Lower until your chest nearly touches the floor with elbows at ~45°. Brace your core so your hips don't sag. Elevate your feet or add reps to progress."
+    }
+  },
+  "chest-dip": {
+    "id": "chest-dip",
+    "name": "Chest Dip",
+    "primaryMuscle": "mid-chest",
+    "muscles": ["mid-chest", "triceps", "front-delts"],
+    "equipment": "bodyweight",
+    "repType": "reps",
+    "defaultSets": 3,
+    "defaultReps": 10,
+    "restSecs": 90,
+    "tip": {
+      "en": "Lean your torso forward and let your elbows flare slightly to bias the chest. Lower until you feel a stretch across the chest, then press back up. Use the assisted-dip machine or add a weight belt to adjust difficulty."
+    }
+  },
+
+  // ── Back ──────────────────────────────────────────────────────────────────
+  "barbell-row": {
+    "id": "barbell-row",
+    "name": "Barbell Bent-Over Row",
+    "primaryMuscle": "lats",
+    "muscles": ["lats", "rhomboids", "rear-delts", "biceps", "lower-back"],
+    "equipment": "barbell",
+    "repType": "reps",
+    "defaultSets": 4,
+    "defaultReps": 10,
+    "restSecs": 90,
+    "tip": {
+      "en": "Hinge at the hips to about 45°, back flat and core braced. Pull the bar to your lower ribcage, driving your elbows back and squeezing your shoulder blades. Lower under control — don't heave with your lower back."
+    }
+  },
+  "pull-up": {
+    "id": "pull-up",
+    "name": "Pull-Up",
+    "primaryMuscle": "lats",
+    "muscles": ["lats", "biceps", "rear-delts", "forearms"],
+    "equipment": "bodyweight",
+    "repType": "reps",
+    "defaultSets": 3,
+    "defaultReps": 8,
+    "restSecs": 120,
+    "tip": {
+      "en": "Grip just outside shoulder width, palms facing away. Pull your chest toward the bar by driving your elbows down, not just bending your arms. Get your chin over the bar, then lower to a full hang. Use bands or the assisted machine if needed."
+    }
+  },
+  "chest-supported-row": {
+    "id": "chest-supported-row",
+    "name": "Chest-Supported Row",
+    "primaryMuscle": "lats",
+    "muscles": ["lats", "rhomboids", "traps", "rear-delts", "biceps"],
+    "equipment": "machine",
+    "repType": "reps",
+    "defaultSets": 3,
+    "defaultReps": 12,
+    "restSecs": 90,
+    "tip": {
+      "en": "The chest pad removes momentum and protects your lower back. Row the handles back, squeezing your shoulder blades together at the end. Keep your chest glued to the pad the whole time."
+    }
+  },
+  "straight-arm-pulldown": {
+    "id": "straight-arm-pulldown",
+    "name": "Straight-Arm Pulldown",
+    "primaryMuscle": "lats",
+    "muscles": ["lats"],
+    "equipment": "cable",
+    "repType": "reps",
+    "defaultSets": 3,
+    "defaultReps": 15,
+    "restSecs": 60,
+    "tip": {
+      "en": "Set a high cable with a straight bar. Keeping your arms nearly straight (soft elbow bend), pull the bar down to your thighs using your lats. A great isolation move to feel the lats before or after heavy rows."
+    }
+  },
+  "deadlift": {
+    "id": "deadlift",
+    "name": "Deadlift",
+    "primaryMuscle": "lower-back",
+    "muscles": ["lower-back", "glutes", "hamstrings", "traps", "lats", "forearms"],
+    "equipment": "barbell",
+    "repType": "reps",
+    "defaultSets": 3,
+    "defaultReps": 5,
+    "restSecs": 150,
+    "tip": {
+      "en": "Bar over mid-foot, hinge and grip just outside your knees. Brace hard, chest up, and drive through the floor keeping the bar close to your body. Lock out hips and knees together — don't lean back. Reset your setup each rep."
+    }
+  },
+  "barbell-shrug": {
+    "id": "barbell-shrug",
+    "name": "Barbell Shrug",
+    "primaryMuscle": "traps",
+    "muscles": ["traps", "forearms"],
+    "equipment": "barbell",
+    "repType": "reps",
+    "defaultSets": 3,
+    "defaultReps": 15,
+    "restSecs": 60,
+    "tip": {
+      "en": "Hold the bar at arm's length and shrug your shoulders straight up toward your ears — don't roll them. Pause and squeeze at the top, then lower fully. Lifting straps let you focus on the traps rather than your grip."
+    }
+  },
+
+  // ── Shoulders ─────────────────────────────────────────────────────────────
+  "overhead-press": {
+    "id": "overhead-press",
+    "name": "Overhead Press",
+    "primaryMuscle": "front-delts",
+    "muscles": ["front-delts", "side-delts", "triceps"],
+    "equipment": "barbell",
+    "repType": "reps",
+    "defaultSets": 4,
+    "defaultReps": 8,
+    "restSecs": 120,
+    "tip": {
+      "en": "Start with the bar at your collarbone, grip just outside your shoulders. Brace your core and glutes and press straight overhead, moving your head slightly back then forward as the bar passes. Avoid leaning back excessively."
+    }
+  },
+  "dumbbell-shoulder-press": {
+    "id": "dumbbell-shoulder-press",
+    "name": "Dumbbell Shoulder Press",
+    "primaryMuscle": "front-delts",
+    "muscles": ["front-delts", "side-delts", "triceps"],
+    "equipment": "dumbbell",
+    "repType": "reps",
+    "defaultSets": 3,
+    "defaultReps": 10,
+    "restSecs": 90,
+    "tip": {
+      "en": "Press from shoulder height to overhead without clanging the dumbbells together at the top. Keep your wrists stacked over your elbows and avoid arching your lower back. Use a bench with back support for heavier sets."
+    }
+  },
+  "reverse-pec-deck": {
+    "id": "reverse-pec-deck",
+    "name": "Reverse Pec Deck",
+    "primaryMuscle": "rear-delts",
+    "muscles": ["rear-delts", "rhomboids", "traps"],
+    "equipment": "machine",
+    "repType": "reps",
+    "defaultSets": 3,
+    "defaultReps": 15,
+    "restSecs": 60,
+    "tip": {
+      "en": "Face the pad and move the handles out and back in a wide arc, leading with your elbows. Squeeze your rear delts and upper back at the end. Keep the weight light and the motion smooth — no jerking."
+    }
+  },
+
+  // ── Arms ──────────────────────────────────────────────────────────────────
+  "barbell-curl": {
+    "id": "barbell-curl",
+    "name": "Barbell Curl",
+    "primaryMuscle": "biceps",
+    "muscles": ["biceps", "forearms"],
+    "equipment": "barbell",
+    "repType": "reps",
+    "defaultSets": 3,
+    "defaultReps": 10,
+    "restSecs": 60,
+    "tip": {
+      "en": "Keep your elbows pinned to your sides and curl the bar up without swinging your torso. Squeeze the biceps at the top, then lower under control. An EZ-bar is easier on the wrists if a straight bar bothers them."
+    }
+  },
+  "incline-dumbbell-curl": {
+    "id": "incline-dumbbell-curl",
+    "name": "Incline Dumbbell Curl",
+    "primaryMuscle": "biceps",
+    "muscles": ["biceps", "forearms"],
+    "equipment": "dumbbell",
+    "repType": "reps",
+    "defaultSets": 3,
+    "defaultReps": 12,
+    "restSecs": 60,
+    "tip": {
+      "en": "Lie back on a 45–60° incline bench and let your arms hang straight down. This stretched position emphasizes the long head of the biceps. Curl without letting your elbows drift forward."
+    }
+  },
+  "close-grip-bench-press": {
+    "id": "close-grip-bench-press",
+    "name": "Close-Grip Bench Press",
+    "primaryMuscle": "triceps",
+    "muscles": ["triceps", "mid-chest", "front-delts"],
+    "equipment": "barbell",
+    "repType": "reps",
+    "defaultSets": 3,
+    "defaultReps": 10,
+    "restSecs": 90,
+    "tip": {
+      "en": "Grip the bar about shoulder-width — not so narrow that it strains your wrists. Keep your elbows tucked close to your body and lower to your lower chest. This shifts the load to the triceps while still moving heavy weight."
+    }
+  },
+  "bench-dip": {
+    "id": "bench-dip",
+    "name": "Bench Dip",
+    "primaryMuscle": "triceps",
+    "muscles": ["triceps", "front-delts", "mid-chest"],
+    "equipment": "bodyweight",
+    "repType": "reps",
+    "defaultSets": 3,
+    "defaultReps": 12,
+    "restSecs": 60,
+    "tip": {
+      "en": "Hands on a bench behind you, legs out in front. Lower by bending your elbows straight back until they reach ~90°, then press up. Keep your back close to the bench. Bend your knees to make it easier, or rest a plate on your lap to progress."
+    }
+  },
+  "wrist-curl": {
+    "id": "wrist-curl",
+    "name": "Wrist Curl",
+    "primaryMuscle": "forearms",
+    "muscles": ["forearms"],
+    "equipment": "dumbbell",
+    "repType": "reps",
+    "defaultSets": 3,
+    "defaultReps": 15,
+    "restSecs": 45,
+    "tip": {
+      "en": "Rest your forearms on your thighs or a bench with palms up and wrists hanging off the edge. Let the weight roll to your fingertips, then curl it up by flexing your wrists. Keep it slow and controlled — forearms respond to high reps."
+    }
+  },
+
+  // ── Legs ──────────────────────────────────────────────────────────────────
+  "barbell-squat": {
+    "id": "barbell-squat",
+    "name": "Barbell Back Squat",
+    "primaryMuscle": "quads",
+    "muscles": ["quads", "glutes", "hamstrings", "lower-back", "abs"],
+    "equipment": "barbell",
+    "repType": "reps",
+    "defaultSets": 4,
+    "defaultReps": 8,
+    "restSecs": 150,
+    "tip": {
+      "en": "Bar on your upper traps, feet shoulder-width, toes slightly out. Brace your core, break at the hips and knees together, and descend to at least parallel. Drive up through your mid-foot with your chest tall and knees tracking over your toes."
+    }
+  },
+  "romanian-deadlift": {
+    "id": "romanian-deadlift",
+    "name": "Romanian Deadlift",
+    "primaryMuscle": "hamstrings",
+    "muscles": ["hamstrings", "glutes", "lower-back"],
+    "equipment": "barbell",
+    "repType": "reps",
+    "defaultSets": 3,
+    "defaultReps": 10,
+    "restSecs": 120,
+    "tip": {
+      "en": "Start standing with the bar at your hips. Push your hips back and lower the bar along your thighs with a soft knee bend, feeling a deep hamstring stretch. Keep your back flat and the bar close, then drive your hips forward to return."
+    }
+  },
+  "barbell-hip-thrust": {
+    "id": "barbell-hip-thrust",
+    "name": "Barbell Hip Thrust",
+    "primaryMuscle": "glutes",
+    "muscles": ["glutes", "hamstrings"],
+    "equipment": "barbell",
+    "repType": "reps",
+    "defaultSets": 3,
+    "defaultReps": 10,
+    "restSecs": 90,
+    "tip": {
+      "en": "Upper back on a bench, bar across your hips (use a pad). Drive through your heels and thrust your hips up until your torso is parallel to the floor. Squeeze your glutes hard at the top and tuck your chin. Lower under control."
+    }
+  },
+  "goblet-squat": {
+    "id": "goblet-squat",
+    "name": "Goblet Squat",
+    "primaryMuscle": "quads",
+    "muscles": ["quads", "glutes", "hamstrings", "abs"],
+    "equipment": "dumbbell",
+    "repType": "reps",
+    "defaultSets": 3,
+    "defaultReps": 12,
+    "restSecs": 90,
+    "tip": {
+      "en": "Hold a single dumbbell vertically against your chest. Squat down between your knees, keeping your torso upright and elbows inside your knees. A great way to groove clean squat form before loading a barbell."
+    }
+  },
+  "bulgarian-split-squat": {
+    "id": "bulgarian-split-squat",
+    "name": "Bulgarian Split Squat",
+    "primaryMuscle": "quads",
+    "muscles": ["quads", "glutes", "hamstrings"],
+    "equipment": "dumbbell",
+    "repType": "reps",
+    "defaultSets": 3,
+    "defaultReps": 10,
+    "restSecs": 90,
+    "tip": {
+      "en": "Rest your back foot on a bench behind you, front foot planted forward. Lower straight down until your front thigh is parallel, keeping most of the weight on your front leg. Excellent for balance and single-leg strength. Finish all reps before switching."
+    }
+  },
+  "lying-leg-curl": {
+    "id": "lying-leg-curl",
+    "name": "Lying Leg Curl",
+    "primaryMuscle": "hamstrings",
+    "muscles": ["hamstrings", "calves"],
+    "equipment": "machine",
+    "repType": "reps",
+    "defaultSets": 3,
+    "defaultReps": 12,
+    "restSecs": 90,
+    "tip": {
+      "en": "Lie face down with the pad just above your heels. Curl your heels toward your glutes, squeezing the hamstrings at the top. Keep your hips pressed into the bench — don't let them lift as you curl."
+    }
+  },
+  "standing-calf-raise": {
+    "id": "standing-calf-raise",
+    "name": "Standing Calf Raise",
+    "primaryMuscle": "calves",
+    "muscles": ["calves"],
+    "equipment": "machine",
+    "repType": "reps",
+    "defaultSets": 4,
+    "defaultReps": 15,
+    "restSecs": 60,
+    "tip": {
+      "en": "Shoulders under the pads, balls of your feet on the platform. Drop your heels for a full stretch, then rise onto your toes as high as possible. Keep your legs straight to target the larger calf muscle. Pause at the top of each rep."
+    }
+  },
+  "hip-adductor": {
+    "id": "hip-adductor",
+    "name": "Hip Adductor Machine",
+    "primaryMuscle": "adductors",
+    "muscles": ["adductors"],
+    "equipment": "machine",
+    "repType": "reps",
+    "defaultSets": 3,
+    "defaultReps": 20,
+    "restSecs": 60,
+    "tip": {
+      "en": "Sit with your legs against the inner pads and squeeze your knees together against the resistance. Move slowly and control the return to a comfortable stretch. High reps with moderate weight work best for the inner thighs."
+    }
+  },
+
+  // ── Core ──────────────────────────────────────────────────────────────────
+  "hanging-leg-raise": {
+    "id": "hanging-leg-raise",
+    "name": "Hanging Leg Raise",
+    "primaryMuscle": "abs",
+    "muscles": ["abs", "hip-flexors", "obliques"],
+    "equipment": "bodyweight",
+    "repType": "reps",
+    "defaultSets": 3,
+    "defaultReps": 12,
+    "restSecs": 60,
+    "tip": {
+      "en": "Hang from a pull-up bar. Keeping your legs fairly straight, raise them until they're parallel to the floor or higher, curling your pelvis up at the top. Avoid swinging — control both the lift and the descent. Bend your knees to make it easier."
+    }
+  },
+  "russian-twist": {
+    "id": "russian-twist",
+    "name": "Russian Twist",
+    "primaryMuscle": "obliques",
+    "muscles": ["obliques", "abs"],
+    "equipment": "bodyweight",
+    "repType": "reps",
+    "defaultSets": 3,
+    "defaultReps": 20,
+    "restSecs": 45,
+    "tip": {
+      "en": "Sit with knees bent and lean back slightly to engage your core. Rotate your torso side to side, tapping the floor or a weight beside each hip. Move from your mid-section, not just your arms. Lift your feet to increase difficulty."
+    }
+  },
+  "bicycle-crunch": {
+    "id": "bicycle-crunch",
+    "name": "Bicycle Crunch",
+    "primaryMuscle": "abs",
+    "muscles": ["abs", "obliques", "hip-flexors"],
+    "equipment": "bodyweight",
+    "repType": "reps",
+    "defaultSets": 3,
+    "defaultReps": 20,
+    "restSecs": 45,
+    "tip": {
+      "en": "Lie on your back, hands lightly behind your head. Bring one knee in while rotating the opposite elbow toward it, then switch in a pedaling motion. Keep it slow and deliberate — quality reps beat speed."
+    }
+  },
+  "side-plank": {
+    "id": "side-plank",
+    "name": "Side Plank",
+    "primaryMuscle": "obliques",
+    "muscles": ["obliques", "abs"],
+    "equipment": "bodyweight",
+    "repType": "seconds",
+    "defaultSets": 3,
+    "defaultReps": 30,
+    "restSecs": 45,
+    "tip": {
+      "en": "Prop yourself on one forearm with your body in a straight line and hips stacked. Lift your hips so your body forms a rigid line and hold. Don't let your bottom hip sag. Complete the hold on both sides."
+    }
+  },
+
+  // ── Cardio ────────────────────────────────────────────────────────────────
+  "rowing-machine": {
+    "id": "rowing-machine",
+    "name": "Rowing Machine",
+    "primaryMuscle": "cardio",
+    "muscles": ["cardio", "lats", "quads", "hamstrings", "biceps"],
+    "equipment": "machine",
+    "repType": "seconds",
+    "defaultSets": 1,
+    "defaultReps": 1200,
+    "restSecs": 0,
+    "tip": {
+      "en": "Drive with your legs first, then lean back and pull the handle to your lower ribs — legs, hips, arms in that order. Reverse on the recovery: arms, hips, legs. Aim for a smooth, powerful stroke rather than fast and choppy."
+    }
+  },
+  "stair-climber": {
+    "id": "stair-climber",
+    "name": "Stair Climber",
+    "primaryMuscle": "cardio",
+    "muscles": ["cardio", "quads", "glutes", "calves", "hamstrings"],
+    "equipment": "machine",
+    "repType": "seconds",
+    "defaultSets": 1,
+    "defaultReps": 1200,
+    "restSecs": 0,
+    "tip": {
+      "en": "Stand tall and avoid leaning your weight onto the handrails — let your legs do the work. Take full steps and drive through your whole foot. A steady 20–30 minutes builds serious lower-body endurance."
+    }
+  },
+  "jump-rope": {
+    "id": "jump-rope",
+    "name": "Jump Rope",
+    "primaryMuscle": "cardio",
+    "muscles": ["cardio", "calves", "forearms"],
+    "equipment": "bodyweight",
+    "repType": "seconds",
+    "defaultSets": 3,
+    "defaultReps": 60,
+    "restSecs": 30,
+    "tip": {
+      "en": "Jump just high enough to clear the rope (about an inch) and turn it with your wrists, not your arms. Stay on the balls of your feet with a soft knee bend. Start with short intervals and build up as your conditioning improves."
+    }
   }
 };
 

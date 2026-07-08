@@ -1,8 +1,9 @@
 import { useMemo, useState } from "react";
 import { useApp } from "../store/appState";
-import { EXERCISES, exerciseName } from "../data/exercises";
+import { allExercises, getExercise, resolveExerciseName } from "../data/exerciseResolver";
 import { MUSCLE_GROUPS, muscleGroupOf, muscleLabel } from "../data/muscles";
 import { normalizePlan, removeDayFromPlan, validatePlan } from "../data/planResolver";
+import ExerciseForm from "../components/ExerciseForm";
 import type { Plan, PlanDay, RotationSlot } from "../types";
 import { uuid } from "../lib/id";
 import { localize, useLang } from "../i18n";
@@ -64,15 +65,16 @@ export default function PlanBuilder({
   initial: Plan | null;
   onClose: () => void;
 }) {
-  const { dispatch } = useApp();
+  const { state, dispatch } = useApp();
   const { t, lang } = useLang();
   const [draft, setDraft] = useState<Plan>(() => (initial ? clonePlan(initial) : blankPlan()));
   const [pickerDay, setPickerDay] = useState<number | null>(null);
   const [slotPicker, setSlotPicker] = useState<number | null>(null);
   const [filter, setFilter] = useState("");
   const [confirmDiscard, setConfirmDiscard] = useState(false);
+  const [creatingExercise, setCreatingExercise] = useState(false);
 
-  const errors = useMemo(() => validatePlan(draft), [draft]);
+  const errors = useMemo(() => validatePlan(draft, state.settings), [draft, state.settings]);
   const dirty = useMemo(
     () => JSON.stringify(draft) !== JSON.stringify(initial ?? blankPlan()),
     [draft, initial]
@@ -95,7 +97,7 @@ export default function PlanBuilder({
     setDraft((p) => ({ ...p, days: move(p.days, dayIdx, dayIdx + dir) }));
 
   const addExercise = (dayIdx: number, exerciseId: string) => {
-    const ex = EXERCISES[exerciseId];
+    const ex = getExercise(exerciseId, state.settings);
     if (!ex) return;
     patchDay(dayIdx, (d) => ({
       ...d,
@@ -140,14 +142,14 @@ export default function PlanBuilder({
     const q = filter.trim().toLowerCase();
     return MUSCLE_GROUPS.map((group) => ({
       group,
-      items: Object.values(EXERCISES).filter(
+      items: allExercises(state.settings).filter(
         (e) =>
           muscleGroupOf(e.primaryMuscle) === group &&
           !chosen.has(e.id) &&
           (q === "" || e.name.toLowerCase().includes(q))
       ),
     })).filter((g) => g.items.length > 0);
-  }, [pickerDay, draft.days, filter]);
+  }, [pickerDay, draft.days, filter, state.settings]);
 
   return (
     <div className="page" style={{ paddingBottom: "calc(20px + env(safe-area-inset-bottom))" }}>
@@ -220,7 +222,7 @@ export default function PlanBuilder({
             {day.exercises.map((pe, exIdx) => (
               <div key={`${pe.exerciseId}-${exIdx}`} style={{ borderTop: "1px solid var(--border)", paddingTop: 8, marginTop: 8 }}>
                 <div className="row" style={{ gap: 6 }}>
-                  <span style={{ flex: 1, fontSize: 14, fontWeight: 600 }}>{exerciseName(pe.exerciseId)}</span>
+                  <span style={{ flex: 1, fontSize: 14, fontWeight: 600 }}>{resolveExerciseName(pe.exerciseId, state.settings)}</span>
                   <Button small variant="ghost" disabled={exIdx === 0} onClick={() => reorderExercise(dayIdx, exIdx, -1)} aria-label={t("builder.move_up")}>
                     <IconChevronUp size={15} />
                   </Button>
@@ -293,6 +295,9 @@ export default function PlanBuilder({
         <Sheet onClose={() => setPickerDay(null)}>
           <div className="card-title" style={{ marginBottom: 10 }}>{t("builder.pick_exercise")}</div>
           <Input placeholder={t("builder.search")} value={filter} onChange={(e) => setFilter(e.target.value)} />
+          <Button block variant="ghost" small style={{ marginTop: 8 }} onClick={() => setCreatingExercise(true)}>
+            + {t("customex.add")}
+          </Button>
           <div className="fade-list" style={{ marginTop: 12 }}>
             {pickerGroups.length === 0 && <EmptyState>{t("builder.no_matches")}</EmptyState>}
             {pickerGroups.map((g) => (
@@ -313,6 +318,25 @@ export default function PlanBuilder({
             ))}
           </div>
         </Sheet>
+      )}
+
+      {/* Create custom exercise from within the picker */}
+      {creatingExercise && (
+        <ExerciseForm
+          initial={null}
+          onClose={() => setCreatingExercise(false)}
+          onSave={(exercise) => {
+            dispatch({ type: "upsertExercise", exercise });
+            if (pickerDay !== null) {
+              patchDay(pickerDay, (d) => ({
+                ...d,
+                exercises: [...d.exercises, { exerciseId: exercise.id, sets: exercise.defaultSets, reps: exercise.defaultReps, restSecs: exercise.restSecs }],
+              }));
+            }
+            setCreatingExercise(false);
+            setPickerDay(null);
+          }}
+        />
       )}
 
       {/* Weekday slot picker */}

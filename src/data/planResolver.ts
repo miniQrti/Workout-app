@@ -11,6 +11,7 @@
 import type { Plan, PlanDay, RotationSlot, Settings } from "../types";
 import { PLANS } from "./plans";
 import { EXERCISES } from "./exercises";
+import { getExercise } from "./exerciseResolver";
 
 /** Resolve a plan id against built-ins first, then the user's custom plans. */
 export function getPlan(id: string, settings: Settings): Plan | undefined {
@@ -66,7 +67,7 @@ export function normalizePlan(draft: Plan): Plan {
 // Returns i18n keys of any violations (empty = valid). The builder disables Save
 // while non-empty; validate defensively rather than trusting the UI.
 
-export function validatePlan(draft: Plan): string[] {
+export function validatePlan(draft: Plan, settings?: Settings): string[] {
   const errs: string[] = [];
 
   if (draft.name.trim().length === 0) errs.push("builder.err.name");
@@ -78,9 +79,10 @@ export function validatePlan(draft: Plan): string[] {
   if (draft.days.some((d) => localizedIsEmpty(d.name))) errs.push("builder.err.day_name");
   if (draft.days.some((d) => d.exercises.length === 0)) errs.push("builder.err.day_exercises");
 
+  const known = (id: string) => (settings ? getExercise(id, settings) : EXERCISES[id]);
   if (
     draft.days.some((d) =>
-      d.exercises.some((pe) => !EXERCISES[pe.exerciseId])
+      d.exercises.some((pe) => !known(pe.exerciseId))
     )
   ) {
     errs.push("builder.err.unknown_exercise");

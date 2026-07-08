@@ -1,8 +1,8 @@
-import type { BackupFile, ExerciseLog, Feel, SetLog, Settings, WorkoutLog, Unit } from "../types";
+import type { BackupFile, Equipment, Exercise, ExerciseLog, Feel, SetLog, Settings, WorkoutLog, Unit } from "../types";
 import { SCHEMA_VERSION } from "../types";
 import { displayWeight } from "../lib/units";
 import { parseDate } from "../lib/dates";
-import { exerciseName } from "../data/exercises";
+import { resolveExerciseName } from "../data/exerciseResolver";
 import { normalizeCycleSettings } from "./cycle";
 
 // ── Canonical JSON backup (lossless) ─────────────────────────────────────────
@@ -96,7 +96,43 @@ export function parseBackup(
   };
   // Sanitize the nested cycle object — a hand-edited backup could carry garbage.
   settings.cycle = normalizeCycleSettings(settings.cycle);
+  // Drop malformed custom exercises so one bad entry can't corrupt resolution.
+  if (settings.customExercises !== undefined) {
+    settings.customExercises = normalizeCustomExercises(settings.customExercises);
+  }
   return { settings, logs };
+}
+
+const EQUIPMENTS: Equipment[] = ["machine", "cable", "dumbbell", "barbell", "smith", "bodyweight"];
+
+/** Keep only structurally valid custom exercises from a (possibly hand-edited) backup. */
+export function normalizeCustomExercises(raw: unknown): Exercise[] {
+  if (!Array.isArray(raw)) return [];
+  const out: Exercise[] = [];
+  for (const e of raw) {
+    if (typeof e !== "object" || e === null) continue;
+    const r = e as Record<string, unknown>;
+    if (typeof r.id !== "string" || typeof r.name !== "string" || r.name.trim() === "") continue;
+    if (typeof r.primaryMuscle !== "string" || r.primaryMuscle === "") continue;
+    const muscles = Array.isArray(r.muscles) ? r.muscles.filter((m): m is string => typeof m === "string") : [];
+    const equipment = EQUIPMENTS.includes(r.equipment as Equipment) ? (r.equipment as Equipment) : "machine";
+    const repType = r.repType === "seconds" ? "seconds" : "reps";
+    const num = (v: unknown, fallback: number) => (Number.isFinite(Number(v)) ? Number(v) : fallback);
+    const tipEn = typeof r.tip === "object" && r.tip !== null ? (r.tip as Record<string, unknown>).en : undefined;
+    out.push({
+      id: r.id,
+      name: r.name,
+      primaryMuscle: r.primaryMuscle,
+      muscles: muscles.includes(r.primaryMuscle) ? muscles : [r.primaryMuscle, ...muscles],
+      equipment,
+      repType,
+      defaultSets: Math.max(1, Math.round(num(r.defaultSets, 3))),
+      defaultReps: Math.max(1, Math.round(num(r.defaultReps, 12))),
+      restSecs: Math.max(0, Math.round(num(r.restSecs, 90))),
+      ...(typeof tipEn === "string" && tipEn.trim() ? { tip: { en: tipEn } } : {}),
+    });
+  }
+  return out;
 }
 
 // ── CSV export (spreadsheet convenience, display unit) ───────────────────────
@@ -108,7 +144,7 @@ function esc(v: string | number): string {
     : s;
 }
 
-export function exportCSV(logs: WorkoutLog[], unit: Unit): string {
+export function exportCSV(logs: WorkoutLog[], unit: Unit, settings: Settings): string {
   const rows: (string | number)[][] = [
     ["Date", "Day", "Exercise", "Feel", "Set", `Weight (${unit})`, "Reps", "Completed", "Duration (min)"],
   ];
@@ -117,7 +153,7 @@ export function exportCSV(logs: WorkoutLog[], unit: Unit): string {
     const durMin = log.durationSecs ? Math.round(log.durationSecs / 60) : "";
     let first = true;
     for (const ex of log.exercises) {
-      const name = exerciseName(ex.exerciseId, ex.nameSnapshot);
+      const name = resolveExerciseName(ex.exerciseId, settings, ex.nameSnapshot);
       ex.sets.forEach((s, i) => {
         rows.push([
           date, log.dayName, name, ex.feel ?? "", i + 1,

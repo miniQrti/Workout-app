@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useApp } from "../store/appState";
 import { getPlan } from "../data/planResolver";
-import { EXERCISES, exerciseName } from "../data/exercises";
+import { getExercise, resolveExerciseName } from "../data/exerciseResolver";
 import { suggestProgression } from "../store/progression";
 import { getPR } from "../store/selectors";
 import { consistencyStats, thisWeekWorkouts } from "../store/analytics";
@@ -106,21 +106,21 @@ export default function Home({
     if (!day) return [];
     const tone = currentTone(settings.cycle);
     return day.exercises.map((pe) => {
-      const ex = EXERCISES[pe.exerciseId];
+      const ex = getExercise(pe.exerciseId, settings);
       // Soften the suggestion for the cycle phase before deriving PR-attempt,
       // so a downgraded "increase" no longer shows the PR chip.
       const suggestion = ex ? applyCycleTone(suggestProgression(index, ex, pe.reps, unit), tone) : null;
       const pr = getPR(index, pe.exerciseId);
       return {
         exerciseId: pe.exerciseId,
-        name: exerciseName(pe.exerciseId),
+        name: resolveExerciseName(pe.exerciseId, settings),
         sets: pe.sets,
         reps: pe.reps,
         suggestion,
         isPRAttempt: !!(suggestion && pr && suggestion.weightKg > pr.weightKg && suggestion.action === "increase"),
       };
     });
-  }, [day, index, unit, settings.cycle]);
+  }, [day, index, unit, settings.cycle, settings.customExercises]);
 
   const stats = useMemo(() => consistencyStats(logs), [logs]);
   const weekCount = useMemo(() => thisWeekWorkouts(logs), [logs]);
@@ -257,7 +257,7 @@ export default function Home({
             <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 14 }}>
               {day.exercises.slice(0, 4).map((pe) => (
                 <div key={pe.exerciseId} className="row" style={{ fontSize: 13 }}>
-                  <span>{exerciseName(pe.exerciseId)}</span>
+                  <span>{resolveExerciseName(pe.exerciseId, settings)}</span>
                   <span style={{ color: "var(--text-2)" }}>{pe.sets} × {pe.reps}</span>
                 </div>
               ))}

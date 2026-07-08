@@ -3,11 +3,11 @@ import {
   type Dispatch, type ReactNode,
 } from "react";
 import type {
-  ActiveSession, DraftSet, Feel, Plan, Settings, Unit, WorkoutLog, Lang, AccentKey, ThemeSetting,
+  ActiveSession, DraftSet, Exercise, Feel, Plan, Settings, Unit, WorkoutLog, Lang, AccentKey, ThemeSetting,
 } from "../types";
 import { DEFAULT_PLAN_ID } from "../data/plans";
 import { DEFAULT_MACHINE_NOTES } from "../data/coach";
-import { EXERCISES } from "../data/exercises";
+import { getExercise } from "../data/exerciseResolver";
 import {
   loadAll, saveLogs, saveSession, saveSettings, clearSession, clearAllData,
   requestPersistentStorage,
@@ -66,6 +66,8 @@ export type Action =
   | { type: "swapExercise"; exIdx: number; exerciseId: string }
   | { type: "upsertPlan"; plan: Plan }
   | { type: "deletePlan"; planId: string }
+  | { type: "upsertExercise"; exercise: Exercise }
+  | { type: "deleteExercise"; exerciseId: string }
   | { type: "discardSession" }
   | { type: "finishSession"; log: WorkoutLog; nextDayIdx: number }
   | { type: "setLogs"; logs: WorkoutLog[] }
@@ -166,7 +168,7 @@ function reducer(state: AppState, action: Action): AppState {
       }));
 
     case "swapExercise": {
-      const ex = EXERCISES[action.exerciseId];
+      const ex = getExercise(action.exerciseId, state.settings);
       if (!ex) return state;
       return mutateSession(state, (s) => ({
         ...s,
@@ -206,6 +208,22 @@ function reducer(state: AppState, action: Action): AppState {
           ...(wasActive ? { activePlanId: DEFAULT_PLAN_ID, nextDayIdx: 0 } : {}),
         },
       };
+    }
+
+    case "upsertExercise": {
+      const existing = state.settings.customExercises ?? [];
+      const has = existing.some((e) => e.id === action.exercise.id);
+      const customExercises = has
+        ? existing.map((e) => (e.id === action.exercise.id ? action.exercise : e))
+        : [...existing, action.exercise];
+      return { ...state, settings: { ...state.settings, customExercises } };
+    }
+
+    case "deleteExercise": {
+      const customExercises = (state.settings.customExercises ?? []).filter(
+        (e) => e.id !== action.exerciseId
+      );
+      return { ...state, settings: { ...state.settings, customExercises } };
     }
 
     case "discardSession":

@@ -2,11 +2,13 @@ import { useRef, useState } from "react";
 import { useApp, wipeAllData, defaultSettings } from "../store/appState";
 import { makeBackup, parseBackup, exportCSV, shareOrDownload } from "../store/backup";
 import { parseLegacyCSV, mergeLogs } from "../store/legacy";
-import type { AccentKey, Lang, ThemeSetting, Unit } from "../types";
+import type { AccentKey, Exercise, Lang, ThemeSetting, Unit } from "../types";
+import { muscleLabel } from "../data/muscles";
 import { useLang } from "../i18n";
-import { Button, Card, Modal, PageHeader, SectionLabel, Segmented } from "../ui/kit";
+import { Button, Card, EmptyState, Modal, PageHeader, SectionLabel, Segmented } from "../ui/kit";
 import { IconCheck, IconDownload, IconUpload } from "../ui/icons";
 import CycleSettingsSection from "../components/CycleSettingsSection";
+import ExerciseForm from "../components/ExerciseForm";
 
 const APP_VERSION = "2.0.0";
 
@@ -21,7 +23,7 @@ type ImportResult = { added: number; skipped: number } | "error" | null;
 
 export default function Settings() {
   const { state, dispatch } = useApp();
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const s = state.settings;
 
   const legacyRef = useRef<HTMLInputElement>(null);
@@ -29,6 +31,11 @@ export default function Settings() {
   const [importResult, setImportResult] = useState<ImportResult>(null);
   const [restorePending, setRestorePending] = useState<string | null>(null);
   const [resetOpen, setResetOpen] = useState(false);
+  const [exerciseFormFor, setExerciseFormFor] = useState<Exercise | null>(null);
+  const [exerciseFormOpen, setExerciseFormOpen] = useState(false);
+  const [deletingExercise, setDeletingExercise] = useState<Exercise | null>(null);
+
+  const customExercises = s.customExercises ?? [];
 
   const today = new Date().toISOString().slice(0, 10);
 
@@ -39,7 +46,7 @@ export default function Settings() {
 
   async function handleExportCSV() {
     if (state.logs.length === 0) return;
-    await shareOrDownload(exportCSV(state.logs, s.unit), `ironlog-${today}.csv`, "text/csv");
+    await shareOrDownload(exportCSV(state.logs, s.unit, s), `ironlog-${today}.csv`, "text/csv");
   }
 
   function readFile(file: File, onText: (text: string) => void) {
@@ -155,6 +162,33 @@ export default function Settings() {
           </div>
         </div>
 
+        {/* My exercises (user-authored) */}
+        <div>
+          <SectionLabel>{t("customex.section")}</SectionLabel>
+          <div className="fade-list" style={{ marginTop: 8 }}>
+            <Card>
+              {customExercises.length === 0 && <EmptyState>{t("customex.empty")}</EmptyState>}
+              {customExercises.map((ex) => (
+                <div key={ex.id} className="row" style={{ padding: "8px 0", borderTop: "1px solid var(--border)" }}>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 14, fontWeight: 600 }}>{ex.name}</div>
+                    <div style={{ fontSize: 11, color: "var(--text-3)" }}>{muscleLabel(ex.primaryMuscle, lang)}</div>
+                  </div>
+                  <Button small variant="ghost" onClick={() => { setExerciseFormFor(ex); setExerciseFormOpen(true); }}>
+                    {t("common.edit")}
+                  </Button>
+                  <Button small variant="ghost" style={{ color: "var(--red)" }} onClick={() => setDeletingExercise(ex)}>
+                    {t("common.delete")}
+                  </Button>
+                </div>
+              ))}
+              <Button block style={{ marginTop: 10 }} onClick={() => { setExerciseFormFor(null); setExerciseFormOpen(true); }}>
+                + {t("customex.add")}
+              </Button>
+            </Card>
+          </div>
+        </div>
+
         {/* Cycle (opt-in; controls appear only when enabled) */}
         <CycleSettingsSection />
 
@@ -237,6 +271,35 @@ export default function Settings() {
           <div style={{ display: "flex", gap: 8 }}>
             <Button block onClick={() => setRestorePending(null)}>{t("common.cancel")}</Button>
             <Button block variant="primary" onClick={confirmRestore}>{t("common.confirm")}</Button>
+          </div>
+        </Modal>
+      )}
+
+      {/* Custom exercise create/edit */}
+      {exerciseFormOpen && (
+        <ExerciseForm
+          initial={exerciseFormFor}
+          onClose={() => setExerciseFormOpen(false)}
+          onSave={(exercise) => {
+            dispatch({ type: "upsertExercise", exercise });
+            setExerciseFormOpen(false);
+          }}
+        />
+      )}
+
+      {/* Custom exercise delete confirm */}
+      {deletingExercise && (
+        <Modal onClose={() => setDeletingExercise(null)}>
+          <div className="card-title">{t("customex.delete_title")}</div>
+          <div style={{ fontSize: 13, color: "var(--text-2)", margin: "6px 0 16px" }}>
+            {t("customex.delete_warning", { name: deletingExercise.name })}
+          </div>
+          <div style={{ display: "flex", gap: 8 }}>
+            <Button block onClick={() => setDeletingExercise(null)}>{t("common.cancel")}</Button>
+            <Button block variant="danger" onClick={() => {
+              dispatch({ type: "deleteExercise", exerciseId: deletingExercise.id });
+              setDeletingExercise(null);
+            }}>{t("common.delete")}</Button>
           </div>
         </Modal>
       )}
