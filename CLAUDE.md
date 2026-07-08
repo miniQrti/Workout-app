@@ -38,7 +38,7 @@ src/
   lib/                  — units (kg↔lb), dates (local-time week math), id
   i18n/                 — makeT with plural rules; en.ts / de.ts dictionaries
   data/
-    exercises.ts        — 42-exercise catalogue (generated port from v1)
+    exercises.ts        — built-in exercise catalogue (v1 port + popular staples)
     plans.ts            — 10 training plans (generated port from v1)
     muscles.ts          — muscle → group mapping, localized labels
     coach.ts            — progression jumps (per-unit!), overrides, substitutions,
