@@ -218,6 +218,7 @@ export const de: Record<string, string> = {
   "programs.difficulty.advanced": "Profi",
   "programs.create": "Neu",
   "programs.custom": "EIGENER",
+  "programs.targets": "Zielmuskeln",
 
   // Plan builder
   "builder.title_new": "Neuer Plan",
