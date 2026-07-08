@@ -1,5 +1,6 @@
 import type { Plan } from "../types";
 import { demoUrl, exerciseName } from "../data/exercises";
+import { dayMuscleGroups } from "../data/mobility";
 import { localize, useLang } from "../i18n";
 
 /**
@@ -31,6 +32,15 @@ export default function PlanPreview({ plan, showDemoLinks = true }: { plan: Plan
       {plan.days.map((day) => (
         <div key={day.id} style={{ marginBottom: 12 }}>
           <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 4 }}>{localize(day.name, lang)}</div>
+          {(() => {
+            const groups = dayMuscleGroups(day.exercises.map((pe) => pe.exerciseId));
+            if (groups.length === 0) return null;
+            return (
+              <div style={{ fontSize: 11, color: "var(--text-3)", marginBottom: 4 }}>
+                {t("programs.targets")}: {groups.map((g) => t(`muscle.${g}`)).join(" · ")}
+              </div>
+            );
+          })()}
           {day.exercises.map((pe, i) => (
             <div key={`${pe.exerciseId}-${i}`} className="row" style={{ fontSize: 12, color: "var(--text-2)", padding: "2px 0" }}>
               <span>

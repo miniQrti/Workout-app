@@ -218,6 +218,7 @@ export const en: Record<string, string> = {
   "programs.difficulty.advanced": "Advanced",
   "programs.create": "New",
   "programs.custom": "CUSTOM",
+  "programs.targets": "Targets",
 
   // Plan builder
   "builder.title_new": "New plan",

@@ -2,12 +2,13 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useApp } from "../store/appState";
 import { demoUrl, EXERCISES, exerciseName } from "../data/exercises";
 import { getPlan } from "../data/planResolver";
-import { SUBSTITUTIONS, EXERCISE_OVERRIDES, COOLDOWN } from "../data/coach";
+import { SUBSTITUTIONS, EXERCISE_OVERRIDES } from "../data/coach";
+import { dayMuscleGroups, generateCooldown, generateWarmup } from "../data/mobility";
 import { muscleGroupOf, muscleLabel } from "../data/muscles";
 import { suggestProgression } from "../store/progression";
 import { applyCycleTone, currentTone } from "../store/cycle";
 import { lastEntry } from "../store/selectors";
-import type { DraftExercise, Feel, SetLog, WorkoutLog } from "../types";
+import type { DraftExercise, Feel, SetLog, WarmupStep, WorkoutLog } from "../types";
 import { displayWeight, parseWeightInput } from "../lib/units";
 import { formatDuration } from "../lib/dates";
 import { uuid } from "../lib/id";
@@ -420,10 +421,22 @@ export default function Workout({
     return { logged, total, done };
   }, [session]);
 
+  // Warmup & cooldown are generated from the muscle groups this day trains, so
+  // they fit the session (and cover custom plans). Derived from the plan day's
+  // exercises for stability; falls back to the live session list if the day is
+  // unresolvable (e.g. a custom plan edited mid-session).
+  const { warmupSteps, cooldownSteps } = useMemo(() => {
+    if (!session) return { warmupSteps: [] as WarmupStep[], cooldownSteps: [] as WarmupStep[] };
+    const day = getPlan(session.planId, state.settings)?.days.find((d) => d.id === session.dayId);
+    const ids = day?.exercises.map((pe) => pe.exerciseId) ?? session.exercises.map((e) => e.exerciseId);
+    const groups = dayMuscleGroups(ids);
+    return { warmupSteps: generateWarmup(groups), cooldownSteps: generateCooldown(groups) };
+  }, [session, state.settings]);
+
   if (!session) return null;
 
   const allSetsDone = counts.total > 0 && counts.done === counts.total;
-  const cooldownComplete = session.cooldownDone.length >= COOLDOWN.length;
+  const cooldownComplete = session.cooldownDone.length >= cooldownSteps.length;
 
   function buildLog(): WorkoutLog | null {
     if (!session) return null;
@@ -510,13 +523,13 @@ export default function Workout({
       {/* List mode — compact overview, tap a row to focus */}
       {focusIdx === null && (
         <div className="page-body">
-          <WarmupCard />
+          <WarmupCard steps={warmupSteps} />
 
           {session.exercises.map((ex, i) => (
             <ExerciseRow key={`${i}-${ex.exerciseId}`} ex={ex} onFocus={() => setFocusIdx(i)} />
           ))}
 
-          <CooldownCard autoExpand={allSetsDone && !cooldownComplete} />
+          <CooldownCard steps={cooldownSteps} autoExpand={allSetsDone && !cooldownComplete} />
         </div>
       )}
 
@@ -668,7 +681,7 @@ export default function Workout({
 
 // ── Cooldown checklist (auto-expands once every set is done) ──────────────────
 
-function CooldownCard({ autoExpand }: { autoExpand: boolean }) {
+function CooldownCard({ steps, autoExpand }: { steps: WarmupStep[]; autoExpand: boolean }) {
   const { state, dispatch } = useApp();
   const { t, lang } = useLang();
   const [open, setOpen] = useState(false);
@@ -687,7 +700,7 @@ function CooldownCard({ autoExpand }: { autoExpand: boolean }) {
     return undefined;
   }, [autoExpand]);
 
-  if (!session) return null;
+  if (!session || steps.length === 0) return null;
   const done = session.cooldownDone.length;
 
   return (
@@ -697,12 +710,12 @@ function CooldownCard({ autoExpand }: { autoExpand: boolean }) {
         <div style={{ flex: 1, textAlign: "left", fontSize: 14, fontWeight: 700, color: "var(--text-1)" }}>
           {t("workout.cooldown")}
         </div>
-        <Chip tone={done >= COOLDOWN.length ? "accent" : "default"}>{done}/{COOLDOWN.length}</Chip>
+        <Chip tone={done >= steps.length ? "accent" : "default"}>{done}/{steps.length}</Chip>
         <span style={{ color: "var(--text-3)" }}>{open ? <IconChevronUp size={14} /> : <IconChevronDown size={14} />}</span>
       </button>
       {open && (
         <div style={{ padding: "0 16px 14px", display: "flex", flexDirection: "column", gap: 8 }}>
-          {COOLDOWN.map((c, i) => {
+          {steps.map((c, i) => {
             const checked = session.cooldownDone.includes(i);
             return (
               <button key={i} onClick={() => dispatch({ type: "toggleCooldown", idx: i })}
@@ -727,15 +740,12 @@ function CooldownCard({ autoExpand }: { autoExpand: boolean }) {
 
 // ── Warmup checklist ──────────────────────────────────────────────────────────
 
-function WarmupCard() {
+function WarmupCard({ steps }: { steps: WarmupStep[] }) {
   const { state, dispatch } = useApp();
   const { t, lang } = useLang();
   const [open, setOpen] = useState(false);
   const session = state.session;
-  if (!session) return null;
-
-  const warmup = getPlan(session.planId, state.settings)?.days.find((d) => d.id === session.dayId)?.warmup ?? [];
-  if (warmup.length === 0) return null;
+  if (!session || steps.length === 0) return null;
 
   const done = session.warmupDone.length;
 
@@ -746,12 +756,12 @@ function WarmupCard() {
         <div style={{ flex: 1, textAlign: "left", fontSize: 14, fontWeight: 700, color: "var(--text-1)" }}>
           {t("workout.warmup")}
         </div>
-        <Chip tone={done === warmup.length ? "accent" : "default"}>{done}/{warmup.length}</Chip>
+        <Chip tone={done === steps.length ? "accent" : "default"}>{done}/{steps.length}</Chip>
         <span style={{ color: "var(--text-3)" }}>{open ? <IconChevronUp size={14} /> : <IconChevronDown size={14} />}</span>
       </button>
       {open && (
         <div style={{ padding: "0 16px 14px", display: "flex", flexDirection: "column", gap: 8 }}>
-          {warmup.map((w, i) => {
+          {steps.map((w, i) => {
             const checked = session.warmupDone.includes(i);
             return (
               <button key={i} onClick={() => dispatch({ type: "toggleWarmup", idx: i })}
