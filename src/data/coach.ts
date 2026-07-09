@@ -64,6 +64,39 @@ export const EXERCISE_OVERRIDES: Record<string, ExerciseOverride> = {
       de: "Waden passen sich langsam an — volle Bewegung, langsame Negative",
     },
   },
+  "standing-calf-raise": {
+    warning: {
+      en: "Calves adapt slowly — full range of motion, slow negatives",
+      de: "Waden passen sich langsam an — volle Bewegung, langsame Negative",
+    },
+  },
+  "bulgarian-split-squat": {
+    // Per-hand dumbbells — the group's 10 kg "easy" jump is far too big here.
+    maxJumpKg: 2.5,
+    warning: {
+      en: "Single-leg — add weight in small steps and match both sides",
+      de: "Einbeinig — Gewicht in kleinen Schritten, beide Seiten gleich",
+    },
+  },
+  "deadlift": {
+    warning: {
+      en: "Brace hard and keep a flat back — leave form-breaking jumps alone",
+      de: "Fest anspannen, Rücken gerade — keine formzerstörenden Sprünge",
+    },
+  },
+  "romanian-deadlift": {
+    warning: {
+      en: "Hamstring stretch, not a max pull — flat back, small increases",
+      de: "Beinbizeps-Dehnung, kein Maximalzug — gerader Rücken, kleine Steigerungen",
+    },
+  },
+  "side-plank": {
+    progressBySeconds: true,
+    warning: {
+      en: "Add time, not weight. Keep hips stacked and lifted.",
+      de: "Zeit statt Gewicht steigern. Hüften gestapelt und angehoben halten.",
+    },
+  },
 };
 
 // Ranked substitution alternatives (same-gym-friendly swaps)
@@ -105,6 +138,115 @@ export const SUBSTITUTIONS: Record<string, Substitution[]> = {
     { exerciseId: "cable-crunch",      reason: { en: "Constant cable tension, full range", de: "Konstante Kabelspannung, voller Bewegungsumfang" } },
     { exerciseId: "hanging-knee-raise", reason: { en: "Bodyweight plus grip work", de: "Körpergewicht plus Griffkraft" } },
     { exerciseId: "plank",             reason: { en: "Zero spinal compression, isometric", de: "Keine Wirbelsäulenkompression, isometrisch" } },
+  ],
+
+  // ── Chest ──
+  "barbell-bench-press": [
+    { exerciseId: "dumbbell-press",       reason: { en: "More range, each side works alone", de: "Mehr Bewegungsumfang, jede Seite einzeln" } },
+    { exerciseId: "chest-press-machine",  reason: { en: "Fixed path — safe solo deload", de: "Feste Bahn — sicherer Deload ohne Partner" } },
+  ],
+  "incline-barbell-press": [
+    { exerciseId: "incline-dumbbell-press", reason: { en: "Deeper stretch, kinder to shoulders", de: "Tiefere Dehnung, schulterschonend" } },
+    { exerciseId: "chest-press-machine",    reason: { en: "Fixed path for a controlled deload", de: "Feste Bahn für kontrollierten Deload" } },
+  ],
+  "push-up": [
+    { exerciseId: "chest-press-machine", reason: { en: "Dial in exact load and reps", de: "Genaue Last und Wiederholungen einstellbar" } },
+    { exerciseId: "pec-deck",            reason: { en: "Isolate the chest, no core fatigue", de: "Brust isolieren, ohne Rumpfermüdung" } },
+  ],
+  "chest-dip": [
+    { exerciseId: "tricep-dip-machine",  reason: { en: "Seated version, adjustable load", de: "Sitzende Variante, einstellbare Last" } },
+    { exerciseId: "chest-press-machine", reason: { en: "Fixed path — easier to scale", de: "Feste Bahn — leichter zu dosieren" } },
+  ],
+
+  // ── Back ──
+  "barbell-row": [
+    { exerciseId: "chest-supported-row", reason: { en: "Chest pad takes the lower back out", de: "Brustpolster entlastet den unteren Rücken" } },
+    { exerciseId: "dumbbell-row",        reason: { en: "Unilateral, fixes side imbalances", de: "Einseitig, gleicht Dysbalancen aus" } },
+    { exerciseId: "seated-cable-row",    reason: { en: "Seated, constant cable tension", de: "Sitzend, konstante Kabelspannung" } },
+  ],
+  "pull-up": [
+    { exerciseId: "assisted-pull-up", reason: { en: "Counterweight scales the difficulty", de: "Gegengewicht dosiert die Schwierigkeit" } },
+    { exerciseId: "lat-pulldown",     reason: { en: "Same pull, load you can pick", de: "Gleicher Zug, wählbare Last" } },
+  ],
+  "chest-supported-row": [
+    { exerciseId: "seated-cable-row", reason: { en: "Constant tension, full stretch", de: "Konstante Spannung, volle Dehnung" } },
+    { exerciseId: "dumbbell-row",     reason: { en: "Unilateral free-weight option", de: "Einseitige Freihantel-Option" } },
+  ],
+  "deadlift": [
+    { exerciseId: "romanian-deadlift", reason: { en: "Less spinal load, more hamstring", de: "Weniger Wirbelsäulenlast, mehr Beinbizeps" } },
+    { exerciseId: "back-extension",    reason: { en: "Machine hinge, lower-back friendly", de: "Maschinen-Hüftbeuge, rückenschonend" } },
+  ],
+
+  // ── Shoulders ──
+  "overhead-press": [
+    { exerciseId: "dumbbell-shoulder-press", reason: { en: "Free range, kinder to shoulders", de: "Freier Bewegungsumfang, schulterschonend" } },
+    { exerciseId: "shoulder-press-machine",  reason: { en: "Fixed path for a solo deload", de: "Feste Bahn für Deload ohne Partner" } },
+  ],
+  "dumbbell-shoulder-press": [
+    { exerciseId: "shoulder-press-machine", reason: { en: "Fixed path, no balancing", de: "Feste Bahn, kein Ausbalancieren" } },
+    { exerciseId: "arnold-press",           reason: { en: "Rotation hits all three delt heads", de: "Rotation trifft alle drei Deltaköpfe" } },
+  ],
+
+  // ── Arms ──
+  "barbell-curl": [
+    { exerciseId: "dumbbell-curl", reason: { en: "Each arm works alone, wrist-friendly", de: "Jeder Arm einzeln, handgelenkschonend" } },
+    { exerciseId: "cable-curl",    reason: { en: "Constant tension, fine weight steps", de: "Konstante Spannung, feine Gewichtsstufen" } },
+  ],
+  "close-grip-bench-press": [
+    { exerciseId: "tricep-dip-machine", reason: { en: "Seated press, adjustable load", de: "Sitzendes Drücken, einstellbare Last" } },
+    { exerciseId: "tricep-pushdown",    reason: { en: "Isolation, easy on the shoulders", de: "Isolation, schulterschonend" } },
+  ],
+  "bench-dip": [
+    { exerciseId: "tricep-dip-machine", reason: { en: "Same movement, scalable weight", de: "Gleiche Bewegung, dosierbares Gewicht" } },
+    { exerciseId: "tricep-pushdown",    reason: { en: "Isolation with constant tension", de: "Isolation mit konstanter Spannung" } },
+  ],
+
+  // ── Legs ──
+  "barbell-squat": [
+    { exerciseId: "leg-press",           reason: { en: "Fixed path, less technical demand", de: "Feste Bahn, weniger technischer Anspruch" } },
+    { exerciseId: "goblet-squat",        reason: { en: "Lighter, grooves upright form", de: "Leichter, schult aufrechte Form" } },
+    { exerciseId: "smith-machine-squat", reason: { en: "Guided bar for a solo deload", de: "Geführte Stange für Deload ohne Partner" } },
+  ],
+  "romanian-deadlift": [
+    { exerciseId: "leg-curl-machine", reason: { en: "Isolates hamstrings, no back load", de: "Isoliert Beinbizeps, ohne Rückenlast" } },
+    { exerciseId: "back-extension",   reason: { en: "Supported hinge, easier on the spine", de: "Gestützte Hüftbeuge, wirbelsäulenschonend" } },
+  ],
+  "barbell-hip-thrust": [
+    { exerciseId: "glute-kickback-machine", reason: { en: "Isolates the glute, no setup", de: "Isoliert das Gesäß, ohne Aufbau" } },
+    { exerciseId: "leg-press",              reason: { en: "High foot placement targets glutes", de: "Hohe Fußstellung betont das Gesäß" } },
+  ],
+  "goblet-squat": [
+    { exerciseId: "leg-press",           reason: { en: "Fixed path, heavier loading", de: "Feste Bahn, schwerere Belastung" } },
+    { exerciseId: "smith-machine-squat", reason: { en: "Guided bar, more stability", de: "Geführte Stange, mehr Stabilität" } },
+  ],
+  "bulgarian-split-squat": [
+    { exerciseId: "dumbbell-lunge", reason: { en: "Unilateral, less balance demand", de: "Einseitig, weniger Balanceanforderung" } },
+    { exerciseId: "leg-press",      reason: { en: "Both legs, easier to load heavy", de: "Beide Beine, leichter schwer zu laden" } },
+  ],
+  "lying-leg-curl": [
+    { exerciseId: "leg-curl-machine",  reason: { en: "Seated version, same muscle", de: "Sitzende Variante, gleicher Muskel" } },
+    { exerciseId: "romanian-deadlift", reason: { en: "Loaded stretch for the hamstrings", de: "Belastete Dehnung für den Beinbizeps" } },
+  ],
+  "standing-calf-raise": [
+    { exerciseId: "calf-raise-machine", reason: { en: "Seated bias for the soleus", de: "Sitzend, betont den Schollenmuskel" } },
+  ],
+
+  // ── Core ──
+  "hanging-leg-raise": [
+    { exerciseId: "hanging-knee-raise", reason: { en: "Bent knees — an easier regression", de: "Gebeugte Knie — leichtere Variante" } },
+    { exerciseId: "cable-crunch",       reason: { en: "Weighted spinal flexion", de: "Belastete Wirbelsäulenbeugung" } },
+  ],
+  "russian-twist": [
+    { exerciseId: "rotary-torso", reason: { en: "Machine-guided rotation, set load", de: "Maschinengeführte Rotation, feste Last" } },
+    { exerciseId: "cable-crunch", reason: { en: "Direct ab work, constant tension", de: "Direkte Baucharbeit, konstante Spannung" } },
+  ],
+  "bicycle-crunch": [
+    { exerciseId: "ab-crunch-machine", reason: { en: "Adjustable load, seated", de: "Einstellbare Last, sitzend" } },
+    { exerciseId: "cable-crunch",      reason: { en: "Weighted, constant tension", de: "Belastet, konstante Spannung" } },
+  ],
+  "side-plank": [
+    { exerciseId: "rotary-torso", reason: { en: "Dynamic oblique work with load", de: "Dynamische Seitenbauch-Arbeit mit Last" } },
+    { exerciseId: "plank",        reason: { en: "Front-facing isometric hold", de: "Frontaler isometrischer Halt" } },
   ],
 };
 
