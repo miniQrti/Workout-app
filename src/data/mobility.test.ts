@@ -28,11 +28,10 @@ describe("dayMuscleGroups", () => {
 });
 
 describe("generateWarmup", () => {
-  it("brackets per-group moves with the universal opener and closer", () => {
+  it("leads with the universal light-cardio opener then the day's moves", () => {
     const steps = generateWarmup(["legs"]);
     const n = names(steps);
     expect(n[0]).toBe("Light cardio");
-    expect(n[n.length - 1]).toBe("Ramp-up set");
     for (const g of WARMUP_BY_GROUP.legs) expect(n).toContain(g.name.en);
   });
 
@@ -42,8 +41,16 @@ describe("generateWarmup", () => {
     expect(n).toContain("Wrist circles");    // arms
   });
 
-  it("returns just the universal steps when no groups are worked", () => {
-    expect(names(generateWarmup([]))).toEqual(["Light cardio", "Ramp-up set"]);
+  it("carries no equipment-based moves — cardio opener is the only 'gear'", () => {
+    const n = names(generateWarmup(["chest", "back", "shoulders", "arms", "legs", "core"]));
+    expect(n).not.toContain("Ramp-up set");
+    expect(n).not.toContain("Band pull-aparts");
+    expect(n).not.toContain("Scapular pull-aparts");
+    expect(n).not.toContain("Light band curls");
+  });
+
+  it("returns just the universal opener when no groups are worked", () => {
+    expect(names(generateWarmup([]))).toEqual(["Light cardio"]);
   });
 });
 

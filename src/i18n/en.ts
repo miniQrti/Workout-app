@@ -114,6 +114,8 @@ export const en: Record<string, string> = {
   "workout.title": "Active Workout",
   "workout.finish": "Finish",
   "workout.warmup": "Warmup & Mobility",
+  "workout.warmup_hint": "Loosen up before your first lift",
+  "workout.start_exercises": "Start exercises →",
   "workout.cooldown": "Cooldown & Stretch",
   "workout.cooldown_first": "Cooldown ↓",
   "workout.cooldown_missing": "Cooldown stretches not done yet.",
