@@ -399,10 +399,14 @@ export default function Workout({
   const { t, lang } = useLang();
   const session = state.session;
 
-  // Focus mode: one exercise fills the screen, no scrolling mid-workout.
-  // Starts focused on the first incomplete exercise; null = list overview.
-  const [focusIdx, setFocusIdx] = useState<number | null>(() => {
+  // Focus mode: one card fills the screen, no scrolling mid-workout. The warmup
+  // is the first focused card ("warmup"), then each exercise by index; null = the
+  // list overview. A fresh session opens on the warmup; a recovered one resumes at
+  // the first incomplete exercise.
+  const [focus, setFocus] = useState<"warmup" | number | null>(() => {
     const exs = state.session?.exercises ?? [];
+    const anyDone = exs.some((e) => e.sets.some((s) => s.completed));
+    if (!anyDone) return "warmup";
     const idx = exs.findIndex((e) => e.sets.some((s) => !s.completed));
     return idx >= 0 ? idx : null;
   });
@@ -435,8 +439,20 @@ export default function Workout({
     return { warmupSteps: generateWarmup(groups), cooldownSteps: generateCooldown(groups) };
   }, [session, state.settings]);
 
+  // If a session somehow has no warmup steps, don't strand focus on an empty
+  // warmup card — fall through to the first exercise (or the list).
+  useEffect(() => {
+    if (focus === "warmup" && warmupSteps.length === 0) {
+      setFocus(session && session.exercises.length > 0 ? 0 : null);
+    }
+  }, [focus, warmupSteps.length, session]);
+
   if (!session) return null;
 
+  const warmupFocused = focus === "warmup" && warmupSteps.length > 0;
+  const exFocus = typeof focus === "number" ? focus : null;
+  const focusedEx = exFocus !== null ? session.exercises[exFocus] : undefined;
+  const lastExIdx = session.exercises.length - 1;
   const allSetsDone = counts.total > 0 && counts.done === counts.total;
   const cooldownComplete = session.cooldownDone.length >= cooldownSteps.length;
 
@@ -506,7 +522,7 @@ export default function Workout({
   }, [swapEx, lang, state.settings]);
 
   return (
-    <div className="page" style={{ paddingBottom: (focusIdx !== null ? 90 : 20) + (rest ? 90 : 0) + 70 }}>
+    <div className="page" style={{ paddingBottom: (focus !== null ? 90 : 20) + (rest ? 90 : 0) + 70 }}>
       {/* Header */}
       <div className="page-header">
         <button onClick={tryExit} className="btn btn-ghost btn-sm" style={{ color: "var(--text-2)", padding: 6 }}>
@@ -531,47 +547,56 @@ export default function Workout({
       </div>
 
       {/* List mode — compact overview, tap a row to focus */}
-      {focusIdx === null && (
+      {focus === null && (
         <div className="page-body">
           <WarmupCard steps={warmupSteps} />
 
           {session.exercises.map((ex, i) => (
-            <ExerciseRow key={`${i}-${ex.exerciseId}`} ex={ex} onFocus={() => setFocusIdx(i)} />
+            <ExerciseRow key={`${i}-${ex.exerciseId}`} ex={ex} onFocus={() => setFocus(i)} />
           ))}
 
           <CooldownCard steps={cooldownSteps} autoExpand={allSetsDone && !cooldownComplete} />
         </div>
       )}
 
-      {/* Focus mode — single exercise, navigator + progress dots */}
-      {focusIdx !== null && session.exercises[focusIdx] && (
+      {/* Focus mode — single card (warmup first, then each exercise) */}
+      {focus !== null && (warmupFocused || focusedEx) && (
         <div className="page-body" style={{ paddingBottom: 8 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <button
-              onClick={() => setFocusIdx(null)}
+              onClick={() => setFocus(null)}
               className="btn btn-ghost btn-sm"
               style={{ color: "var(--text-2)", padding: "4px 0" }}
             >
               ‹ {t("workout.all")}
             </button>
             <div style={{ flex: 1 }} />
-            <Button small disabled={focusIdx === 0} onClick={() => setFocusIdx(focusIdx - 1)}>‹</Button>
+            <Button small disabled={warmupFocused} onClick={() => setFocus(exFocus === 0 ? "warmup" : (exFocus as number) - 1)}>‹</Button>
             <span style={{ fontSize: 12, color: "var(--text-2)", minWidth: 40, textAlign: "center" }}>
-              {focusIdx + 1} / {session.exercises.length}
+              {warmupFocused ? 1 : (exFocus as number) + 2} / {session.exercises.length + 1}
             </span>
-            <Button small disabled={focusIdx === session.exercises.length - 1} onClick={() => setFocusIdx(focusIdx + 1)}>›</Button>
+            <Button small disabled={!warmupFocused && exFocus === lastExIdx} onClick={() => setFocus(warmupFocused ? 0 : (exFocus as number) + 1)}>›</Button>
           </div>
 
-          {/* Progress dots */}
+          {/* Progress dots — warmup leads, then one per exercise */}
           <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
+            <div
+              onClick={() => setFocus("warmup")}
+              style={{
+                width: warmupFocused ? 22 : 8, height: 8, borderRadius: 4,
+                background: session.warmupDone.length >= warmupSteps.length && warmupSteps.length > 0
+                  ? "var(--accent)" : warmupFocused ? "var(--accent)" : "var(--border)",
+                cursor: "pointer", transition: "all 0.2s", flexShrink: 0,
+              }}
+            />
             {session.exercises.map((e, i) => {
               const done = e.sets.length > 0 && e.sets.every((s) => s.completed);
               const noFeel = done && !e.feel;
-              const active = i === focusIdx;
+              const active = i === exFocus;
               return (
                 <div
                   key={i}
-                  onClick={() => setFocusIdx(i)}
+                  onClick={() => setFocus(i)}
                   style={{
                     width: active ? 22 : 8, height: 8, borderRadius: 4,
                     background: done ? (noFeel ? "var(--gold)" : "var(--accent)") : active ? "var(--accent)" : "var(--border)",
@@ -582,25 +607,33 @@ export default function Workout({
             })}
           </div>
 
-          <ExerciseCard
-            key={`${focusIdx}-${session.exercises[focusIdx].exerciseId}`}
-            ex={session.exercises[focusIdx]}
-            exIdx={focusIdx}
-            onStartRest={(secs) => setRest({ endsAt: Date.now() + secs * 1000, total: secs })}
-            onOpenSwap={() => setSwapFor(focusIdx)}
-          />
+          {warmupFocused ? (
+            <WarmupFocusCard steps={warmupSteps} />
+          ) : exFocus !== null && focusedEx ? (
+            <ExerciseCard
+              key={`${exFocus}-${focusedEx.exerciseId}`}
+              ex={focusedEx}
+              exIdx={exFocus}
+              onStartRest={(secs) => setRest({ endsAt: Date.now() + secs * 1000, total: secs })}
+              onOpenSwap={() => setSwapFor(exFocus)}
+            />
+          ) : null}
         </div>
       )}
 
-      {/* Focus-mode sticky footer: next exercise, or back to the list */}
-      {focusIdx !== null && (
+      {/* Focus-mode sticky footer: start exercises / next exercise / finish */}
+      {focus !== null && (
         <div style={{
           position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 100,
           background: "var(--surface)", borderTop: "1px solid var(--border)",
           padding: "12px 16px calc(12px + env(safe-area-inset-bottom))",
         }}>
-          {focusIdx < session.exercises.length - 1 ? (
-            <Button block variant="primary" onClick={() => setFocusIdx(focusIdx + 1)}>
+          {warmupFocused ? (
+            <Button block variant="primary" onClick={() => setFocus(0)}>
+              {t("workout.start_exercises")}
+            </Button>
+          ) : exFocus !== null && exFocus < lastExIdx ? (
+            <Button block variant="primary" onClick={() => setFocus(exFocus + 1)}>
               {t("workout.next_exercise")}
             </Button>
           ) : (
@@ -609,7 +642,7 @@ export default function Workout({
                 ? { background: "var(--gold-soft)", color: "var(--gold)", borderColor: "var(--gold)" }
                 : undefined}
               onClick={() => {
-                if (allSetsDone && !cooldownComplete) setFocusIdx(null); // list auto-opens the cooldown
+                if (allSetsDone && !cooldownComplete) setFocus(null); // list auto-opens the cooldown
                 else tryFinish();
               }}
             >
@@ -622,7 +655,7 @@ export default function Workout({
       {rest && (
         <RestBanner
           rest={rest}
-          lifted={focusIdx !== null}
+          lifted={focus !== null}
           onSkip={() => setRest(null)}
           onExtend={() => setRest((r) => (r ? { endsAt: r.endsAt + 30_000, total: r.total + 30 } : r))}
         />
@@ -790,6 +823,52 @@ function WarmupCard({ steps }: { steps: WarmupStep[] }) {
           })}
         </div>
       )}
+    </div>
+  );
+}
+
+// ── Warmup focus card (zoomed-in first card of the session) ───────────────────
+
+function WarmupFocusCard({ steps }: { steps: WarmupStep[] }) {
+  const { state, dispatch } = useApp();
+  const { t, lang } = useLang();
+  const session = state.session;
+  if (!session || steps.length === 0) return null;
+
+  const done = session.warmupDone.length;
+
+  return (
+    <div className="card" style={{ padding: 0, overflow: "hidden" }}>
+      {/* Header — mirrors the exercise card so the warmup reads as step one */}
+      <div style={{ width: "100%", padding: "14px 16px", display: "flex", alignItems: "center", gap: 10 }}>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: 15, fontWeight: 700, color: "var(--text-1)" }}>{t("workout.warmup")}</div>
+          <div style={{ fontSize: 12, color: "var(--text-2)", marginTop: 2 }}>{t("workout.warmup_hint")}</div>
+        </div>
+        {done >= steps.length
+          ? <Chip tone="accent"><IconCheck size={12} /> {done}/{steps.length}</Chip>
+          : <Chip>{done}/{steps.length}</Chip>}
+      </div>
+
+      <div style={{ padding: "0 16px 16px", display: "flex", flexDirection: "column", gap: 6 }}>
+        {steps.map((w, i) => {
+          const checked = session.warmupDone.includes(i);
+          return (
+            <button key={i} onClick={() => dispatch({ type: "toggleWarmup", idx: i })}
+              style={{ display: "flex", alignItems: "center", gap: 12, background: "none", border: "none", cursor: "pointer", textAlign: "left", padding: "4px 0" }}>
+              <span className={`set-check${checked ? " done" : ""}`} style={{ width: 30, height: 30, borderRadius: 9, flexShrink: 0 }}>
+                <IconCheck size={16} />
+              </span>
+              <span style={{ flex: 1 }}>
+                <span style={{ fontSize: 14, fontWeight: 600, color: checked ? "var(--text-3)" : "var(--text-1)", textDecoration: checked ? "line-through" : "none" }}>
+                  {localize(w.name, lang)}
+                </span>
+                <span style={{ fontSize: 12, color: "var(--text-3)", display: "block" }}>{localize(w.detail, lang)}</span>
+              </span>
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }

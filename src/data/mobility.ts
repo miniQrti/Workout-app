@@ -16,28 +16,28 @@ import { getExercise } from "./exerciseResolver";
 import { MUSCLE_GROUPS, muscleGroupOf } from "./muscles";
 
 // Universal steps that bracket every session regardless of the muscles worked.
+// Light cardio is the one piece of "equipment" we keep — everything else in the
+// warmup is bodyweight mobility that needs nothing but a bit of floor space.
 const WARMUP_OPENER: WarmupStep = {
   name: { en: "Light cardio", de: "Leichtes Cardio" },
   detail: { en: "5 min — treadmill or bike to raise your heart rate", de: "5 Min. — Laufband oder Rad, um den Puls zu erhöhen" },
-};
-const WARMUP_CLOSER: WarmupStep = {
-  name: { en: "Ramp-up set", de: "Aufbausatz" },
-  detail: { en: "First exercise at ~50% × 12–15 reps", de: "Erste Übung bei ~50 % × 12–15 Wdh." },
 };
 const COOLDOWN_OPENER: WarmupStep = {
   name: { en: "Zone 2 Cardio", de: "Zone-2-Cardio" },
   detail: { en: "10 min · easy pace to bring your heart rate down", de: "10 Min. · lockeres Tempo, um den Puls zu senken" },
 };
 
-/** Dynamic warmup movements per muscle group. */
+/**
+ * Dynamic warmup movements per muscle group. Bodyweight only — no bands, bars or
+ * machines — so the warmup stays short and can be done anywhere before touching a
+ * weight.
+ */
 export const WARMUP_BY_GROUP: Record<MuscleGroupId, WarmupStep[]> = {
   chest: [
     { name: { en: "Arm circles", de: "Armkreisen" }, detail: { en: "10 forward, 10 backward", de: "10 vorwärts, 10 rückwärts" } },
-    { name: { en: "Band pull-aparts", de: "Band-Auseinanderziehen" }, detail: { en: "15 reps — squeeze shoulder blades", de: "15 Wdh. — Schulterblätter zusammenziehen" } },
   ],
   back: [
     { name: { en: "Cat-cow", de: "Katze-Kuh" }, detail: { en: "8 slow reps on the mat", de: "8 langsame Wdh. auf der Matte" } },
-    { name: { en: "Scapular pull-aparts", de: "Schulterblatt-Retraktion" }, detail: { en: "12 reps — hang or band, retract", de: "12 Wdh. — Klimmzugstange oder Band, zurückziehen" } },
   ],
   shoulders: [
     { name: { en: "Shoulder rolls", de: "Schulterkreisen" }, detail: { en: "10 forward, 10 backward", de: "10 vorwärts, 10 rückwärts" } },
@@ -45,7 +45,6 @@ export const WARMUP_BY_GROUP: Record<MuscleGroupId, WarmupStep[]> = {
   ],
   arms: [
     { name: { en: "Wrist circles", de: "Handgelenkkreisen" }, detail: { en: "10 each direction", de: "10 pro Richtung" } },
-    { name: { en: "Light band curls", de: "Leichte Band-Curls" }, detail: { en: "15 reps — biceps and triceps", de: "15 Wdh. — Bizeps und Trizeps" } },
   ],
   legs: [
     { name: { en: "Leg swings", de: "Beinschwünge" }, detail: { en: "10 front-back each leg", de: "10 vor-zurück pro Bein" } },
@@ -108,10 +107,10 @@ function dedupe(steps: WarmupStep[]): WarmupStep[] {
   return steps.filter((s) => (seen.has(s.name.en) ? false : (seen.add(s.name.en), true)));
 }
 
-/** Warmup for a day: universal opener → per-group dynamic moves → ramp-up closer. */
+/** Warmup for a day: universal light-cardio opener → per-group bodyweight moves. */
 export function generateWarmup(groups: MuscleGroupId[]): WarmupStep[] {
   const perGroup = groups.flatMap((g) => WARMUP_BY_GROUP[g]);
-  return dedupe([WARMUP_OPENER, ...perGroup, WARMUP_CLOSER]);
+  return dedupe([WARMUP_OPENER, ...perGroup]);
 }
 
 /** Cooldown for a day: universal easy cardio → per-group targeted stretches. */
