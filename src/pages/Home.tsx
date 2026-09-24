@@ -7,6 +7,7 @@ import { getPR } from "../store/selectors";
 import { consistencyStats, thisWeekWorkouts } from "../store/analytics";
 import { needsRecovery, slotForDate, trainedOn, weekOverview, type WeekDayOverview } from "../store/schedule";
 import { applyCycleTone, currentTone, isPeriodDay } from "../store/cycle";
+import { applyReturnAdjustment, returnAdjustment } from "../store/returnToTraining";
 import CycleCard from "../components/CycleCard";
 import { localize, localeOf, useLang } from "../i18n";
 import { displayWeight } from "../lib/units";
@@ -101,6 +102,7 @@ export default function Home({
   const plan = getPlan(settings.activePlanId, settings);
   const dayIdx = plan ? settings.nextDayIdx % plan.days.length : 0;
   const day = plan?.days[dayIdx];
+  const returnPlan = useMemo(() => returnAdjustment(logs, plan), [logs, plan]);
 
   const coach = useMemo(() => {
     if (!day) return [];
@@ -109,7 +111,11 @@ export default function Home({
       const ex = getExercise(pe.exerciseId, settings);
       // Soften the suggestion for the cycle phase before deriving PR-attempt,
       // so a downgraded "increase" no longer shows the PR chip.
-      const suggestion = ex ? applyCycleTone(suggestProgression(index, ex, pe.reps, unit), tone) : null;
+      const suggestion = applyReturnAdjustment(
+        ex ? applyCycleTone(suggestProgression(index, ex, pe.reps, unit), tone) : null,
+        returnPlan,
+        unit
+      );
       const pr = getPR(index, pe.exerciseId);
       return {
         exerciseId: pe.exerciseId,
@@ -120,7 +126,7 @@ export default function Home({
         isPRAttempt: !!(suggestion && pr && suggestion.weightKg > pr.weightKg && suggestion.action === "increase"),
       };
     });
-  }, [day, index, unit, settings.cycle, settings.customExercises]);
+  }, [day, index, unit, settings.cycle, settings.customExercises, returnPlan]);
 
   const stats = useMemo(() => consistencyStats(logs), [logs]);
   const weekCount = useMemo(() => thisWeekWorkouts(logs), [logs]);
@@ -196,6 +202,17 @@ export default function Home({
 
         {/* Cycle status (opt-in) */}
         {cycle?.enabled && <CycleCard />}
+
+        {returnPlan && (
+          <Card title={t("return.title")}>
+            <div style={{ fontSize: 13, color: "var(--text-2)", lineHeight: 1.45 }}>
+              {t("return.summary", {
+                days: returnPlan.daysAway,
+                percent: returnPlan.reductionPercent,
+              })}
+            </div>
+          </Card>
+        )}
 
         {/* Today: workout, rest, cardio, or already trained */}
         {plan && day && todayState !== "workout" && (

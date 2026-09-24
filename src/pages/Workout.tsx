@@ -8,10 +8,11 @@ import { dayMuscleGroups, generateCooldown, generateWarmup } from "../data/mobil
 import { muscleGroupOf, muscleLabel } from "../data/muscles";
 import { suggestProgression } from "../store/progression";
 import { applyCycleTone, currentTone } from "../store/cycle";
+import { applyReturnAdjustment, returnAdjustment } from "../store/returnToTraining";
 import { lastEntry } from "../store/selectors";
 import type { DraftExercise, Feel, SetLog, WarmupStep, WorkoutLog } from "../types";
 import { displayWeight, parseWeightInput } from "../lib/units";
-import { formatDuration } from "../lib/dates";
+import { formatDuration, parseDate } from "../lib/dates";
 import { uuid } from "../lib/id";
 import { localize, useLang } from "../i18n";
 import { Button, Chip, Input, Modal, Sheet } from "../ui/kit";
@@ -168,14 +169,24 @@ function ExerciseCard({
   const unit = state.settings.unit;
   const info = getExercise(ex.exerciseId, state.settings);
   const timed = info?.repType === "seconds";
+  const plan = getPlan(state.session?.planId ?? state.settings.activePlanId, state.settings);
+  const sessionDate = parseDate(state.session?.startedAt) ?? new Date();
+  const returnPlan = useMemo(
+    () => returnAdjustment(state.logs, plan, sessionDate),
+    [state.logs, plan, sessionDate.getTime()]
+  );
 
   const prev = useMemo(() => lastEntry(index, ex.exerciseId), [index, ex.exerciseId]);
   const suggestion = useMemo(
-    () => applyCycleTone(
-      info ? suggestProgression(index, info, ex.targetReps, unit) : null,
-      currentTone(state.settings.cycle)
+    () => applyReturnAdjustment(
+      applyCycleTone(
+        info ? suggestProgression(index, info, ex.targetReps, unit) : null,
+        currentTone(state.settings.cycle)
+      ),
+      returnPlan,
+      unit
     ),
-    [index, info, ex.targetReps, unit, state.settings.cycle]
+    [index, info, ex.targetReps, unit, state.settings.cycle, returnPlan]
   );
   const override = EXERCISE_OVERRIDES[ex.exerciseId];
   const note = state.settings.machineNotes[ex.exerciseId] ?? "";
