@@ -48,6 +48,8 @@ export const de: Record<string, string> = {
   "home.no_history": "keine Historie — mit dem Plangewicht starten",
   "home.done_today": "Training abgeschlossen!",
   "home.done_hint": "Stark — jetzt Erholung und Essen. Bis zur nächsten Einheit.",
+  "home.incomplete_today": "Training unvollständig gespeichert",
+  "home.incomplete_hint": "Deine abgeschlossenen Sätze wurden gespeichert. Dein Plan zeigt die nächste Einheit.",
   "home.train_anyway": "Trotzdem trainieren",
   "home.recovery_hint.one": "Du hast gestern trainiert — dieser Plan sieht Pause zwischen den Einheiten vor.",
   "home.recovery_hint.other": "Du hast {count} Tage am Stück trainiert — Wachstum passiert an Ruhetagen.",
