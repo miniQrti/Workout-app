@@ -214,7 +214,10 @@ function LogItem({ log }: { log: WorkoutLog }) {
       <button onClick={() => setOpen((o) => !o)}
         style={{ width: "100%", padding: "14px 16px", background: "none", border: "none", cursor: "pointer", textAlign: "left", display: "flex", alignItems: "center", gap: 8 }}>
         <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 14, fontWeight: 600, color: "var(--text-1)" }}>{log.dayName}</div>
+          <div style={{ fontSize: 14, fontWeight: 600, color: "var(--text-1)", display: "flex", alignItems: "center", gap: 7 }}>
+            <span>{log.dayName}</span>
+            {log.completedEarly && <Chip tone="gold">{t("progress.incomplete")}</Chip>}
+          </div>
           <div style={{ fontSize: 12, color: "var(--text-2)", marginTop: 2 }}>
             {d?.toLocaleDateString(localeOf(lang), { month: "short", day: "numeric" })}
             {" · "}{t("common.exercises", { count: log.exercises.length })}

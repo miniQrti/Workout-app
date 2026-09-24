@@ -118,6 +118,7 @@ export const en: Record<string, string> = {
   // Workout
   "workout.title": "Active Workout",
   "workout.finish": "Finish",
+  "workout.end_early": "End early",
   "workout.warmup": "Warmup & Mobility",
   "workout.warmup_hint": "Loosen up before your first lift",
   "workout.start_exercises": "Start exercises →",
@@ -149,8 +150,12 @@ export const en: Record<string, string> = {
   "workout.keep_going": "Keep going",
   "workout.discard": "Discard",
   "workout.incomplete_title": "Finish incomplete workout?",
-  "workout.sets_missing.one": "{count} set not logged yet.",
-  "workout.sets_missing.other": "{count} sets not logged yet.",
+  "workout.exercises_missing.one": "{count} exercise is not complete.",
+  "workout.exercises_missing.other": "{count} exercises are not complete.",
+  "workout.sets_missing.one": "{count} set is not complete.",
+  "workout.sets_missing.other": "{count} sets are not complete.",
+  "workout.incomplete_saved": "Completed work will be saved and this workout will be marked incomplete.",
+  "workout.save_incomplete": "Save incomplete workout",
   "workout.finish_anyway": "Finish anyway",
   "workout.progress": "{done}/{total} sets",
   "workout.tip": "Form tip",
@@ -163,6 +168,7 @@ export const en: Record<string, string> = {
 
   // Summary
   "summary.title": "Workout Complete!",
+  "summary.saved_early": "Workout Saved",
   "summary.duration": "Duration",
   "summary.exercises": "Exercises",
   "summary.sets": "Sets Done",

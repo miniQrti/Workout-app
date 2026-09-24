@@ -118,6 +118,7 @@ export const de: Record<string, string> = {
   // Workout
   "workout.title": "Aktives Training",
   "workout.finish": "Beenden",
+  "workout.end_early": "Vorzeitig beenden",
   "workout.warmup": "Aufwärmen & Mobilität",
   "workout.warmup_hint": "Locker werden vor dem ersten Satz",
   "workout.start_exercises": "Übungen starten →",
@@ -149,8 +150,12 @@ export const de: Record<string, string> = {
   "workout.keep_going": "Weitermachen",
   "workout.discard": "Verwerfen",
   "workout.incomplete_title": "Unvollständiges Training beenden?",
-  "workout.sets_missing.one": "{count} Satz noch nicht erfasst.",
-  "workout.sets_missing.other": "{count} Sätze noch nicht erfasst.",
+  "workout.exercises_missing.one": "{count} Übung ist nicht abgeschlossen.",
+  "workout.exercises_missing.other": "{count} Übungen sind nicht abgeschlossen.",
+  "workout.sets_missing.one": "{count} Satz ist nicht abgeschlossen.",
+  "workout.sets_missing.other": "{count} Sätze sind nicht abgeschlossen.",
+  "workout.incomplete_saved": "Abgeschlossene Arbeit wird gespeichert und dieses Training als unvollständig markiert.",
+  "workout.save_incomplete": "Unvollständiges Training speichern",
   "workout.finish_anyway": "Trotzdem beenden",
   "workout.progress": "{done}/{total} Sätze",
   "workout.tip": "Technik-Tipp",
@@ -163,6 +168,7 @@ export const de: Record<string, string> = {
 
   // Summary
   "summary.title": "Training abgeschlossen!",
+  "summary.saved_early": "Training gespeichert",
   "summary.duration": "Dauer",
   "summary.exercises": "Übungen",
   "summary.sets": "Sätze",

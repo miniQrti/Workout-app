@@ -71,6 +71,7 @@ function asLog(raw: unknown): WorkoutLog | null {
     startedAt: r.startedAt as string,
     completedAt: parseDate(r.completedAt as string)?.toISOString() ?? (r.startedAt as string),
     durationSecs: Number.isFinite(Number(r.durationSecs)) ? Math.max(0, Number(r.durationSecs)) : 0,
+    ...(r.completedEarly === true ? { completedEarly: true } : {}),
     exercises,
   };
 }

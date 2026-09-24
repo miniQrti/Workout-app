@@ -56,7 +56,9 @@ function SummaryModal({ summary, onClose }: { summary: Summary; onClose: () => v
         }}>
           <IconCheck size={34} />
         </div>
-        <div style={{ fontSize: 21, fontWeight: 800 }}>{t("summary.title")}</div>
+        <div style={{ fontSize: 21, fontWeight: 800 }}>
+          {t(log.completedEarly ? "summary.saved_early" : "summary.title")}
+        </div>
         <div style={{ fontSize: 14, color: "var(--text-2)", marginTop: 4 }}>{log.dayName}</div>
       </div>
 
