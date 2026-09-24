@@ -134,6 +134,7 @@ export default function Home({
 
   const todaySlot = slotForDate(plan, new Date());
   const trainedToday = useMemo(() => trainedOn(logs, new Date()), [logs]);
+  const incompleteOnlyToday = trainedToday && !trainedOn(logs.filter((log) => !log.completedEarly), new Date());
   const week = useMemo(() => weekOverview(plan, logs), [plan, logs]);
   // Streak of consecutive trained days ending yesterday, when it has hit the
   // plan's max back-to-back load; 0 otherwise.
@@ -232,11 +233,11 @@ export default function Home({
                 </div>
               )}
               <div style={{ fontSize: 18, fontWeight: 800 }}>
-                {todayState === "done" ? t("home.done_today") : todayState === "cardio" ? t("home.cardio_day") : t("home.rest_day")}
+                {todayState === "done" ? t(incompleteOnlyToday ? "home.incomplete_today" : "home.done_today") : todayState === "cardio" ? t("home.cardio_day") : t("home.rest_day")}
               </div>
               <div style={{ fontSize: 13, color: "var(--text-2)", marginTop: 4 }}>
                 {todayState === "done"
-                  ? t("home.done_hint")
+                  ? t(incompleteOnlyToday ? "home.incomplete_hint" : "home.done_hint")
                   : todayState === "cardio"
                     ? t("home.cardio_hint")
                     : todayState === "recovery"
