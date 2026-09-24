@@ -2,6 +2,33 @@ import { describe, expect, it } from "vitest";
 import { exportCSV, makeBackup, normalizeCustomExercises, parseBackup } from "./backup";
 import { makeLog } from "./testUtils";
 import { defaultSettings } from "./appState";
+import type { Plan } from "../types";
+
+function validCustomPlan(): Plan {
+  return {
+    id: "custom-plan-1",
+    name: " My Plan ",
+    tagline: { en: "A custom plan" },
+    difficulty: "intermediate",
+    daysPerWeek: 99,
+    estimatedMins: 0,
+    goal: "hypertrophy",
+    schedule: {
+      cycleLength: 7,
+      rotation: [
+        { type: "workout", dayId: "day-1" },
+        { type: "rest" }, { type: "rest" }, { type: "rest" },
+        { type: "rest" }, { type: "rest" }, { type: "rest" },
+      ],
+    },
+    days: [{
+      id: "day-1",
+      name: { en: "Day One" },
+      warmup: [],
+      exercises: [{ exerciseId: "leg-press", sets: 3, reps: 10, restSecs: 90 }],
+    }],
+  };
+}
 
 describe("JSON backup", () => {
   it("round-trips losslessly", () => {
@@ -52,6 +79,51 @@ describe("JSON backup", () => {
     expect(restored.settings.cycle!.cycleLength).toBe(40);
     expect(restored.settings.cycle!.periodLength).toBe(1);
     expect(restored.settings.cycle!.periodStarts).toEqual(["2026-01-01"]);
+  });
+
+  it("sanitizes primitive settings and rejects broken plan references", () => {
+    const backup = makeBackup(defaultSettings(), []) as unknown as Record<string, unknown>;
+    backup.settings = {
+      unit: "stone",
+      theme: "neon",
+      accent: "pink",
+      lang: "fr",
+      activePlanId: "missing-plan",
+      nextDayIdx: -9,
+      machineNotes: { valid: "Seat 3", invalid: 42 },
+      customExercises: "not-an-array",
+      customPlans: [{ id: "broken" }],
+    };
+
+    const defaults = defaultSettings();
+    const restored = parseBackup(JSON.stringify(backup), defaults).settings;
+    expect(restored.unit).toBe(defaults.unit);
+    expect(restored.theme).toBe(defaults.theme);
+    expect(restored.accent).toBe(defaults.accent);
+    expect(restored.lang).toBe(defaults.lang);
+    expect(restored.activePlanId).toBe(defaults.activePlanId);
+    expect(restored.nextDayIdx).toBe(0);
+    expect(restored.machineNotes.valid).toBe("Seat 3");
+    expect(restored.machineNotes.invalid).toBeUndefined();
+    expect(restored.customExercises).toEqual([]);
+    expect(restored.customPlans).toEqual([]);
+  });
+
+  it("restores and normalizes a valid custom plan", () => {
+    const settings = {
+      ...defaultSettings(),
+      activePlanId: "custom-plan-1",
+      nextDayIdx: 8,
+      customPlans: [validCustomPlan()],
+    };
+    const restored = parseBackup(JSON.stringify(makeBackup(settings, [])), defaultSettings()).settings;
+
+    expect(restored.customPlans).toHaveLength(1);
+    expect(restored.customPlans![0]!.name).toBe("My Plan");
+    expect(restored.customPlans![0]!.daysPerWeek).toBe(1);
+    expect(restored.customPlans![0]!.estimatedMins).toBeGreaterThan(0);
+    expect(restored.activePlanId).toBe("custom-plan-1");
+    expect(restored.nextDayIdx).toBe(0);
   });
 });
 

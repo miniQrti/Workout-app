@@ -32,6 +32,23 @@ describe("progression", () => {
     expect(s.reasonKey).toBe("coach.hold_incomplete");
   });
 
+  it("bases an incomplete-session hold on the heaviest completed set", () => {
+    const logs = [makeLog(3, [{
+      exId: "leg-press",
+      feel: "good",
+      sets: [[90, 12], [110, 4, false]],
+    }])];
+    const s = suggestProgression(buildExerciseIndex(logs), legPress, 12, "kg")!;
+    expect(s.action).toBe("hold");
+    expect(s.reasonKey).toBe("coach.hold_incomplete");
+    expect(s.weightKg).toBe(90);
+  });
+
+  it("returns no weight suggestion when the only weighted sets were incomplete", () => {
+    const logs = [makeLog(3, [{ exId: "leg-press", feel: "tough", sets: [[110, 4, false]] }])];
+    expect(suggestProgression(buildExerciseIndex(logs), legPress, 12, "kg")).toBeNull();
+  });
+
   it("holds until target reps hit on every set", () => {
     const logs = [makeLog(3, [{ exId: "leg-press", feel: "good", sets: [[100, 12], [100, 9]] }])];
     const s = suggestProgression(buildExerciseIndex(logs), legPress, 12, "kg")!;

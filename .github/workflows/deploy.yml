@@ -26,7 +26,10 @@ jobs:
           cache: 'npm'
       - run: npm ci
       - run: npm test
-      - run: npm run typecheck
+      # Build on pull requests too so PWA/Vite configuration errors cannot hide
+      # until a deployment job runs.
+      - run: npm run build
+      - run: npm run verify:build
 
   deploy:
     # Deploy only on push to the deployment branches, after tests pass
@@ -53,6 +56,8 @@ jobs:
         run: npm run build
         env:
           BASE_PATH: "${{ steps.pages.outputs.base_path }}/"
+
+      - run: npm run verify:build
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3

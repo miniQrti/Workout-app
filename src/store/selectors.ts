@@ -116,9 +116,18 @@ export function detectNewPRs(
     let best: SetLog | null = null;
     for (const s of completedSets(ex.sets)) {
       if (s.weightKg === null) continue;
-      if (!best || s.weightKg > (best.weightKg ?? 0)) best = s;
+      if (
+        !best ||
+        s.weightKg > (best.weightKg ?? 0) ||
+        (s.weightKg === best.weightKg && s.reps > best.reps)
+      ) {
+        best = s;
+      }
     }
-    if (best?.weightKg != null && (!prev || best.weightKg > prev.weightKg)) {
+    if (
+      best?.weightKg != null &&
+      (!prev || best.weightKg > prev.weightKg || (best.weightKg === prev.weightKg && best.reps > prev.reps))
+    ) {
       out.push({ exerciseId: ex.exerciseId, weightKg: best.weightKg, reps: best.reps });
     }
   }

@@ -5,6 +5,7 @@ import { getPlan } from "./data/planResolver";
 import { getExercise, resolveExerciseName } from "./data/exerciseResolver";
 import { detectNewPRs } from "./store/selectors";
 import { sessionTonnageKg } from "./store/analytics";
+import { nextDayIndexAfter } from "./store/session";
 import type { ActiveSession, WorkoutLog } from "./types";
 import { uuid } from "./lib/id";
 import { displayWeight, formatCompact, fromKg } from "./lib/units";
@@ -219,10 +220,7 @@ export default function App() {
   }, [state.settings, lang, dispatch]);
 
   const finishWorkout = useCallback((log: WorkoutLog) => {
-    const plan = getPlan(state.settings.activePlanId, state.settings);
-    const dayCount = plan?.days.length ?? 1;
-    const currentIdx = plan?.days.findIndex((d) => d.id === log.dayId) ?? 0;
-    const nextDayIdx = ((currentIdx >= 0 ? currentIdx : 0) + 1) % dayCount;
+    const nextDayIdx = nextDayIndexAfter(log, state.settings);
 
     const newPRs = detectNewPRs(index, log);
     dispatch({ type: "finishSession", log, nextDayIdx });

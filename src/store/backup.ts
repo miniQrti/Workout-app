@@ -1,9 +1,15 @@
-import type { BackupFile, Equipment, Exercise, ExerciseLog, Feel, SetLog, Settings, WorkoutLog, Unit } from "../types";
+import type {
+  BackupFile, Equipment, Exercise, ExerciseLog, Feel, LocalizedText, Plan,
+  PlanDay, RotationSlot, SetLog, Settings, WorkoutLog, Unit,
+} from "../types";
 import { SCHEMA_VERSION } from "../types";
 import { displayWeight } from "../lib/units";
 import { parseDate } from "../lib/dates";
 import { resolveExerciseName } from "../data/exerciseResolver";
 import { normalizeCycleSettings } from "./cycle";
+import { getPlan, normalizePlan, validatePlan } from "../data/planResolver";
+import { PLANS } from "../data/plans";
+import { EXERCISES } from "../data/exercises";
 
 // ── Canonical JSON backup (lossless) ─────────────────────────────────────────
 
@@ -63,8 +69,8 @@ function asLog(raw: unknown): WorkoutLog | null {
     dayId: typeof r.dayId === "string" ? r.dayId : "unknown",
     dayName: typeof r.dayName === "string" ? r.dayName : "Workout",
     startedAt: r.startedAt as string,
-    completedAt: typeof r.completedAt === "string" ? r.completedAt : (r.startedAt as string),
-    durationSecs: Number.isFinite(Number(r.durationSecs)) ? Number(r.durationSecs) : 0,
+    completedAt: parseDate(r.completedAt as string)?.toISOString() ?? (r.startedAt as string),
+    durationSecs: Number.isFinite(Number(r.durationSecs)) ? Math.max(0, Number(r.durationSecs)) : 0,
     exercises,
   };
 }
@@ -90,17 +96,140 @@ export function parseBackup(
     .filter((l): l is WorkoutLog => l !== null)
     .sort((a, b) => a.startedAt.localeCompare(b.startedAt));
 
+  const source = asRecord(raw.settings) ?? {};
+  const customExercises = normalizeCustomExercises(source.customExercises);
   const settings: Settings = {
     ...defaults,
-    ...(typeof raw.settings === "object" && raw.settings !== null ? raw.settings : {}),
+    unit: isOneOf(source.unit, ["kg", "lb"] as const) ? source.unit : defaults.unit,
+    theme: isOneOf(source.theme, ["light", "dark", "system"] as const) ? source.theme : defaults.theme,
+    accent: isOneOf(source.accent, ["green", "blue", "purple", "orange"] as const) ? source.accent : defaults.accent,
+    lang: isOneOf(source.lang, ["en", "de"] as const) ? source.lang : defaults.lang,
+    activePlanId: defaults.activePlanId,
+    nextDayIdx: nonNegativeInt(source.nextDayIdx) ?? defaults.nextDayIdx,
+    machineNotes: {
+      ...defaults.machineNotes,
+      ...stringRecord(source.machineNotes),
+    },
+    cycle: normalizeCycleSettings(source.cycle),
+    customExercises,
   };
-  // Sanitize the nested cycle object — a hand-edited backup could carry garbage.
-  settings.cycle = normalizeCycleSettings(settings.cycle);
-  // Drop malformed custom exercises so one bad entry can't corrupt resolution.
-  if (settings.customExercises !== undefined) {
-    settings.customExercises = normalizeCustomExercises(settings.customExercises);
+
+  settings.customPlans = normalizeCustomPlans(source.customPlans, settings);
+  if (typeof source.activePlanId === "string" && getPlan(source.activePlanId, settings)) {
+    settings.activePlanId = source.activePlanId;
   }
+  const activePlan = getPlan(settings.activePlanId, settings);
+  settings.nextDayIdx %= Math.max(1, activePlan?.days.length ?? 1);
   return { settings, logs };
+}
+
+function asRecord(value: unknown): Record<string, unknown> | null {
+  return typeof value === "object" && value !== null && !Array.isArray(value)
+    ? value as Record<string, unknown>
+    : null;
+}
+
+function isOneOf<T extends string>(value: unknown, allowed: readonly T[]): value is T {
+  return typeof value === "string" && allowed.includes(value as T);
+}
+
+function nonNegativeInt(value: unknown): number | null {
+  const n = Number(value);
+  return Number.isInteger(n) && n >= 0 ? n : null;
+}
+
+function positiveInt(value: unknown): number | null {
+  const n = Number(value);
+  return Number.isInteger(n) && n >= 1 ? n : null;
+}
+
+function stringRecord(value: unknown): Record<string, string> {
+  const raw = asRecord(value);
+  if (!raw) return {};
+  return Object.fromEntries(
+    Object.entries(raw).filter((entry): entry is [string, string] => typeof entry[1] === "string")
+  );
+}
+
+function localizedText(value: unknown): LocalizedText | null {
+  const raw = asRecord(value);
+  if (!raw || typeof raw.en !== "string") return null;
+  return {
+    en: raw.en,
+    ...(typeof raw.de === "string" ? { de: raw.de } : {}),
+  };
+}
+
+const DIFFICULTIES = ["beginner", "intermediate", "advanced"] as const;
+const GOALS = [
+  "strength", "hypertrophy", "fatLoss", "endurance",
+  "functional-longevity", "time-efficient", "weight-loss",
+] as const;
+
+/** Keep only complete, internally consistent custom plans from a backup. */
+export function normalizeCustomPlans(raw: unknown, settings: Settings): Plan[] {
+  if (!Array.isArray(raw)) return [];
+  const out: Plan[] = [];
+  const seen = new Set<string>();
+
+  for (const value of raw) {
+    const plan = asRecord(value);
+    if (!plan || typeof plan.id !== "string" || plan.id.trim() === "" || seen.has(plan.id) || PLANS[plan.id]) continue;
+    if (typeof plan.name !== "string") continue;
+    const tagline = localizedText(plan.tagline);
+    if (!tagline || !isOneOf(plan.difficulty, DIFFICULTIES) || !isOneOf(plan.goal, GOALS)) continue;
+
+    const days: PlanDay[] = [];
+    for (const dayValue of Array.isArray(plan.days) ? plan.days : []) {
+      const day = asRecord(dayValue);
+      const name = localizedText(day?.name);
+      if (!day || typeof day.id !== "string" || day.id.trim() === "" || !name) continue;
+
+      const warmup = (Array.isArray(day.warmup) ? day.warmup : []).flatMap((stepValue) => {
+        const step = asRecord(stepValue);
+        const stepName = localizedText(step?.name);
+        const detail = localizedText(step?.detail);
+        return stepName && detail ? [{ name: stepName, detail }] : [];
+      });
+      const exercises = (Array.isArray(day.exercises) ? day.exercises : []).flatMap((exerciseValue) => {
+        const exercise = asRecord(exerciseValue);
+        const sets = positiveInt(exercise?.sets);
+        const reps = positiveInt(exercise?.reps);
+        const restSecs = nonNegativeInt(exercise?.restSecs);
+        return exercise && typeof exercise.exerciseId === "string" && sets && reps && restSecs !== null
+          ? [{ exerciseId: exercise.exerciseId, sets, reps, restSecs }]
+          : [];
+      });
+      days.push({ id: day.id, name, warmup, exercises });
+    }
+
+    const schedule = asRecord(plan.schedule);
+    const rotation: RotationSlot[] = [];
+    for (const slotValue of Array.isArray(schedule?.rotation) ? schedule.rotation : []) {
+      const slot = asRecord(slotValue);
+      if (slot?.type === "rest" || slot?.type === "cardio") {
+        rotation.push({ type: slot.type });
+      } else if (slot?.type === "workout" && typeof slot.dayId === "string") {
+        rotation.push({ type: "workout", dayId: slot.dayId });
+      }
+    }
+
+    const candidate = normalizePlan({
+      id: plan.id,
+      name: plan.name,
+      tagline,
+      difficulty: plan.difficulty,
+      daysPerWeek: 0,
+      estimatedMins: 0,
+      goal: plan.goal,
+      schedule: { cycleLength: 7, rotation },
+      days,
+    });
+    if (validatePlan(candidate, settings).length > 0) continue;
+    seen.add(candidate.id);
+    out.push(candidate);
+  }
+  return out;
 }
 
 const EQUIPMENTS: Equipment[] = ["machine", "cable", "dumbbell", "barbell", "smith", "bodyweight"];
@@ -109,19 +238,25 @@ const EQUIPMENTS: Equipment[] = ["machine", "cable", "dumbbell", "barbell", "smi
 export function normalizeCustomExercises(raw: unknown): Exercise[] {
   if (!Array.isArray(raw)) return [];
   const out: Exercise[] = [];
+  const seen = new Set<string>();
   for (const e of raw) {
     if (typeof e !== "object" || e === null) continue;
     const r = e as Record<string, unknown>;
-    if (typeof r.id !== "string" || typeof r.name !== "string" || r.name.trim() === "") continue;
+    if (
+      typeof r.id !== "string" || r.id.trim() === "" || seen.has(r.id) || EXERCISES[r.id] ||
+      typeof r.name !== "string" || r.name.trim() === ""
+    ) continue;
     if (typeof r.primaryMuscle !== "string" || r.primaryMuscle === "") continue;
     const muscles = Array.isArray(r.muscles) ? r.muscles.filter((m): m is string => typeof m === "string") : [];
     const equipment = EQUIPMENTS.includes(r.equipment as Equipment) ? (r.equipment as Equipment) : "machine";
     const repType = r.repType === "seconds" ? "seconds" : "reps";
     const num = (v: unknown, fallback: number) => (Number.isFinite(Number(v)) ? Number(v) : fallback);
-    const tipEn = typeof r.tip === "object" && r.tip !== null ? (r.tip as Record<string, unknown>).en : undefined;
-    out.push({
+    const tip = asRecord(r.tip);
+    const tipEn = tip?.en;
+    const tipDe = tip?.de;
+    const exercise: Exercise = {
       id: r.id,
-      name: r.name,
+      name: r.name.trim(),
       primaryMuscle: r.primaryMuscle,
       muscles: muscles.includes(r.primaryMuscle) ? muscles : [r.primaryMuscle, ...muscles],
       equipment,
@@ -129,8 +264,12 @@ export function normalizeCustomExercises(raw: unknown): Exercise[] {
       defaultSets: Math.max(1, Math.round(num(r.defaultSets, 3))),
       defaultReps: Math.max(1, Math.round(num(r.defaultReps, 12))),
       restSecs: Math.max(0, Math.round(num(r.restSecs, 90))),
-      ...(typeof tipEn === "string" && tipEn.trim() ? { tip: { en: tipEn } } : {}),
-    });
+      ...(typeof tipEn === "string" && tipEn.trim()
+        ? { tip: { en: tipEn, ...(typeof tipDe === "string" && tipDe.trim() ? { de: tipDe } : {}) } }
+        : {}),
+    };
+    seen.add(exercise.id);
+    out.push(exercise);
   }
   return out;
 }
