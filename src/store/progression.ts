@@ -76,7 +76,7 @@ export function suggestProgression(
   }
 
   // 2. Completion gate
-  if (last.sets.some((s) => !s.completed)) {
+  if (last.sets.some((s) => !s.completed) || weighted.length < last.plannedSets) {
     return { ...base, action: "hold", weightKg: top, reasonKey: "coach.hold_incomplete" };
   }
 

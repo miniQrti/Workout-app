@@ -43,7 +43,7 @@ function WeekStrip({ week, locale, periodDots }: {
                 ? "var(--gold-soft)"
                 : "var(--surface-2)";
           const fg = d.trained
-            ? "#fff"
+            ? "var(--accent-contrast)"
             : type === "workout"
               ? "var(--accent)"
               : type === "cardio"
@@ -353,7 +353,7 @@ export default function Home({
                         <div style={{ fontSize: 14, fontWeight: 600 }}>{log.dayName}</div>
                         <div style={{ fontSize: 12, color: "var(--text-2)", marginTop: 2 }}>
                           {d?.toLocaleDateString(locale, { weekday: "short", month: "short", day: "numeric" })}
-                          {" · "}{t("common.exercises", { count: log.exercises.length })}
+                          {" · "}{t("common.exercises", { count: log.exercises.filter((ex) => ex.sets.some((set) => set.completed)).length })}
                         </div>
                       </div>
                       <span style={{ fontSize: 13, color: "var(--text-2)" }}>

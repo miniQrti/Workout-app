@@ -11,6 +11,7 @@ export interface SessionEntry {
   date: Date;
   feel: Feel | null;
   sets: SetLog[];
+  plannedSets: number;
   /** Heaviest completed set, kg (null if all sets are bodyweight/timed). */
   topWeightKg: number | null;
   /** Best Epley estimated 1RM across the session's sets, kg. */
@@ -36,7 +37,7 @@ export function buildExerciseIndex(logs: WorkoutLog[]): ExerciseIndex {
     if (!date) continue;
     for (const ex of log.exercises) {
       const done = completedSets(ex.sets);
-      if (done.length === 0 && ex.sets.length === 0) continue;
+      if (done.length === 0) continue;
 
       let top: number | null = null;
       let e1rm: number | null = null;
@@ -52,6 +53,7 @@ export function buildExerciseIndex(logs: WorkoutLog[]): ExerciseIndex {
         date,
         feel: ex.feel,
         sets: ex.sets,
+        plannedSets: Math.max(ex.plannedSets ?? ex.sets.length, ex.sets.length),
         topWeightKg: top,
         bestE1RMKg: e1rm,
       };

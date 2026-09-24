@@ -92,6 +92,8 @@ export interface SetLog {
 
 export interface ExerciseLog {
   exerciseId: string;
+  /** Number of sets planned, including sets skipped when ending early. */
+  plannedSets?: number;
   /** Display name snapshot for exercises not in the catalogue (imports). */
   nameSnapshot?: string;
   feel: Feel | null;
@@ -108,6 +110,8 @@ export interface WorkoutLog {
   durationSecs: number;
   /** True when the user explicitly saved the session before all planned sets were complete. */
   completedEarly?: boolean;
+  /** Which planned day should follow this session, when chosen on early finish. */
+  repeatDay?: boolean;
   exercises: ExerciseLog[];
 }
 
@@ -185,7 +189,7 @@ export interface Settings {
 
 // ── Versioned backup file ─────────────────────────────────────────────────────
 
-export const SCHEMA_VERSION = 1;
+export const SCHEMA_VERSION = 2;
 
 export interface BackupFile {
   app: "ironlog";

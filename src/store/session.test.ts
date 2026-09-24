@@ -18,4 +18,13 @@ describe("nextDayIndexAfter", () => {
     const log = makeLog(0, [], { planId: "deleted-plan", dayId: "deleted-day" });
     expect(nextDayIndexAfter(log, defaultSettings())).toBe(0);
   });
+
+  it("keeps an unfinished day queued when the user chooses to repeat it", () => {
+    const settings = { ...defaultSettings(), activePlanId: "beginner-3day", nextDayIdx: 0 };
+    const log = makeLog(0, [], {
+      planId: "upper-lower-4day", dayId: "upper-body", repeatDay: true, completedEarly: true,
+    });
+    expect(nextDayIndexAfter(log, settings)).toBe(0);
+    expect(nextDayIndexAfter({ ...log, repeatDay: false }, settings)).toBe(1);
+  });
 });

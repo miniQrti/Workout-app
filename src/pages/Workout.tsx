@@ -22,8 +22,8 @@ import { IconCheck, IconChevronDown, IconChevronUp, IconSwap, IconX } from "../u
 // ── Inputs that keep local text while dispatching parsed values ───────────────
 
 function WeightInput({
-  kg, unit, onChange,
-}: { kg: number | null; unit: "kg" | "lb"; onChange: (kg: number | null) => void }) {
+  kg, unit, label, onChange,
+}: { kg: number | null; unit: "kg" | "lb"; label: string; onChange: (kg: number | null) => void }) {
   const [text, setText] = useState(kg !== null ? String(displayWeight(kg, unit)) : "");
   const lastKg = useRef(kg);
 
@@ -37,6 +37,7 @@ function WeightInput({
   return (
     <Input
       inputMode="decimal"
+      aria-label={label}
       placeholder="—"
       value={text}
       onChange={(e) => {
@@ -51,8 +52,8 @@ function WeightInput({
 }
 
 function RepsInput({
-  value, onChange,
-}: { value: number | null; onChange: (v: number | null) => void }) {
+  value, label, onChange,
+}: { value: number | null; label: string; onChange: (v: number | null) => void }) {
   const [text, setText] = useState(value !== null ? String(value) : "");
   const last = useRef(value);
 
@@ -66,6 +67,7 @@ function RepsInput({
   return (
     <Input
       inputMode="numeric"
+      aria-label={label}
       placeholder="—"
       value={text}
       onChange={(e) => {
@@ -133,22 +135,22 @@ function RestBanner({ rest, onSkip, onExtend, lifted }: {
       <svg width="44" height="44" viewBox="0 0 44 44">
         <circle cx="22" cy="22" r="19" fill="none" stroke={done ? "rgba(255,255,255,0.35)" : "var(--surface-2)"} strokeWidth="4" />
         <circle cx="22" cy="22" r="19" fill="none"
-          stroke={done ? "#fff" : "var(--accent)"} strokeWidth="4"
+          stroke={done ? "var(--accent-contrast)" : "var(--accent)"} strokeWidth="4"
           strokeDasharray={`${frac * 119.4} 119.4`}
           strokeLinecap="round" transform="rotate(-90 22 22)" />
       </svg>
       <div style={{ flex: 1 }}>
-        <div style={{ fontSize: 12, fontWeight: 600, color: done ? "rgba(255,255,255,0.85)" : "var(--text-2)" }}>
+        <div style={{ fontSize: 12, fontWeight: 600, color: done ? "var(--accent-contrast)" : "var(--text-2)" }}>
           {done ? t("workout.rest_done") : t("workout.resting")}
         </div>
-        <div style={{ fontSize: 26, fontWeight: 800, color: done ? "#fff" : "var(--text-1)", fontVariantNumeric: "tabular-nums" }}>
+        <div style={{ fontSize: 26, fontWeight: 800, color: done ? "var(--accent-contrast)" : "var(--text-1)", fontVariantNumeric: "tabular-nums" }}>
           {formatDuration(remaining)}
         </div>
       </div>
       {!done && (
         <Button small onClick={onExtend}>+30s</Button>
       )}
-      <Button small onClick={onSkip} style={done ? { background: "rgba(255,255,255,0.2)", color: "#fff", border: "none" } : undefined}>
+      <Button small onClick={onSkip} style={done ? { background: "rgba(255,255,255,0.2)", color: "var(--accent-contrast)", border: "none" } : undefined}>
         {t("workout.skip")}
       </Button>
     </div>
@@ -263,14 +265,18 @@ function ExerciseCard({
                   <WeightInput
                     kg={set.weightKg}
                     unit={unit}
+                    label={t("workout.set_weight_label", { exercise: resolveExerciseName(ex.exerciseId, state.settings), set: si + 1, unit })}
                     onChange={(weightKg) => dispatch({ type: "updateSet", exIdx, setIdx: si, patch: { weightKg } })}
                   />
                   <RepsInput
                     value={set.reps}
+                    label={t(timed ? "workout.set_seconds_label" : "workout.set_reps_label", { exercise: resolveExerciseName(ex.exerciseId, state.settings), set: si + 1 })}
                     onChange={(reps) => dispatch({ type: "updateSet", exIdx, setIdx: si, patch: { reps } })}
                   />
                   <button
                     className={`set-check${set.completed ? " done" : ""}`}
+                    aria-label={t("workout.set_complete_label", { exercise: resolveExerciseName(ex.exerciseId, state.settings), set: si + 1 })}
+                    aria-pressed={set.completed}
                     onClick={() => {
                       const completing = !set.completed;
                       if (completing && set.reps === null) {
@@ -424,7 +430,7 @@ export default function Workout({
   });
   const [rest, setRest] = useState<Rest | null>(null);
   const [swapFor, setSwapFor] = useState<number | null>(null);
-  const [confirm, setConfirm] = useState<"discard" | "incomplete" | null>(null);
+  const [confirm, setConfirm] = useState<"discard" | "incomplete" | "nothing" | null>(null);
 
   const completion = useMemo(
     () => workoutCompletion(session?.exercises ?? []),
@@ -462,8 +468,7 @@ export default function Workout({
 
   function buildLog(): WorkoutLog | null {
     if (!session) return null;
-    const exercises = session.exercises
-      .map((ex) => {
+    const exercises = session.exercises.map((ex) => {
         // Snapshot the name for custom exercises so history reads correctly even
         // if the exercise is later deleted.
         const snapshot = isCustomExercise(ex.exerciseId, state.settings)
@@ -471,15 +476,15 @@ export default function Workout({
           : undefined;
         return {
           exerciseId: ex.exerciseId,
+          plannedSets: ex.sets.length,
           ...(snapshot ? { nameSnapshot: snapshot } : {}),
           feel: ex.feel,
           sets: ex.sets
             .filter((s): s is typeof s & { reps: number } => s.reps !== null && s.reps >= 1)
             .map((s): SetLog => ({ weightKg: s.weightKg, reps: s.reps, completed: s.completed })),
         };
-      })
-      .filter((ex) => ex.sets.length > 0);
-    if (exercises.length === 0) return null;
+      });
+    if (!exercises.some((ex) => ex.sets.some((set) => set.completed))) return null;
     const now = new Date();
     return {
       id: uuid(),
@@ -489,20 +494,25 @@ export default function Workout({
       startedAt: session.startedAt,
       completedAt: now.toISOString(),
       durationSecs: Math.max(0, Math.round((now.getTime() - new Date(session.startedAt).getTime()) / 1000)),
-      ...(!allSetsDone ? { completedEarly: true } : {}),
+      ...(!allSetsDone || !cooldownComplete ? { completedEarly: true } : {}),
       exercises,
     };
   }
 
   function tryFinish() {
     const log = buildLog();
-    if (!log) { setConfirm("discard"); return; }
+    if (!log) { setConfirm("nothing"); return; }
     if (!allSetsDone || !cooldownComplete) { setConfirm("incomplete"); return; }
     onFinished(log);
   }
 
   function tryExit() {
-    if (completion.enteredSets > 0) setConfirm("discard");
+    if (!session) return;
+    if (
+      session.exercises.some((ex) =>
+        ex.feel !== null || ex.sets.some((set) => set.completed || set.reps !== null || set.weightKg !== null)
+      ) || session.warmupDone.length > 0 || session.cooldownDone.length > 0
+    ) setConfirm("discard");
     else { dispatch({ type: "discardSession" }); onExit(); }
   }
 
@@ -530,7 +540,7 @@ export default function Workout({
     <div className="page" style={{ paddingBottom: (focus !== null ? 90 : 20) + (rest ? 90 : 0) + 70 }}>
       {/* Header */}
       <div className="page-header">
-        <button onClick={tryExit} className="btn btn-ghost btn-sm" style={{ color: "var(--text-2)", padding: 6 }}>
+        <button onClick={tryExit} aria-label={t("workout.exit")} className="btn btn-ghost btn-sm" style={{ color: "var(--text-2)", padding: 10 }}>
           <IconX size={20} />
         </button>
         <div style={{ flex: 1 }}>
@@ -642,9 +652,14 @@ export default function Workout({
               {t("workout.start_exercises")}
             </Button>
           ) : exFocus !== null && exFocus < lastExIdx ? (
-            <Button block variant="primary" onClick={() => setFocus(exFocus + 1)}>
-              {t("workout.next_exercise")}
-            </Button>
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              <Button block variant="primary" onClick={() => setFocus(exFocus + 1)}>
+                {t("workout.next_exercise")}
+              </Button>
+              {completion.completedSets > 0 && !allSetsDone && (
+                <Button block small variant="ghost" onClick={tryFinish}>{t("workout.end_early")}</Button>
+              )}
+            </div>
           ) : (
             <Button block variant={allSetsDone && !cooldownComplete ? "default" : "primary"}
               style={allSetsDone && !cooldownComplete
@@ -697,10 +712,10 @@ export default function Workout({
 
       {/* Confirm dialogs */}
       {confirm === "discard" && (
-        <Modal onClose={() => setConfirm(null)}>
+        <Modal title={t("workout.discard_title")} onClose={() => setConfirm(null)}>
           <div className="card-title">{t("workout.discard_title")}</div>
           <div style={{ fontSize: 13, color: "var(--text-2)", margin: "6px 0 16px" }}>
-            {t("workout.discard_body", { count: completion.enteredSets })}
+            {t("workout.discard_body")}
           </div>
           <div style={{ display: "flex", gap: 8 }}>
             <Button block onClick={() => setConfirm(null)}>{t("workout.keep_going")}</Button>
@@ -712,8 +727,17 @@ export default function Workout({
           </div>
         </Modal>
       )}
+      {confirm === "nothing" && (
+        <Modal title={t("workout.nothing_title")} onClose={() => setConfirm(null)}>
+          <div className="card-title">{t("workout.nothing_title")}</div>
+          <div style={{ fontSize: 13, color: "var(--text-2)", margin: "6px 0 16px" }}>
+            {t("workout.nothing_body")}
+          </div>
+          <Button block onClick={() => setConfirm(null)}>{t("workout.keep_going")}</Button>
+        </Modal>
+      )}
       {confirm === "incomplete" && (
-        <Modal onClose={() => setConfirm(null)}>
+        <Modal title={t("workout.incomplete_title")} onClose={() => setConfirm(null)}>
           <div className="card-title">{t("workout.incomplete_title")}</div>
           <div style={{ fontSize: 13, color: "var(--text-2)", margin: "6px 0 16px", display: "flex", flexDirection: "column", gap: 4 }}>
             {completion.incompleteExercises > 0 && (
@@ -725,13 +749,18 @@ export default function Workout({
             {!cooldownComplete && <span>• {t("workout.cooldown_missing")}</span>}
             <span style={{ marginTop: 4 }}>{t("workout.incomplete_saved")}</span>
           </div>
-          <div style={{ display: "flex", gap: 8 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             <Button block onClick={() => setConfirm(null)}>{t("workout.keep_going")}</Button>
-            <Button block variant="primary" onClick={() => {
-              setConfirm(null);
+            {!allSetsDone && (
+              <Button block variant="primary" onClick={() => {
+                const log = buildLog();
+                if (log) onFinished({ ...log, repeatDay: true });
+              }}>{t("workout.save_repeat")}</Button>
+            )}
+            <Button block variant={allSetsDone ? "primary" : "default"} onClick={() => {
               const log = buildLog();
               if (log) onFinished(log);
-            }}>{t("workout.save_incomplete")}</Button>
+            }}>{t(allSetsDone ? "workout.save_incomplete" : "workout.save_next")}</Button>
           </div>
         </Modal>
       )}
