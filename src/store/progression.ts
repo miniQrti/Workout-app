@@ -44,13 +44,24 @@ export function suggestProgression(
 
   const recent = sessions.slice(-3).reverse(); // newest first
   const last = recent[0]!;
-  const weighted = last.sets.filter((s) => s.weightKg !== null && s.reps >= 1);
+  // A failed/incomplete attempt must never establish the next working weight.
+  // Keep the completion gate below so a partially completed session still
+  // produces an explanatory "hold" suggestion, but base that hold on weight
+  // the user actually completed.
+  const weighted = last.sets.filter(
+    (s) => s.completed && s.weightKg !== null && s.reps >= 1
+  );
   if (weighted.length === 0) return null;
 
   const top = Math.max(...weighted.map((s) => s.weightKg!));
   const min = Math.min(...weighted.map((s) => s.weightKg!));
-  const avgReps = weighted.reduce((a, s) => a + s.reps, 0) / weighted.length;
-  const e1rmKg = epley1RMKg(top, Math.round(avgReps));
+  const topSet = weighted.reduce((best, set) =>
+    set.weightKg! > best.weightKg! ||
+    (set.weightKg === best.weightKg && set.reps > best.reps)
+      ? set
+      : best
+  );
+  const e1rmKg = epley1RMKg(top, topSet.reps);
 
   const base = { lastWeightKg: top, e1rmKg };
 

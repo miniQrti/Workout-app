@@ -51,4 +51,14 @@ describe("selectors", () => {
     const prs = detectNewPRs(index, newLog);
     expect(prs).toEqual([{ exerciseId: "leg-press", weightKg: 105, reps: 10 }]);
   });
+
+  it("detects a same-weight PR when more reps are completed", () => {
+    const history = [makeLog(10, [{ exId: "leg-press", sets: [[100, 10]] }])];
+    const index = buildExerciseIndex(history);
+    const newLog = makeLog(0, [{ exId: "leg-press", sets: [[100, 12]] }]);
+
+    expect(detectNewPRs(index, newLog)).toEqual([
+      { exerciseId: "leg-press", weightKg: 100, reps: 12 },
+    ]);
+  });
 });
