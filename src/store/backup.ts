@@ -57,6 +57,8 @@ function asLog(raw: unknown): WorkoutLog | null {
       .filter((s): s is SetLog => s !== null);
     exercises.push({
       exerciseId: er.exerciseId,
+      ...(Number.isInteger(er.plannedSets) && (er.plannedSets as number) >= sets.length
+        ? { plannedSets: er.plannedSets as number } : {}),
       ...(typeof er.nameSnapshot === "string" ? { nameSnapshot: er.nameSnapshot } : {}),
       feel: asFeel(er.feel),
       sets,
@@ -72,6 +74,7 @@ function asLog(raw: unknown): WorkoutLog | null {
     completedAt: parseDate(r.completedAt as string)?.toISOString() ?? (r.startedAt as string),
     durationSecs: Number.isFinite(Number(r.durationSecs)) ? Math.max(0, Number(r.durationSecs)) : 0,
     ...(r.completedEarly === true ? { completedEarly: true } : {}),
+    ...(r.repeatDay === true ? { repeatDay: true } : {}),
     exercises,
   };
 }
@@ -90,7 +93,8 @@ export function parseBackup(
   if (typeof raw.schemaVersion !== "number" || raw.schemaVersion > SCHEMA_VERSION) {
     throw new Error(`unsupported schema version ${String(raw.schemaVersion)}`);
   }
-  // schemaVersion < current: apply migrations here as the schema evolves.
+  // v1 logs have no plannedSets/repeatDay. asLog normalizes those optional
+  // fields; selectors use the logged set count for v1 exercise entries.
 
   const logs = (Array.isArray(raw.logs) ? raw.logs : [])
     .map(asLog)
@@ -302,6 +306,13 @@ export function exportCSV(logs: WorkoutLog[], unit: Unit, settings: Settings): s
           first && i === 0 ? durMin : "",
         ]);
       });
+      const skipped = Math.max(0, (ex.plannedSets ?? ex.sets.length) - ex.sets.length);
+      for (let i = 0; i < skipped; i++) {
+        rows.push([
+          date, log.dayName, name, ex.feel ?? "", ex.sets.length + i + 1,
+          "", "", "No", first && ex.sets.length === 0 && i === 0 ? durMin : "",
+        ]);
+      }
       first = false;
     }
   }

@@ -265,7 +265,7 @@ export default function Settings() {
 
       {/* Restore confirm */}
       {restorePending !== null && (
-        <Modal onClose={() => setRestorePending(null)}>
+        <Modal title={t("settings.import_json")} onClose={() => setRestorePending(null)}>
           <div className="card-title">{t("settings.import_json")}</div>
           <div style={{ fontSize: 13, color: "var(--text-2)", margin: "6px 0 16px" }}>{t("settings.restore_warning")}</div>
           <div style={{ display: "flex", gap: 8 }}>
@@ -289,7 +289,7 @@ export default function Settings() {
 
       {/* Custom exercise delete confirm */}
       {deletingExercise && (
-        <Modal onClose={() => setDeletingExercise(null)}>
+        <Modal title={t("customex.delete_title")} onClose={() => setDeletingExercise(null)}>
           <div className="card-title">{t("customex.delete_title")}</div>
           <div style={{ fontSize: 13, color: "var(--text-2)", margin: "6px 0 16px" }}>
             {t("customex.delete_warning", { name: deletingExercise.name })}
@@ -306,7 +306,7 @@ export default function Settings() {
 
       {/* Reset confirm */}
       {resetOpen && (
-        <Modal onClose={() => setResetOpen(false)}>
+        <Modal title={t("settings.reset")} onClose={() => setResetOpen(false)}>
           <div className="card-title">{t("settings.reset")}</div>
           <div style={{ fontSize: 13, color: "var(--text-2)", margin: "6px 0 16px" }}>{t("settings.reset_warning")}</div>
           <div style={{ display: "flex", gap: 8 }}>

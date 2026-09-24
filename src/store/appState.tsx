@@ -131,7 +131,10 @@ function reducer(state: AppState, action: Action): AppState {
         exercises: s.exercises.map((ex, ei) =>
           ei !== action.exIdx
             ? ex
-            : { ...ex, sets: ex.sets.map((set, si) => (si !== action.setIdx ? set : { ...set, ...action.patch })) }
+            : { ...ex, sets: ex.sets.map((set, si) => (si !== action.setIdx ? set : {
+                ...set, ...action.patch,
+                ...(action.patch.reps === null ? { completed: false } : {}),
+              })) }
         ),
       }));
 

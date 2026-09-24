@@ -94,7 +94,7 @@ export default function Programs({
       </div>
 
       {confirmPlan && (
-        <Modal onClose={() => setConfirmId(null)}>
+        <Modal title={t("programs.switch")} onClose={() => setConfirmId(null)}>
           <div className="card-title">{t("programs.switch")}</div>
           <div style={{ fontSize: 13, color: "var(--text-2)", margin: "6px 0 16px" }}>
             {t("programs.switch_body", { name: confirmPlan.name })}
@@ -110,7 +110,7 @@ export default function Programs({
       )}
 
       {deletePlan && (
-        <Modal onClose={() => setDeleteId(null)}>
+        <Modal title={t("builder.delete")} onClose={() => setDeleteId(null)}>
           <div className="card-title">{t("builder.delete")}</div>
           <div style={{ fontSize: 13, color: "var(--text-2)", margin: "6px 0 16px" }}>
             {t("builder.delete_confirm", { name: deletePlan.name })}

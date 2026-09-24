@@ -32,6 +32,15 @@ describe("progression", () => {
     expect(s.reasonKey).toBe("coach.hold_incomplete");
   });
 
+  it("does not increase after an early finish omitted planned sets", () => {
+    const log = makeLog(3, [{ exId: "leg-press", feel: "easy", sets: [[100, 12]] }]);
+    log.exercises[0]!.plannedSets = 3;
+    log.completedEarly = true;
+    const s = suggestProgression(buildExerciseIndex([log]), legPress, 12, "kg")!;
+    expect(s.action).toBe("hold");
+    expect(s.reasonKey).toBe("coach.hold_incomplete");
+  });
+
   it("bases an incomplete-session hold on the heaviest completed set", () => {
     const logs = [makeLog(3, [{
       exId: "leg-press",

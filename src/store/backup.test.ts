@@ -50,6 +50,21 @@ describe("JSON backup", () => {
     expect(restored.logs[0]!.completedEarly).toBe(true);
   });
 
+  it("round-trips skipped exercises and the repeat choice, and migrates v1 logs", () => {
+    const log = makeLog(1, [{ exId: "leg-press", sets: [[100, 10]] }], {
+      completedEarly: true, repeatDay: true,
+    });
+    log.exercises[0]!.plannedSets = 3;
+    log.exercises.push({ exerciseId: "plank", plannedSets: 2, feel: null, sets: [] });
+    const backup = makeBackup(defaultSettings(), [log]);
+    expect(parseBackup(JSON.stringify(backup), defaultSettings()).logs[0]).toEqual(log);
+    expect(exportCSV([log], "kg", defaultSettings())).toContain("Plank,,1,,,No");
+
+    const old = makeBackup(defaultSettings(), [makeLog(2, [{ exId: "leg-press", sets: [[100, 10]] }])]);
+    old.schemaVersion = 1;
+    expect(parseBackup(JSON.stringify(old), defaultSettings()).logs[0]!.exercises[0]!.plannedSets).toBeUndefined();
+  });
+
   it("rejects files from other apps and future schemas", () => {
     expect(() => parseBackup(JSON.stringify({ app: "other", schemaVersion: 1 }), defaultSettings())).toThrow();
     expect(() => parseBackup(JSON.stringify({ app: "ironlog", schemaVersion: 999, logs: [] }), defaultSettings())).toThrow();

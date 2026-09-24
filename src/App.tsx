@@ -40,13 +40,13 @@ function SummaryModal({ summary, onClose }: { summary: Summary; onClose: () => v
 
   const stats = [
     { value: formatDuration(log.durationSecs), label: t("summary.duration") },
-    { value: String(log.exercises.length), label: t("summary.exercises") },
+    { value: String(log.exercises.filter((ex) => ex.sets.some((set) => set.completed)).length), label: t("summary.exercises") },
     { value: String(setsDone), label: t("summary.sets") },
     { value: tonnage > 0 ? `${formatCompact(fromKg(tonnage, unit))} ${unit}` : "—", label: t("summary.volume") },
   ];
 
   return (
-    <Modal>
+    <Modal title={t(log.completedEarly ? "summary.saved_early" : "summary.title")}>
       <div style={{ textAlign: "center", marginBottom: 18 }}>
         <div style={{
           width: 72, height: 72, borderRadius: "50%",

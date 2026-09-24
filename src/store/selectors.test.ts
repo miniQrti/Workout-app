@@ -20,6 +20,15 @@ describe("selectors", () => {
     expect(index.get("plank")![0]!.topWeightKg).toBeNull();
   });
 
+  it("keeps skipped exercises out of coaching while preserving partial planned sets", () => {
+    const log = makeLog(1, [{ exId: "leg-press", sets: [[100, 12]] }]);
+    log.exercises[0]!.plannedSets = 3;
+    log.exercises.push({ exerciseId: "chest-press-machine", plannedSets: 3, feel: null, sets: [] });
+    const index = buildExerciseIndex([log]);
+    expect(index.get("leg-press")?.[0]?.plannedSets).toBe(3);
+    expect(index.has("chest-press-machine")).toBe(false);
+  });
+
   it("PR is heaviest completed set, ties broken by reps", () => {
     const logs = [
       makeLog(10, [{ exId: "leg-press", sets: [[100, 10], [100, 12]] }]),

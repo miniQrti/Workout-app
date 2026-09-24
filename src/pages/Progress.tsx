@@ -220,7 +220,7 @@ function LogItem({ log }: { log: WorkoutLog }) {
           </div>
           <div style={{ fontSize: 12, color: "var(--text-2)", marginTop: 2 }}>
             {d?.toLocaleDateString(localeOf(lang), { month: "short", day: "numeric" })}
-            {" · "}{t("common.exercises", { count: log.exercises.length })}
+            {" · "}{t("common.exercises", { count: log.exercises.filter((ex) => ex.sets.some((s) => s.completed)).length })}
           </div>
         </div>
         <span style={{ fontSize: 13, color: "var(--text-2)" }}>
@@ -233,6 +233,11 @@ function LogItem({ log }: { log: WorkoutLog }) {
           {log.exercises.map((ex, i) => (
             <div key={i} style={{ marginBottom: i < log.exercises.length - 1 ? 10 : 0 }}>
               <div style={{ fontSize: 13, fontWeight: 600 }}>{resolveExerciseName(ex.exerciseId, state.settings, ex.nameSnapshot)}</div>
+              {ex.sets.every((s) => !s.completed) && ex.plannedSets && (
+                <div style={{ fontSize: 12, color: "var(--text-2)", marginTop: 2 }}>
+                  {t("progress.skipped_sets", { count: ex.plannedSets })}
+                </div>
+              )}
               {ex.sets.map((s, si) => (
                 <div key={si} style={{ fontSize: 12, color: "var(--text-2)", marginTop: 2, display: "flex", gap: 8 }}>
                   <span style={{ color: "var(--text-3)" }}>{t("workout.set")} {si + 1}</span>
@@ -241,6 +246,11 @@ function LogItem({ log }: { log: WorkoutLog }) {
                   {!s.completed && <span style={{ color: "var(--red)" }}>{t("progress.incomplete")}</span>}
                 </div>
               ))}
+              {ex.plannedSets !== undefined && ex.plannedSets > ex.sets.length && ex.sets.some((s) => s.completed) && (
+                <div style={{ fontSize: 12, color: "var(--text-2)", marginTop: 2 }}>
+                  {t("progress.skipped_sets", { count: ex.plannedSets - ex.sets.length })}
+                </div>
+              )}
             </div>
           ))}
         </div>

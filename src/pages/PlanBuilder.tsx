@@ -364,7 +364,7 @@ export default function PlanBuilder({
 
       {/* Discard confirm */}
       {confirmDiscard && (
-        <Modal onClose={() => setConfirmDiscard(false)}>
+        <Modal title={t("builder.discard_title")} onClose={() => setConfirmDiscard(false)}>
           <div className="card-title">{t("builder.discard_title")}</div>
           <div style={{ fontSize: 13, color: "var(--text-2)", margin: "6px 0 16px" }}>{t("builder.discard_body")}</div>
           <div style={{ display: "flex", gap: 8 }}>
