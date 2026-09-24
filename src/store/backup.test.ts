@@ -44,6 +44,12 @@ describe("JSON backup", () => {
     expect(restored.logs).toEqual(logs);
   });
 
+  it("preserves an early-finish marker", () => {
+    const log = makeLog(1, [{ exId: "leg-press", sets: [[100, 10]] }], { completedEarly: true });
+    const restored = parseBackup(JSON.stringify(makeBackup(defaultSettings(), [log])), defaultSettings());
+    expect(restored.logs[0]!.completedEarly).toBe(true);
+  });
+
   it("rejects files from other apps and future schemas", () => {
     expect(() => parseBackup(JSON.stringify({ app: "other", schemaVersion: 1 }), defaultSettings())).toThrow();
     expect(() => parseBackup(JSON.stringify({ app: "ironlog", schemaVersion: 999, logs: [] }), defaultSettings())).toThrow();

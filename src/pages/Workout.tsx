@@ -10,6 +10,7 @@ import { suggestProgression } from "../store/progression";
 import { applyCycleTone, currentTone } from "../store/cycle";
 import { applyReturnAdjustment, returnAdjustment } from "../store/returnToTraining";
 import { lastEntry } from "../store/selectors";
+import { workoutCompletion } from "../store/workoutCompletion";
 import type { DraftExercise, Feel, SetLog, WarmupStep, WorkoutLog } from "../types";
 import { displayWeight, parseWeightInput } from "../lib/units";
 import { formatDuration, parseDate } from "../lib/dates";
@@ -425,18 +426,10 @@ export default function Workout({
   const [swapFor, setSwapFor] = useState<number | null>(null);
   const [confirm, setConfirm] = useState<"discard" | "incomplete" | null>(null);
 
-  const counts = useMemo(() => {
-    if (!session) return { logged: 0, total: 0, done: 0 };
-    let logged = 0, total = 0, done = 0;
-    for (const ex of session.exercises) {
-      for (const s of ex.sets) {
-        total++;
-        if (s.reps !== null) logged++;
-        if (s.completed) done++;
-      }
-    }
-    return { logged, total, done };
-  }, [session]);
+  const completion = useMemo(
+    () => workoutCompletion(session?.exercises ?? []),
+    [session]
+  );
 
   // Warmup & cooldown are generated from the muscle groups this day trains, so
   // they fit the session (and cover custom plans). Derived from the plan day's
@@ -464,7 +457,7 @@ export default function Workout({
   const exFocus = typeof focus === "number" ? focus : null;
   const focusedEx = exFocus !== null ? session.exercises[exFocus] : undefined;
   const lastExIdx = session.exercises.length - 1;
-  const allSetsDone = counts.total > 0 && counts.done === counts.total;
+  const allSetsDone = completion.allSetsDone;
   const cooldownComplete = session.cooldownDone.length >= cooldownSteps.length;
 
   function buildLog(): WorkoutLog | null {
@@ -496,6 +489,7 @@ export default function Workout({
       startedAt: session.startedAt,
       completedAt: now.toISOString(),
       durationSecs: Math.max(0, Math.round((now.getTime() - new Date(session.startedAt).getTime()) / 1000)),
+      ...(!allSetsDone ? { completedEarly: true } : {}),
       exercises,
     };
   }
@@ -503,12 +497,12 @@ export default function Workout({
   function tryFinish() {
     const log = buildLog();
     if (!log) { setConfirm("discard"); return; }
-    if (counts.logged < counts.total || !cooldownComplete) { setConfirm("incomplete"); return; }
+    if (!allSetsDone || !cooldownComplete) { setConfirm("incomplete"); return; }
     onFinished(log);
   }
 
   function tryExit() {
-    if (counts.logged > 0) setConfirm("discard");
+    if (completion.enteredSets > 0) setConfirm("discard");
     else { dispatch({ type: "discardSession" }); onExit(); }
   }
 
@@ -542,7 +536,7 @@ export default function Workout({
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: 16, fontWeight: 700 }}>{session.dayName}</div>
           <div style={{ fontSize: 12, color: "var(--text-2)" }}>
-            {t("workout.progress", { done: counts.done, total: counts.total })}
+            {t("workout.progress", { done: completion.completedSets, total: completion.totalSets })}
           </div>
         </div>
         <Button
@@ -553,7 +547,11 @@ export default function Workout({
             ? { background: "var(--gold-soft)", color: "var(--gold)", borderColor: "var(--gold)" }
             : undefined}
         >
-          {allSetsDone && !cooldownComplete ? t("workout.cooldown_first") : t("workout.finish")}
+          {allSetsDone && !cooldownComplete
+            ? t("workout.cooldown_first")
+            : completion.completedSets > 0 && !allSetsDone
+              ? t("workout.end_early")
+              : t("workout.finish")}
         </Button>
       </div>
 
@@ -657,7 +655,11 @@ export default function Workout({
                 else tryFinish();
               }}
             >
-              {allSetsDone && !cooldownComplete ? t("workout.cooldown_first") : t("workout.finish")}
+              {allSetsDone && !cooldownComplete
+                ? t("workout.cooldown_first")
+                : completion.completedSets > 0 && !allSetsDone
+                  ? t("workout.end_early")
+                  : t("workout.finish")}
             </Button>
           )}
         </div>
@@ -698,7 +700,7 @@ export default function Workout({
         <Modal onClose={() => setConfirm(null)}>
           <div className="card-title">{t("workout.discard_title")}</div>
           <div style={{ fontSize: 13, color: "var(--text-2)", margin: "6px 0 16px" }}>
-            {t("workout.discard_body", { count: counts.logged })}
+            {t("workout.discard_body", { count: completion.enteredSets })}
           </div>
           <div style={{ display: "flex", gap: 8 }}>
             <Button block onClick={() => setConfirm(null)}>{t("workout.keep_going")}</Button>
@@ -714,10 +716,14 @@ export default function Workout({
         <Modal onClose={() => setConfirm(null)}>
           <div className="card-title">{t("workout.incomplete_title")}</div>
           <div style={{ fontSize: 13, color: "var(--text-2)", margin: "6px 0 16px", display: "flex", flexDirection: "column", gap: 4 }}>
-            {counts.logged < counts.total && (
-              <span>• {t("workout.sets_missing", { count: counts.total - counts.logged })}</span>
+            {completion.incompleteExercises > 0 && (
+              <span>• {t("workout.exercises_missing", { count: completion.incompleteExercises })}</span>
+            )}
+            {completion.incompleteSets > 0 && (
+              <span>• {t("workout.sets_missing", { count: completion.incompleteSets })}</span>
             )}
             {!cooldownComplete && <span>• {t("workout.cooldown_missing")}</span>}
+            <span style={{ marginTop: 4 }}>{t("workout.incomplete_saved")}</span>
           </div>
           <div style={{ display: "flex", gap: 8 }}>
             <Button block onClick={() => setConfirm(null)}>{t("workout.keep_going")}</Button>
@@ -725,7 +731,7 @@ export default function Workout({
               setConfirm(null);
               const log = buildLog();
               if (log) onFinished(log);
-            }}>{t("workout.finish_anyway")}</Button>
+            }}>{t("workout.save_incomplete")}</Button>
           </div>
         </Modal>
       )}

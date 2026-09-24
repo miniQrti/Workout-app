@@ -106,6 +106,8 @@ export interface WorkoutLog {
   startedAt: string;
   completedAt: string;
   durationSecs: number;
+  /** True when the user explicitly saved the session before all planned sets were complete. */
+  completedEarly?: boolean;
   exercises: ExerciseLog[];
 }
 
