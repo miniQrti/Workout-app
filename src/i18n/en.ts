@@ -73,6 +73,11 @@ export const en: Record<string, string> = {
   "coach.deload": "2 tough sessions in a row — deload to 85%",
   "coach.pr_attempt": "PR attempt",
   "coach.cycle_hold": "low-energy phase — hold and bank quality reps",
+  "coach.return_after_break": "back after {days} days — start {percent}% lighter",
+
+  // Return after time away
+  "return.title": "Welcome back",
+  "return.summary": "It has been {days} days since your last workout. Today's suggested weights are capped about {percent}% below your previous working weights.",
 
   // Cycle — Settings
   "settings.cycle": "Cycle",

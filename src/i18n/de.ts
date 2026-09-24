@@ -73,6 +73,11 @@ export const de: Record<string, string> = {
   "coach.deload": "2 harte Einheiten in Folge — Deload auf 85 %",
   "coach.pr_attempt": "PR-Versuch",
   "coach.cycle_hold": "energiearme Phase — halten und saubere Wiederholungen sammeln",
+  "coach.return_after_break": "zurück nach {days} Tagen — mit {percent} % weniger starten",
+
+  // Wiedereinstieg nach einer Pause
+  "return.title": "Willkommen zurück",
+  "return.summary": "Seit deinem letzten Training sind {days} Tage vergangen. Die heutigen Gewichtsvorschläge liegen etwa {percent} % unter deinen bisherigen Arbeitsgewichten.",
 
   // Zyklus — Einstellungen
   "settings.cycle": "Zyklus",
