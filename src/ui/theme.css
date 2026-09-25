@@ -356,6 +356,60 @@ input[type="number"] { -moz-appearance: textfield; }
 .heat-col { flex: 1; display: flex; flex-direction: column; gap: 3px; }
 .heat-cell { width: 100%; aspect-ratio: 1; border-radius: 3px; }
 
+/* Progress: compact overview and drilldowns */
+.progress-nav { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 4px; }
+.progress-nav button { min-height: 44px; border: 0; border-radius: 10px; background: transparent; color: var(--text-2); font-weight: 650; font-size: 13px; cursor: pointer; }
+.progress-nav button.active { background: var(--accent-soft); color: var(--accent); }
+.progress-hero { border-radius: 18px; padding: 20px; background: var(--accent-soft); color: var(--text-1); }
+.progress-eyebrow { color: var(--accent); font-size: 12px; font-weight: 750; text-transform: uppercase; letter-spacing: .05em; }
+.progress-hero-number { margin: 8px 0 4px; font-size: 36px; font-weight: 780; font-variant-numeric: tabular-nums; line-height: 1.1; }
+.progress-hero-number span { font-size: 17px; font-weight: 600; }
+.progress-hero-detail { color: var(--text-2); font-size: 13px; }
+.progress-shortcuts { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.progress-shortcuts button { min-width: 0; min-height: 76px; background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 12px; color: var(--text-1); text-align: left; cursor: pointer; display: flex; flex-direction: column; justify-content: space-between; }
+.progress-shortcuts strong { font-size: 20px; }
+.progress-shortcuts span { color: var(--accent); font-size: 12px; font-weight: 650; }
+.progress-inline-switch { margin: 12px 0 18px; }
+.progress-week-value { display: flex; align-items: baseline; gap: 8px; margin: 0 0 8px; }
+.progress-week-value strong { font-size: 23px; font-variant-numeric: tabular-nums; }
+.progress-week-value small { font-size: 12px; font-weight: 600; }
+.progress-week-value span { color: var(--text-2); font-size: 12px; }
+.progress-week-bar { flex: 1; height: 100%; padding: 0; display: flex; align-items: flex-end; border: 0; background: transparent; cursor: pointer; }
+.progress-week-bar span { width: 100%; border-radius: 5px 5px 2px 2px; background: var(--accent); opacity: .5; }
+.progress-week-bar.active span { opacity: 1; }
+.progress-note { margin: 10px 0 0; font-size: 12px; line-height: 1.45; color: var(--text-2); }
+.progress-muscles { display: flex; flex-direction: column; gap: 12px; }
+.progress-muscle { display: grid; grid-template-columns: minmax(75px, 1fr) minmax(60px, 2fr) 28px; align-items: center; gap: 9px; font-size: 12px; }
+.progress-muscle strong { text-align: right; font-variant-numeric: tabular-nums; }
+.progress-muscle-track { height: 8px; background: var(--surface-2); border-radius: 6px; overflow: hidden; }
+.progress-muscle-track div { height: 100%; background: var(--accent); border-radius: inherit; }
+.progress-field-label { display: block; font-size: 13px; font-weight: 650; margin: 14px 0 6px; }
+.progress-chart-value { display: flex; flex-direction: column; gap: 3px; margin: 0 0 14px; }
+.progress-chart-value strong { font-size: 25px; font-variant-numeric: tabular-nums; }
+.progress-chart-value span { color: var(--text-2); font-size: 12px; }
+.chart-sessions { display: flex; overflow-x: auto; gap: 6px; margin-top: 12px; padding: 3px 2px 8px; scroll-snap-type: x proximity; }
+.chart-sessions button { flex: 0 0 auto; min-width: 65px; min-height: 44px; scroll-snap-align: start; padding: 5px 8px; border: 1px solid var(--input-border); border-radius: 9px; background: var(--surface); color: var(--text-1); cursor: pointer; display: flex; flex-direction: column; gap: 3px; font-size: 11px; }
+.chart-sessions button.active { border-color: var(--accent); background: var(--accent-soft); }
+.chart-sessions strong { font-size: 12px; }
+.progress-record { display: flex; flex-direction: column; gap: 5px; }
+.progress-record strong { font-size: 22px; }
+.progress-record span { color: var(--text-2); font-size: 13px; }
+.progress-history-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.progress-history-header > div { display: flex; flex-direction: column; gap: 2px; }
+.progress-history-header span { font-size: 12px; color: var(--text-2); }
+.progress-history-header .select { width: auto; max-width: 55%; }
+.progress-log-item { padding: 0; overflow: hidden; }
+.progress-log-toggle { width: 100%; min-height: 70px; padding: 13px 14px; background: transparent; color: var(--text-1); border: 0; cursor: pointer; text-align: left; display: flex; align-items: center; gap: 9px; }
+.progress-log-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.progress-log-main strong { font-size: 14px; }
+.progress-log-main > span { font-size: 12px; color: var(--text-2); }
+.progress-log-details { border-top: 1px solid var(--border); padding: 12px 14px; }
+.progress-log-exercise { display: flex; flex-direction: column; gap: 4px; font-size: 12px; padding: 6px 0; }
+.progress-log-exercise + .progress-log-exercise { border-top: 1px solid var(--border); }
+.progress-log-exercise > strong { font-size: 13px; }
+.progress-log-exercise > span, .progress-log-set { color: var(--text-2); }
+.progress-log-set { display: flex; gap: 10px; }
+
 /* Misc */
 .fade-list > * + * { margin-top: 8px; }
 .tappable { cursor: pointer; }
