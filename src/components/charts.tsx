@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useT } from "../i18n";
 import type { CalendarDay, WeekAgg } from "../store/analytics";
 import { formatCompact } from "../lib/units";
@@ -7,9 +8,14 @@ import { formatCompact } from "../lib/units";
 export interface LinePoint {
   value: number;
   isBest: boolean;
+  label?: string;
 }
 
-export function LineChart({ points }: { points: LinePoint[] }) {
+export function LineChart({ points, selectedIndex, onSelect }: {
+  points: LinePoint[];
+  selectedIndex?: number;
+  onSelect?: (index: number) => void;
+}) {
   const t = useT();
   const W = 300, H = 96, PAD = 10;
   const sessions = points.slice(-12);
@@ -38,7 +44,7 @@ export function LineChart({ points }: { points: LinePoint[] }) {
 
   return (
     <div>
-      <svg width="100%" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" style={{ display: "block", overflow: "visible" }}>
+      <svg width="100%" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" aria-hidden="true" style={{ display: "block", overflow: "visible" }}>
         <defs>
           <linearGradient id="lineGrad" x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stopColor="var(--accent)" stopOpacity="0.18" />
@@ -52,46 +58,54 @@ export function LineChart({ points }: { points: LinePoint[] }) {
             fill={p.isBest ? "var(--gold)" : "var(--accent)"}
             stroke="var(--surface)" strokeWidth="1.5" />
         ))}
+        {selectedIndex !== undefined && pts[selectedIndex] && (
+          <circle cx={pts[selectedIndex].x} cy={pts[selectedIndex].y} r="8" fill="none" stroke="var(--text-1)" strokeWidth="1.5" />
+        )}
       </svg>
-      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: "var(--text-3)", marginTop: 4 }}>
-        <span>{Math.round(minV)}</span>
-        <span>{Math.round(maxV)}</span>
-      </div>
+      {onSelect && (
+        <div className="chart-sessions" aria-label={t("progress.sessions_label")}>
+          {sessions.map((point, i) => (
+            <button key={i} type="button" className={selectedIndex === i ? "active" : ""}
+              aria-pressed={selectedIndex === i} onClick={() => onSelect(i)}>
+              <span>{point.label}</span><strong>{Math.round(point.value * 10) / 10}</strong>
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
 
 // ── Weekly bar chart ──────────────────────────────────────────────────────────
 
-export function WeeklyBars({ weeks, locale, valueOf }: {
+export function WeeklyBars({ weeks, locale, valueOf, valueLabel }: {
   weeks: WeekAgg[];
   locale: string;
   valueOf: (w: WeekAgg) => number;
+  valueLabel: string;
 }) {
+  const t = useT();
+  const [selected, setSelected] = useState<number | null>(null);
   const values = weeks.map(valueOf);
   const maxV = Math.max(...values, 1);
+  const active = Math.min(selected ?? weeks.length - 1, weeks.length - 1);
 
   return (
     <div>
+      {weeks[active] && <div className="progress-week-value" aria-live="polite">
+        <strong>{formatCompact(values[active]!)} <small>{valueLabel}</small></strong>
+        <span>{t("progress.week_of", { date: weeks[active].start.toLocaleDateString(locale, { month: "short", day: "numeric" }) })}</span>
+      </div>}
       <div style={{ display: "flex", alignItems: "flex-end", gap: 6, height: 110, marginBottom: 6 }}>
         {weeks.map((w, i) => {
           const v = values[i]!;
-          const isCurrent = i === weeks.length - 1;
+          const isActive = i === active;
           return (
-            <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-end", height: "100%" }}>
-              {v === maxV && v > 0 && (
-                <div style={{ fontSize: 10, fontWeight: 700, color: "var(--accent)", marginBottom: 3 }}>
-                  {formatCompact(v)}
-                </div>
-              )}
-              <div style={{
-                width: "100%",
-                height: `${v > 0 ? Math.max((v / maxV) * 100, 4) : 2}%`,
-                borderRadius: "5px 5px 2px 2px",
-                background: v > 0 ? "var(--accent)" : "var(--border)",
-                opacity: v > 0 ? (isCurrent ? 1 : 0.55) : 1,
-              }} />
-            </div>
+            <button key={i} type="button" className={`progress-week-bar${isActive ? " active" : ""}`}
+              aria-label={`${t("progress.week_of", { date: w.start.toLocaleDateString(locale, { month: "short", day: "numeric" }) })}: ${formatCompact(v)} ${valueLabel}`}
+              aria-pressed={isActive} onClick={() => setSelected(i)}>
+              <span style={{ height: `${v > 0 ? Math.max((v / maxV) * 100, 4) : 2}%` }} />
+            </button>
           );
         })}
       </div>
