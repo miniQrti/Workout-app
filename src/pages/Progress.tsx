@@ -181,7 +181,7 @@ export default function Progress() {
   const [tab, setTab] = useState<Tab>("overview");
   return <div className="page">
     <PageHeader title={t("progress.title")} />
-    <div className="page-body">
+    <div className="page-body progress-body">
       <nav className="progress-nav" aria-label={t("progress.sections")}>
         {(["overview", "exercises", "history"] as const).map((id) => <button key={id} type="button" className={tab === id ? "active" : ""} aria-current={tab === id ? "page" : undefined} onClick={() => setTab(id)}>{t(`progress.section_${id}`)}</button>)}
       </nav>

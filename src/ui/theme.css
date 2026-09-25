@@ -357,6 +357,7 @@ input[type="number"] { -moz-appearance: textfield; }
 .heat-cell { width: 100%; aspect-ratio: 1; border-radius: 3px; }
 
 /* Progress: compact overview and drilldowns */
+.progress-body { width: 100%; max-width: 760px; margin: 0 auto; }
 .progress-nav { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 4px; }
 .progress-nav button { min-height: 44px; border: 0; border-radius: 10px; background: transparent; color: var(--text-2); font-weight: 650; font-size: 13px; cursor: pointer; }
 .progress-nav button.active { background: var(--accent-soft); color: var(--accent); }
