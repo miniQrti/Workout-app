@@ -36,8 +36,8 @@ function Overview({ onHistory, onExercises }: { onHistory: () => void; onExercis
   return <>
     <div className="progress-hero">
       <div className="progress-eyebrow">{t("progress.this_month")}</div>
-      <div className="progress-hero-number">{monthWorkouts(logs)} <span>{t("progress.workouts")}</span></div>
-      <div className="progress-hero-detail">{t("progress.total_summary", { count: stats.totalWorkouts, streak: stats.weekStreak })}</div>
+      <div className="progress-hero-number">{monthWorkouts(logs)} <span>{t("progress.workouts", { count: monthWorkouts(logs) })}</span></div>
+      <div className="progress-hero-detail">{t("progress.total_count", { count: stats.totalWorkouts })} · {t("progress.streak_count", { count: stats.weekStreak })}</div>
     </div>
     <div className="progress-shortcuts">
       <button type="button" onClick={onExercises}><strong>{recordCount}</strong><span>{t("progress.records_shortcut")} →</span></button>
@@ -49,7 +49,7 @@ function Overview({ onHistory, onExercises }: { onHistory: () => void; onExercis
           value={weeklyMetric} onChange={setWeeklyMetric} />
       </div>
       <WeeklyBars weeks={weeks} locale={localeOf(lang)} valueOf={weeklyMetric === "sessions" ? (w) => w.sessions : (w) => Math.round(fromKg(w.tonnageKg, unit))}
-        valueLabel={weeklyMetric === "sessions" ? t("progress.workouts") : unit} />
+        valueLabel={weeklyMetric === "sessions" ? (value) => t("progress.workouts", { count: value }) : unit} />
       <p className="progress-note">{weeklyMetric === "load" ? t("progress.load_explanation", { unit }) : t("progress.sessions_explanation")}</p>
     </Card>
     <Card title={t("progress.calendar")} subtitle={t("progress.calendar_sub", { n: CALENDAR_WEEKS })}>
@@ -91,7 +91,7 @@ function Exercises() {
   const entries = index.get(chartId) ?? [];
   const sessions = entries.flatMap((entry) => {
     const kg = metric === "weight" ? entry.topWeightKg : entry.bestE1RMKg;
-    return kg === null ? [] : [{ value: fromKg(kg, unit), kg, isBest: false, label: entry.date.toLocaleDateString(localeOf(lang), { month: "short", day: "numeric" }) }];
+    return kg === null ? [] : [{ value: fromKg(kg, unit), kg, isBest: false, label: entry.date.toLocaleString(localeOf(lang), { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }) }];
   }).slice(-12);
   const best = Math.max(...sessions.map((s) => s.value), 0);
   const points = sessions.map((s) => ({ ...s, isBest: s.value === best }));
@@ -136,7 +136,7 @@ function LogItem({ log }: { log: WorkoutLog }) {
   return <div className="card progress-log-item">
     <button type="button" className="progress-log-toggle" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
       <span className="progress-log-main"><strong>{log.dayName}</strong>
-        <span>{d?.toLocaleDateString(localeOf(lang), { dateStyle: "medium" })} · {t("common.exercises", { count: completed })}{log.durationSecs ? ` · ${Math.round(log.durationSecs / 60)} ${t("common.min")}` : ""}</span></span>
+        <span>{d?.toLocaleString(localeOf(lang), { dateStyle: "medium", timeStyle: "short" })} · {t("common.exercises", { count: completed })}{log.durationSecs ? ` · ${Math.round(log.durationSecs / 60)} ${t("common.min")}` : ""}</span></span>
       {log.completedEarly && <Chip tone="gold">{t("progress.incomplete")}</Chip>}
       {open ? <IconChevronUp size={16} /> : <IconChevronDown size={16} />}
     </button>
