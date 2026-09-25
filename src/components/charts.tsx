@@ -82,18 +82,19 @@ export function WeeklyBars({ weeks, locale, valueOf, valueLabel }: {
   weeks: WeekAgg[];
   locale: string;
   valueOf: (w: WeekAgg) => number;
-  valueLabel: string;
+  valueLabel: string | ((value: number) => string);
 }) {
   const t = useT();
   const [selected, setSelected] = useState<number | null>(null);
   const values = weeks.map(valueOf);
   const maxV = Math.max(...values, 1);
   const active = Math.min(selected ?? weeks.length - 1, weeks.length - 1);
+  const labelFor = (value: number) => typeof valueLabel === "string" ? valueLabel : valueLabel(value);
 
   return (
     <div>
       {weeks[active] && <div className="progress-week-value" aria-live="polite">
-        <strong>{formatCompact(values[active]!)} <small>{valueLabel}</small></strong>
+        <strong>{formatCompact(values[active]!)} <small>{labelFor(values[active]!)}</small></strong>
         <span>{t("progress.week_of", { date: weeks[active].start.toLocaleDateString(locale, { month: "short", day: "numeric" }) })}</span>
       </div>}
       <div style={{ display: "flex", alignItems: "flex-end", gap: 6, height: 110, marginBottom: 6 }}>
@@ -102,7 +103,7 @@ export function WeeklyBars({ weeks, locale, valueOf, valueLabel }: {
           const isActive = i === active;
           return (
             <button key={i} type="button" className={`progress-week-bar${isActive ? " active" : ""}`}
-              aria-label={`${t("progress.week_of", { date: w.start.toLocaleDateString(locale, { month: "short", day: "numeric" }) })}: ${formatCompact(v)} ${valueLabel}`}
+              aria-label={`${t("progress.week_of", { date: w.start.toLocaleDateString(locale, { month: "short", day: "numeric" }) })}: ${formatCompact(v)} ${labelFor(v)}`}
               aria-pressed={isActive} onClick={() => setSelected(i)}>
               <span style={{ height: `${v > 0 ? Math.max((v / maxV) * 100, 4) : 2}%` }} />
             </button>
