@@ -6,6 +6,7 @@ import { getExercise, resolveExerciseName } from "./data/exerciseResolver";
 import { detectNewPRs } from "./store/selectors";
 import { sessionTonnageKg } from "./store/analytics";
 import { nextDayIndexAfter } from "./store/session";
+import { preferredExercisesForDay } from "./store/exercisePreferences";
 import type { ActiveSession, WorkoutLog } from "./types";
 import { uuid } from "./lib/id";
 import { displayWeight, formatCompact, fromKg } from "./lib/units";
@@ -195,6 +196,7 @@ export default function App() {
     const plan = getPlan(state.settings.activePlanId, state.settings);
     const day = plan?.days[dayIdx % (plan?.days.length || 1)];
     if (!plan || !day) return;
+    const preferredIds = preferredExercisesForDay(plan.id, day, state.logs, state.settings);
 
     const session: ActiveSession = {
       id: uuid(),
@@ -204,10 +206,11 @@ export default function App() {
       startedAt: new Date().toISOString(),
       warmupDone: [],
       cooldownDone: [],
-      exercises: day.exercises.map((pe) => {
-        const ex = getExercise(pe.exerciseId, state.settings);
+      exercises: day.exercises.map((pe, slot) => {
+        const preferred = preferredIds[slot] ?? pe.exerciseId;
+        const ex = getExercise(preferred, state.settings);
         return {
-          exerciseId: pe.exerciseId,
+          exerciseId: preferred,
           targetSets: pe.sets,
           targetReps: pe.reps,
           restSecs: pe.restSecs || ex?.restSecs || 90,
@@ -219,7 +222,7 @@ export default function App() {
     dispatch({ type: "startSession", session });
     dispatch({ type: "settings", patch: { nextDayIdx: dayIdx } });
     setInWorkout(true);
-  }, [state.settings, lang, dispatch]);
+  }, [state.settings, state.logs, lang, dispatch]);
 
   const finishWorkout = useCallback((log: WorkoutLog) => {
     const nextDayIdx = nextDayIndexAfter(log, state.settings);
